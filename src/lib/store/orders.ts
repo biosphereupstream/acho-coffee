@@ -1,0 +1,361 @@
+import "server-only";
+import { randomUUID } from "crypto";
+import { db, schema } from "@/db";
+import { desc, eq } from "drizzle-orm";
+import { DAILY_CAPACITY_BAGS, ROAST_LEAD_DAYS } from "@/lib/constants";
+import type { OrderInput, OrderRecord, OrderStatus } from "@/lib/types";
+
+/* =========================================================
+   Store pesanan: Drizzle (Postgres/Supabase) bila DATABASE_URL
+   tersedia, selain itu fallback in-memory untuk demo.
+   ========================================================= */
+
+function generateOrderNumber(): string {
+  const d = new Date();
+  const ymd =
+    d.getFullYear() +
+    String(d.getMonth() + 1).padStart(2, "0") +
+    String(d.getDate()).padStart(2, "0");
+  return "ACHO-" + ymd + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+}
+
+export function isDemoMode() {
+  return !db;
+}
+
+/* ---------- memory fallback (globalThis: dibagikan antar module instance di runtime berbeda) ---------- */
+const g = globalThis as unknown as { __achoOrders?: Map<string, OrderRecord> };
+const memoryOrders = g.__achoOrders ?? (g.__achoOrders = new Map<string, OrderRecord>());
+
+/* ---------- core ---------- */
+export async function createOrder(input: OrderInput): Promise<OrderRecord> {
+  const orderNumber = generateOrderNumber();
+  const now = new Date().toISOString();
+
+  if (db) {
+    const [order] = await db
+      .insert(schema.orders)
+      .values({
+        orderNumber,
+        userId: input.userId ?? null,
+        guestEmail: input.guestEmail ?? null,
+        guestToken: input.guestToken ?? null,
+        status: "pending_payment",
+        fulfillment: input.fulfillment,
+        pickupDate: input.pickupDate ?? null,
+        pickupSlot: input.pickupSlot ?? null,
+        shippingAddress: input.shippingAddress ?? null,
+        courierCompany: input.courierCompany ?? null,
+        shippingFee: input.shippingFee,
+        subtotal: input.subtotal,
+        total: input.total,
+        customerName: input.customerName,
+        customerEmail: input.customerEmail,
+        customerPhone: input.customerPhone,
+        note: input.note ?? null,
+        paymentStatus: "pending",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+
+    await db.insert(schema.orderItems).values(
+      input.items.map((it) => ({
+        orderId: order.id,
+        coffeeName: it.coffeeName,
+        roastProfileName: it.roastProfileName,
+        grindSize: it.grindSize,
+        quantity: it.quantity,
+        unitPriceIdr: it.unitPriceIdr,
+        subtotalIdr: it.unitPriceIdr * it.quantity,
+      }))
+    );
+    await db.insert(schema.orderStatusHistory).values({
+      orderId: order.id,
+      status: "pending_payment",
+      note: "Pesanan dibuat, menunggu pembayaran",
+    });
+
+    return {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      userId: order.userId,
+      guestEmail: order.guestEmail,
+      guestToken: order.guestToken,
+      status: order.status as OrderStatus,
+      fulfillment: order.fulfillment,
+      pickupDate: order.pickupDate,
+      pickupSlot: order.pickupSlot,
+      shippingAddress: order.shippingAddress as OrderRecord["shippingAddress"],
+      courierCompany: order.courierCompany,
+      shippingFee: order.shippingFee,
+      subtotal: order.subtotal,
+      total: order.total,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      note: order.note,
+      dokuPaymentId: order.dokuPaymentId,
+      dokuChannel: order.dokuChannel,
+      paymentStatus: order.paymentStatus as OrderRecord["paymentStatus"],
+      paidAt: order.paidAt,
+      trackingNo: order.trackingNo,
+      trackingUrl: order.trackingUrl,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      items: input.items.map((it) => ({
+        coffeeSlug: it.coffeeSlug,
+        coffeeName: it.coffeeName,
+        roastProfileCode: it.roastProfileCode,
+        roastProfileName: it.roastProfileName,
+        grindSize: it.grindSize,
+        quantity: it.quantity,
+        unitPriceIdr: it.unitPriceIdr,
+        subtotalIdr: it.unitPriceIdr * it.quantity,
+      })),
+    };
+  }
+
+  // Demo mode (tanpa DATABASE_URL)
+  const record: OrderRecord = {
+    id: randomUUID(),
+    orderNumber,
+    userId: input.userId ?? null,
+    guestEmail: input.guestEmail ?? null,
+    guestToken: input.guestToken ?? null,
+    status: "pending_payment",
+    fulfillment: input.fulfillment,
+    pickupDate: input.pickupDate ?? null,
+    pickupSlot: input.pickupSlot ?? null,
+    shippingAddress: input.shippingAddress ?? null,
+    courierCompany: input.courierCompany ?? null,
+    shippingFee: input.shippingFee,
+    subtotal: input.subtotal,
+    total: input.total,
+    customerName: input.customerName,
+    customerEmail: input.customerEmail,
+    customerPhone: input.customerPhone,
+    note: input.note ?? null,
+    paymentStatus: "pending",
+    createdAt: now,
+    updatedAt: now,
+    items: input.items.map((it) => ({ ...it, subtotalIdr: it.unitPriceIdr * it.quantity })),
+  };
+  memoryOrders.set(orderNumber, record);
+  return record;
+}
+
+export async function getOrderByNumber(orderNumber: string): Promise<OrderRecord | null> {
+  const key = orderNumber.trim().toUpperCase();
+  if (db) {
+    const rows = await db.select().from(schema.orders).where(eq(schema.orders.orderNumber, key)).limit(1);
+    if (rows.length === 0) return null;
+    const o = rows[0];
+    const items = await db
+      .select()
+      .from(schema.orderItems)
+      .where(eq(schema.orderItems.orderId, o.id));
+    return {
+      id: o.id,
+      orderNumber: o.orderNumber,
+      userId: o.userId,
+      guestEmail: o.guestEmail,
+      guestToken: o.guestToken,
+      status: o.status as OrderStatus,
+      fulfillment: o.fulfillment,
+      pickupDate: o.pickupDate,
+      pickupSlot: o.pickupSlot,
+      shippingAddress: o.shippingAddress as OrderRecord["shippingAddress"],
+      courierCompany: o.courierCompany,
+      shippingFee: o.shippingFee,
+      subtotal: o.subtotal,
+      total: o.total,
+      customerName: o.customerName,
+      customerEmail: o.customerEmail,
+      customerPhone: o.customerPhone,
+      note: o.note,
+      dokuPaymentId: o.dokuPaymentId,
+      dokuChannel: o.dokuChannel,
+      paymentStatus: o.paymentStatus as OrderRecord["paymentStatus"],
+      paidAt: o.paidAt,
+      trackingNo: o.trackingNo,
+      trackingUrl: o.trackingUrl,
+      createdAt: o.createdAt,
+      updatedAt: o.updatedAt,
+      items: items.map((it) => ({
+        coffeeName: it.coffeeName,
+        roastProfileName: it.roastProfileName,
+        grindSize: it.grindSize,
+        quantity: it.quantity,
+        unitPriceIdr: it.unitPriceIdr,
+        subtotalIdr: it.subtotalIdr,
+      })),
+    };
+  }
+  return memoryOrders.get(key) ?? null;
+}
+
+export async function findOrderByTracking(trackingNo: string): Promise<OrderRecord | null> {
+  if (!trackingNo) return null;
+  if (db) {
+    const rows = await db
+      .select()
+      .from(schema.orders)
+      .where(eq(schema.orders.trackingNo, trackingNo))
+      .limit(1);
+    if (rows.length === 0) return null;
+    return getOrderByNumber(rows[0].orderNumber);
+  }
+  for (const o of memoryOrders.values()) {
+    if (o.trackingNo === trackingNo) return o;
+  }
+  return null;
+}
+
+export async function listOrdersByUser(userId: string): Promise<OrderRecord[]> {
+  if (db) {
+    const rows = await db
+      .select()
+      .from(schema.orders)
+      .where(eq(schema.orders.userId, userId))
+      .orderBy(desc(schema.orders.createdAt));
+    const out: OrderRecord[] = [];
+    for (const o of rows) {
+      const full = await getOrderByNumber(o.orderNumber);
+      if (full) out.push(full);
+    }
+    return out;
+  }
+  return [...memoryOrders.values()]
+    .filter((o) => o.userId === userId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function listOrdersByGuestEmail(email: string): Promise<OrderRecord[]> {
+  const key = email.trim().toLowerCase();
+  if (db) {
+    const rows = await db
+      .select()
+      .from(schema.orders)
+      .where(eq(schema.orders.guestEmail, key))
+      .orderBy(desc(schema.orders.createdAt));
+    const out: OrderRecord[] = [];
+    for (const o of rows) {
+      const full = await getOrderByNumber(o.orderNumber);
+      if (full) out.push(full);
+    }
+    return out;
+  }
+  return [...memoryOrders.values()]
+    .filter((o) => (o.guestEmail ?? "").toLowerCase() === key)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function updateOrderStatus(
+  orderNumber: string,
+  status: OrderStatus,
+  note?: string,
+  extra?: Partial<
+    Pick<
+      OrderRecord,
+      "paymentStatus" | "paidAt" | "trackingNo" | "trackingUrl" | "dokuPaymentId" | "dokuChannel"
+    >
+  >
+): Promise<OrderRecord | null> {
+  const key = orderNumber.trim().toUpperCase();
+  if (db) {
+    const rows = await db.select().from(schema.orders).where(eq(schema.orders.orderNumber, key)).limit(1);
+    if (rows.length === 0) return null;
+    const o = rows[0];
+    const patch: Record<string, unknown> = { status, updatedAt: new Date().toISOString() };
+    if (extra?.paymentStatus) patch.paymentStatus = extra.paymentStatus;
+    if (extra?.paidAt) patch.paidAt = extra.paidAt;
+    if (extra?.trackingNo) patch.trackingNo = extra.trackingNo;
+    if (extra?.trackingUrl) patch.trackingUrl = extra.trackingUrl;
+    if (extra?.dokuPaymentId) patch.dokuPaymentId = extra.dokuPaymentId;
+    if (extra?.dokuChannel) patch.dokuChannel = extra.dokuChannel;
+    await db.update(schema.orders).set(patch as never).where(eq(schema.orders.id, o.id));
+    await db.insert(schema.orderStatusHistory).values({ orderId: o.id, status, note: note ?? null });
+    return getOrderByNumber(key);
+  }
+  const rec = memoryOrders.get(key);
+  if (!rec) return null;
+  rec.status = status;
+  rec.updatedAt = new Date().toISOString();
+  if (extra?.paymentStatus) rec.paymentStatus = extra.paymentStatus;
+  if (extra?.paidAt) rec.paidAt = extra.paidAt;
+  if (extra?.trackingNo) rec.trackingNo = extra.trackingNo;
+  if (extra?.trackingUrl) rec.trackingUrl = extra.trackingUrl;
+  if (extra?.dokuPaymentId) rec.dokuPaymentId = extra.dokuPaymentId;
+  if (extra?.dokuChannel) rec.dokuChannel = extra.dokuChannel;
+  return rec;
+}
+
+/* ---------- jadwal antrian pickup ---------- */
+export interface PickupDayInfo {
+  date: string; // YYYY-MM-DD
+  weekday: string;
+  bookedBags: number;
+  remainingBags: number;
+  available: boolean;
+}
+
+async function bookedBagsFor(date: string): Promise<number> {
+  if (db) {
+    const rows = await db
+      .select({ qty: schema.orderItems.quantity, status: schema.orders.status })
+      .from(schema.orders)
+      .innerJoin(schema.orderItems, eq(schema.orders.id, schema.orderItems.orderId))
+      .where(eq(schema.orders.pickupDate, date));
+    let total = 0;
+    for (const r of rows) {
+      if (r.status !== "cancelled" && r.status !== "draft") total += r.qty;
+    }
+    return total;
+  }
+  let total = 0;
+  for (const o of memoryOrders.values()) {
+    if (o.pickupDate === date && o.status !== "cancelled" && o.status !== "draft") {
+      total += o.items.reduce((s, it) => s + it.quantity, 0);
+    }
+  }
+  return total;
+}
+
+export async function getPickupAvailability(days = 14): Promise<PickupDayInfo[]> {
+  const out: PickupDayInfo[] = [];
+  const today = new Date();
+  const weekdayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+  for (let i = 0; i < days + ROAST_LEAD_DAYS + 1; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    if (d.getDay() === 0) continue; // roastery tutup hari Minggu
+    if (i < ROAST_LEAD_DAYS) continue; // butuh waktu roasting + resting
+    const dateStr = d.toISOString().slice(0, 10);
+    const booked = await bookedBagsFor(dateStr);
+    const remaining = Math.max(0, DAILY_CAPACITY_BAGS - booked);
+    out.push({
+      date: dateStr,
+      weekday: weekdayNames[d.getDay()],
+      bookedBags: booked,
+      remainingBags: remaining,
+      available: remaining > 0,
+    });
+  }
+  return out;
+}
+
+/** Untuk admin: daftar pesanan (maks 100 terbaru). */
+export async function listOrdersForAdmin(): Promise<OrderRecord[]> {
+  if (db) {
+    const rows = await db.select().from(schema.orders).orderBy(desc(schema.orders.createdAt)).limit(100);
+    const out: OrderRecord[] = [];
+    for (const o of rows) {
+      const full = await getOrderByNumber(o.orderNumber);
+      if (full) out.push(full);
+    }
+    return out;
+  }
+  return [...memoryOrders.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
