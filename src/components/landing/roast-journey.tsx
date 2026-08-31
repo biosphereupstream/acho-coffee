@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity -- inisialisasi partikel 3D memakai Math.random() yang disengaja & stabil (useMemo []); tidak memengaruhi kemurnian render UI */
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
@@ -32,7 +33,7 @@ function createBeanGeometry(): THREE.BufferGeometry {
 }
 
 function CoffeeBean({ stage }: { stage: number }) {
-  const geo = useMemo(createBeanGeometry, []);
+  const geo = useMemo(() => createBeanGeometry(), []);
   const mat = useRef<THREE.MeshStandardMaterial>(null);
   const group = useRef<THREE.Group>(null);
   const targetColor = useMemo(() => new THREE.Color(STAGE_COLORS[Math.min(stage, 3)]), [stage]);

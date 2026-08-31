@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -78,9 +78,8 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
 
   const recommendation = useMemo(() => recommendRoast(brew, taste, coffee.type), [brew, taste, coffee.type]);
 
-  useEffect(() => {
-    if (!manualRoast) setRoast(recommendation.level);
-  }, [recommendation, manualRoast]);
+  // Profil efektif: ikut rekomendasi otomatis sampai user memilih manual
+  const effectiveRoast = manualRoast ? roast : recommendation.level;
 
   const { data: pickupDays = [] } = useQuery<PickupDay[]>({
     queryKey: ["pickup-slots"],
@@ -95,7 +94,7 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
   const shippingFee = fulfillment === "delivery" ? courier?.price ?? 0 : 0;
   const total = subtotal + shippingFee;
 
-  const roastProfile = ROAST_PROFILES.find((r) => r.level === roast) ?? ROAST_PROFILES[1];
+  const roastProfile = ROAST_PROFILES.find((r) => r.level === effectiveRoast) ?? ROAST_PROFILES[1];
   const grindLabel = GRIND_SIZES.find((g) => g.id === grind)?.name ?? grind;
 
   function canContinue(): { ok: boolean; reason?: string } {
@@ -305,7 +304,7 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
                       }}
                       className={cn(
                         "relative rounded-xl border-2 p-4 text-left transition-all",
-                        roast === r.level
+                        effectiveRoast === r.level
                           ? "border-gold bg-white shadow-md"
                           : "border-border bg-white/60 hover:border-gold/50"
                       )}

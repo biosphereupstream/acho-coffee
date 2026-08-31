@@ -3,12 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Copy, ExternalLink, KeyRound, PackageSearch } from "lucide-react";
+import { Copy, ExternalLink, KeyRound } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { StatusTimeline } from "@/components/order/status-timeline";
 import { formatIDR } from "@/lib/constants";
 import { STATUS_LABELS, type OrderRecord } from "@/lib/types";
@@ -26,7 +25,7 @@ export function StatusClient({
   const router = useRouter();
   const [token, setToken] = useState("");
 
-  const { data: order, isLoading } = useQuery({
+  const { data: order } = useQuery({
     queryKey: ["order", orderNumber],
     queryFn: async () => {
       const res = await fetch("/api/orders/" + orderNumber, { cache: "no-store" });

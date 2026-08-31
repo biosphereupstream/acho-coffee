@@ -1,7 +1,7 @@
 import "server-only";
 import { createHmac, randomUUID } from "crypto";
 import { env } from "@/lib/env";
-import type { DokuChannel, DokuCreateParams, DokuPaymentResult } from "@/lib/payments/doku-shared";
+import type { DokuCreateParams, DokuPaymentResult } from "@/lib/payments/doku-shared";
 
 export type { DokuChannel, DokuCreateParams, DokuPaymentResult, DokuNotifyPayload } from "@/lib/payments/doku-shared";
 export { DOKU_CHANNELS } from "@/lib/payments/doku-shared";

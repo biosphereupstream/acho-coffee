@@ -18,10 +18,8 @@ import { toast } from "sonner";
 
 export function AuthButtons({
   user,
-  supabaseConfigured,
 }: {
   user: { email?: string; name?: string } | null;
-  supabaseConfigured: boolean;
 }) {
   const router = useRouter();
 

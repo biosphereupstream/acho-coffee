@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Coffee } from "lucide-react";
 import { getSupabaseServer } from "@/lib/supabase/server";
-import { env } from "@/lib/env";
 import { AuthButtons } from "@/components/auth-buttons";
 import { MobileNav } from "@/components/mobile-nav";
 
@@ -50,7 +49,7 @@ export async function SiteHeader() {
         </nav>
 
         <div className="hidden md:block">
-          <AuthButtons user={user} supabaseConfigured={env.supabaseConfigured()} />
+          <AuthButtons user={user} />
         </div>
 
         <MobileNav user={user} />
