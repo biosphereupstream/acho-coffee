@@ -1,0 +1,12 @@
+# Normalisasi line ending (menghilangkan warning CRLF di Windows)
+* text=auto eol=lf
+
+# Biner
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
