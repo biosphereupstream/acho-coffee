@@ -28,6 +28,9 @@
 # demo store (mode tanpa DATABASE_URL)
 .data/
 
+# junction skills untuk Claude Code (dibuat ulang oleh skills CLI per mesin)
+.claude/
+
 # misc
 .DS_Store
 *.pem
