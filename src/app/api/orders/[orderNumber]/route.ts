@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getOrderByNumber } from "@/lib/store/orders";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { createClient as getSupabaseServer } from "@/lib/server";
 import {
   GUEST_COOKIE,
   GUEST_COOKIE_OPTIONS,

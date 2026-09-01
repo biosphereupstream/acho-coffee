@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { createClient as getSupabaseServer } from "@/lib/server";
 import { env } from "@/lib/env";
 
 export interface AuthActionResult {

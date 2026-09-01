@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { uploadToR2 } from "@/lib/r2";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { createClient as getSupabaseServer } from "@/lib/server";
 import { env } from "@/lib/env";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB

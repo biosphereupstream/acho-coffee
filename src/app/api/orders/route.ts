@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { randomUUID } from "crypto";
 import { createOrderSchema } from "@/lib/validation";
 import { createOrder } from "@/lib/store/orders";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { createClient as getSupabaseServer } from "@/lib/server";
 import { emails } from "@/lib/email";
 import { GUEST_COOKIE, GUEST_COOKIE_OPTIONS, appendGuestCookie } from "@/lib/order-access";
 

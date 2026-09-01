@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { createClient as getSupabaseServer } from "@/lib/server";
 import { env } from "@/lib/env";
 import { listOrdersByUser } from "@/lib/store/orders";
 import { AccountTabs } from "@/components/account/account-tabs";

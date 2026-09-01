@@ -3,7 +3,14 @@ export const env = {
   siteUrl: () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   supabaseUrl: () => process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
   supabaseAnonKey: () => process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
-  supabaseConfigured: () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+  /** Kunci sisi-klien: publishable key (format baru) atau anon key (legacy). */
+  supabaseKey: () =>
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+  supabaseConfigured: () =>
+    Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    ),
   databaseUrl: () => process.env.DATABASE_URL ?? "",
   resendApiKey: () => process.env.RESEND_API_KEY ?? "",
   resendFrom: () => process.env.RESEND_FROM_EMAIL ?? "ACHO Coffee <hello@acho.coffee>",

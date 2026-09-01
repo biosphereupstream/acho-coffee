@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { getOrderByNumber } from "@/lib/store/orders";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { createClient as getSupabaseServer } from "@/lib/server";
 import { StatusClient } from "@/components/order/status-client";
 import { GUEST_COOKIE, canAccessOrder, parseGuestCookie } from "@/lib/order-access";
 

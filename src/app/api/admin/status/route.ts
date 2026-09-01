@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrderByNumber, updateOrderStatus } from "@/lib/store/orders";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { createClient as getSupabaseServer } from "@/lib/server";
 import { env } from "@/lib/env";
 import { emails } from "@/lib/email";
 import { ensureShipment } from "@/lib/order-lifecycle";

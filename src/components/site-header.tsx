@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Coffee } from "lucide-react";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { createClient as getSupabaseServer } from "@/lib/server";
 import { AuthButtons } from "@/components/auth-buttons";
 import { MobileNav } from "@/components/mobile-nav";
 

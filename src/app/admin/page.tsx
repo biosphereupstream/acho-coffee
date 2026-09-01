@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { createClient as getSupabaseServer } from "@/lib/server";
 import { env } from "@/lib/env";
 import { listOrdersForAdmin } from "@/lib/store/orders";
 import { AdminPanel } from "@/components/admin/admin-panel";
