@@ -5,7 +5,8 @@ import { markOrderPaid } from "@/lib/order-lifecycle";
 
 /** Simulasi pembayaran berhasil — hanya aktif di mode demo (Doku belum dikonfigurasi). */
 export async function POST(req: Request) {
-  if (env.doku.configured()) {
+  // Aktif bila Doku belum dikonfigurasi, ATAU fallback demo diaktifkan untuk testing lokal
+  if (env.doku.configured() && !env.doku.demoFallback()) {
     return NextResponse.json({ error: "Tidak tersedia — Doku aktif" }, { status: 403 });
   }
 

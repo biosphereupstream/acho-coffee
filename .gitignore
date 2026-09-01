@@ -25,6 +25,9 @@
 .tmp-scaffold/
 *.log
 
+# demo store (mode tanpa DATABASE_URL)
+.data/
+
 # misc
 .DS_Store
 *.pem

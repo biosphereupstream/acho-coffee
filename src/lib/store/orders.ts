@@ -1,5 +1,7 @@
 import "server-only";
 import { randomUUID } from "crypto";
+import { promises as fs } from "fs";
+import path from "path";
 import { db, schema } from "@/db";
 import { desc, eq } from "drizzle-orm";
 import { DAILY_CAPACITY_BAGS, ROAST_LEAD_DAYS } from "@/lib/constants";
@@ -7,8 +9,33 @@ import type { OrderInput, OrderRecord, OrderStatus } from "@/lib/types";
 
 /* =========================================================
    Store pesanan: Drizzle (Postgres/Supabase) bila DATABASE_URL
-   tersedia, selain itu fallback in-memory untuk demo.
+   tersedia; selain itu fallback demo berbasis FILE JSON
+   (aman dibagi lintas route runtime/worker di mode demo).
    ========================================================= */
+
+// Path absolut via env agar konsisten antar worker/route runtime (cwd tiap worker bisa berbeda).
+// Default: <project>/.data — cukup untuk dev lokal biasa.
+const DATA_DIR = process.env.ACHO_DATA_DIR
+  ? path.resolve(process.env.ACHO_DATA_DIR)
+  : path.join(process.cwd(), ".data");
+const DATA_FILE = path.join(DATA_DIR, "demo-orders.json");
+
+async function readStore(): Promise<Map<string, OrderRecord>> {
+  try {
+    const raw = await fs.readFile(DATA_FILE, "utf8");
+    const arr = JSON.parse(raw) as OrderRecord[];
+    return new Map(arr.map((o) => [o.orderNumber, o]));
+  } catch {
+    return new Map();
+  }
+}
+
+async function writeStore(map: Map<string, OrderRecord>): Promise<void> {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+  const tmp = DATA_FILE + ".tmp";
+  await fs.writeFile(tmp, JSON.stringify([...map.values()]), "utf8");
+  await fs.rename(tmp, DATA_FILE);
+}
 
 function generateOrderNumber(): string {
   const d = new Date();
@@ -22,10 +49,6 @@ function generateOrderNumber(): string {
 export function isDemoMode() {
   return !db;
 }
-
-/* ---------- memory fallback (globalThis: dibagikan antar module instance di runtime berbeda) ---------- */
-const g = globalThis as unknown as { __achoOrders?: Map<string, OrderRecord> };
-const memoryOrders = g.__achoOrders ?? (g.__achoOrders = new Map<string, OrderRecord>());
 
 /* ---------- core ---------- */
 export async function createOrder(input: OrderInput): Promise<OrderRecord> {
@@ -116,7 +139,8 @@ export async function createOrder(input: OrderInput): Promise<OrderRecord> {
     };
   }
 
-  // Demo mode (tanpa DATABASE_URL)
+  // Demo mode (file store)
+  const store = await readStore();
   const record: OrderRecord = {
     id: randomUUID(),
     orderNumber,
@@ -141,7 +165,8 @@ export async function createOrder(input: OrderInput): Promise<OrderRecord> {
     updatedAt: now,
     items: input.items.map((it) => ({ ...it, subtotalIdr: it.unitPriceIdr * it.quantity })),
   };
-  memoryOrders.set(orderNumber, record);
+  store.set(orderNumber, record);
+  await writeStore(store);
   return record;
 }
 
@@ -192,7 +217,8 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderRecord
       })),
     };
   }
-  return memoryOrders.get(key) ?? null;
+  const store = await readStore();
+  return store.get(key) ?? null;
 }
 
 export async function findOrderByTracking(trackingNo: string): Promise<OrderRecord | null> {
@@ -206,7 +232,8 @@ export async function findOrderByTracking(trackingNo: string): Promise<OrderReco
     if (rows.length === 0) return null;
     return getOrderByNumber(rows[0].orderNumber);
   }
-  for (const o of memoryOrders.values()) {
+  const store = await readStore();
+  for (const o of store.values()) {
     if (o.trackingNo === trackingNo) return o;
   }
   return null;
@@ -226,7 +253,8 @@ export async function listOrdersByUser(userId: string): Promise<OrderRecord[]> {
     }
     return out;
   }
-  return [...memoryOrders.values()]
+  const store = await readStore();
+  return [...store.values()]
     .filter((o) => o.userId === userId)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
@@ -246,7 +274,8 @@ export async function listOrdersByGuestEmail(email: string): Promise<OrderRecord
     }
     return out;
   }
-  return [...memoryOrders.values()]
+  const store = await readStore();
+  return [...store.values()]
     .filter((o) => (o.guestEmail ?? "").toLowerCase() === key)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
@@ -278,7 +307,8 @@ export async function updateOrderStatus(
     await db.insert(schema.orderStatusHistory).values({ orderId: o.id, status, note: note ?? null });
     return getOrderByNumber(key);
   }
-  const rec = memoryOrders.get(key);
+  const store = await readStore();
+  const rec = store.get(key);
   if (!rec) return null;
   rec.status = status;
   rec.updatedAt = new Date().toISOString();
@@ -288,6 +318,8 @@ export async function updateOrderStatus(
   if (extra?.trackingUrl) rec.trackingUrl = extra.trackingUrl;
   if (extra?.dokuPaymentId) rec.dokuPaymentId = extra.dokuPaymentId;
   if (extra?.dokuChannel) rec.dokuChannel = extra.dokuChannel;
+  store.set(key, rec);
+  await writeStore(store);
   return rec;
 }
 
@@ -313,8 +345,9 @@ async function bookedBagsFor(date: string): Promise<number> {
     }
     return total;
   }
+  const store = await readStore();
   let total = 0;
-  for (const o of memoryOrders.values()) {
+  for (const o of store.values()) {
     if (o.pickupDate === date && o.status !== "cancelled" && o.status !== "draft") {
       total += o.items.reduce((s, it) => s + it.quantity, 0);
     }
@@ -357,5 +390,6 @@ export async function listOrdersForAdmin(): Promise<OrderRecord[]> {
     }
     return out;
   }
-  return [...memoryOrders.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const store = await readStore();
+  return [...store.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }

@@ -7,12 +7,23 @@ import { markOrderPaid } from "@/lib/order-lifecycle";
 export async function POST(req: Request) {
   const raw = await req.text();
   const clientId = req.headers.get("client-id") ?? "";
+  const requestId = req.headers.get("request-id") ?? "";
   const timestamp = req.headers.get("request-timestamp") ?? "";
+  const digest = req.headers.get("digest") ?? "";
   const signature = req.headers.get("signature") ?? "";
 
   // Verifikasi signature hanya bila Doku terkonfigurasi
   if (env.doku.configured()) {
-    if (!verifyDokuNotification(clientId, timestamp, raw, signature)) {
+    const valid = verifyDokuNotification({
+      clientId,
+      requestId,
+      timestamp,
+      digest,
+      target: "/api/webhooks/doku",
+      rawBody: raw,
+      signature,
+    });
+    if (!valid) {
       return NextResponse.json({ error: "invalid signature" }, { status: 401 });
     }
   }

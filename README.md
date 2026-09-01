@@ -79,8 +79,11 @@ menggeser status (antrian → roasting → resting → siap diambil/dikirim).
 1. Daftar di [Jokul Doku](https://jokul.doku.com) → dapatkan **Client ID** & **Shared Key** (sandbox dulu).
 2. Isi env: **DOKU_ENV=sandbox**, **DOKU_CLIENT_ID**, **DOKU_SHARED_KEY**.
 3. Webhook notifikasi: daftarkan **https://domainkamu.com/api/webhooks/doku** di dashboard Doku.
-4. Kode memakai **Checkout API v1** (POST /checkout/v1/payment) dengan signature HMAC-SHA256
-   (**Client-Id|Request-Timestamp|body** → base64). Verifikasi webhook sudah diimplementasikan.
+4. Kode memakai **Checkout API v1** (POST /checkout/v1/payment) dengan skema signature resmi Doku:
+   komponen **Client-Id / Request-Id / Request-Timestamp / Request-Target / Digest** (Digest = base64 SHA-256 body),
+   ditandatangani HMAC-SHA256 dengan **Shared Key** lalu diberi prefix **HMACSHA256=**. Verifikasi webhook sudah diimplementasikan.
+   > Catatan: kanal pembayaran (VA/e-wallet/QRIS) harus **diaktifkan dulu di back-office Jokul** — jika belum,
+   > Doku membalas "PAYMENT CHANNEL IS INACTIVE".
 
 ## 📦 Biteship (Kurir & Tracing)
 

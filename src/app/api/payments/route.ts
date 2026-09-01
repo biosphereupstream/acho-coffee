@@ -21,19 +21,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Pesanan ini sudah dibayar" }, { status: 400 });
   }
 
-  const result = await createDokuPayment({
-    invoiceNumber: order.orderNumber,
-    amount: order.total,
-    channel,
-    customerName: order.customerName,
-    customerEmail: order.customerEmail,
-    customerPhone: order.customerPhone,
-    lineItems: order.items.map((it) => ({
-      name: it.coffeeName + " (" + it.roastProfileName + ", " + it.grindSize + ")",
-      quantity: it.quantity,
-      price: it.unitPriceIdr,
-    })),
-  });
+  let result;
+  try {
+    result = await createDokuPayment({
+      invoiceNumber: order.orderNumber,
+      amount: order.total,
+      channel,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      lineItems: order.items.map((it) => ({
+        name: it.coffeeName + " (" + it.roastProfileName + ", " + it.grindSize + ")",
+        quantity: it.quantity,
+        price: it.unitPriceIdr,
+      })),
+    });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Gagal membuat pembayaran. Coba lagi sebentar." },
+      { status: 502 }
+    );
+  }
 
   await updateOrderStatus(order.orderNumber, order.status, "Metode pembayaran dipilih: " + channel, {
     dokuPaymentId: result.paymentId,

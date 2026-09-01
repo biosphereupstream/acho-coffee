@@ -12,6 +12,9 @@ export const env = {
     env: () => (process.env.DOKU_ENV === "production" ? "production" : "sandbox"),
     clientId: () => process.env.DOKU_CLIENT_ID ?? "",
     sharedKey: () => process.env.DOKU_SHARED_KEY ?? "",
+    apiKey: () => process.env.DOKU_API_KEY ?? "",
+    /** Fallback demo bila sandbox Doku tak terjangkau dari jaringan lokal. */
+    demoFallback: () => process.env.DOKU_DEMO_FALLBACK === "1" || process.env.DOKU_DEMO_FALLBACK === "true",
     merchantName: () => process.env.DOKU_MERCHANT_NAME ?? "ACHO Coffee",
     baseUrl: () =>
       process.env.DOKU_ENV === "production"
