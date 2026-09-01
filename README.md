@@ -69,7 +69,10 @@ menggeser status (antrian → roasting → resting → siap diambil/dikirim).
    - Di Google Cloud: **APIs → OAuth consent screen** (tambahkan test user untuk development).
 3. **Project Settings → API**: salin URL & anon key → **NEXT_PUBLIC_SUPABASE_URL**, **NEXT_PUBLIC_SUPABASE_ANON_KEY**.
 4. **Project Settings → Database → Connection string** (URI, port 6543) → **DATABASE_URL**.
-5. Jalankan migrasi: **npm run db:push** (atau psql -f drizzle/0000_init.sql).
+5. Jalankan migrasi: **npm run db:push** — bila koneksi memakai pooler dan `drizzle-kit push` terkendala introspeksi,
+   gunakan **node scripts/apply-migration.js** (menerapkan `drizzle/0000_init.sql` langsung lewat driver postgres).
+   > 💡 **Region pooler**: host pooler harus sesuai region project (`aws-0-<region>.pooler.supabase.com`).
+   > Cek region persisnya dari URL di tombol **Connect** dashboard (contoh proyek ini: ap-southeast-2).
 6. **Authentication → URL Configuration**:
    - Site URL: **https://domainkamu.com**
    - Redirect URLs: **https://domainkamu.com/auth/callback** dan **http://localhost:3000/auth/callback**

@@ -58,7 +58,7 @@ CREATE TABLE "orders" (
   "status" "order_status" NOT NULL DEFAULT 'draft',
   "fulfillment" "fulfillment_type" NOT NULL,
   "pickup_date" date,
-  "pickup_slot" varchar(10),
+  "pickup_slot" varchar(30),
   "shipping_address" jsonb,
   "courier_company" varchar(30),
   "shipping_fee" integer NOT NULL DEFAULT 0,

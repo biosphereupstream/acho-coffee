@@ -90,7 +90,7 @@ export const orders = pgTable(
     status: orderStatusEnum("status").notNull().default("draft"),
     fulfillment: fulfillmentEnum("fulfillment").notNull(),
     pickupDate: date("pickup_date"),
-    pickupSlot: varchar("pickup_slot", { length: 10 }),
+    pickupSlot: varchar("pickup_slot", { length: 30 }),
     shippingAddress: jsonb("shipping_address").$type<{
       name: string;
       phone: string;
