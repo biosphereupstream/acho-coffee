@@ -56,7 +56,15 @@ export async function signInWithGoogle(): Promise<AuthActionResult> {
       queryParams: { access_type: "offline", prompt: "consent" },
     },
   });
-  if (error || !data.url) return { error: "Gagal memulai Google OAuth" };
+  if (error || !data.url) {
+    const reason = error?.message ?? "tidak ada URL redirect";
+    return {
+      error:
+        "Google OAuth belum aktif: " +
+        reason +
+        ". Aktifkan di Supabase Dashboard > Authentication > Providers > Google (perlu Client ID & Secret dari Google Cloud Console).",
+    };
+  }
   return { url: data.url };
 }
 
