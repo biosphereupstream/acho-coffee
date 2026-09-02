@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useCart } from "@/components/cart/cart-context";
 
 const NAV = [
   { href: "/", label: "Beranda" },
@@ -16,9 +17,10 @@ const NAV = [
 export function MobileNav({
   user,
 }: {
-  user: { email?: string; name?: string } | null;
+  user: { email?: string; name?: string; avatarUrl?: string } | null;
 }) {
   const [open, setOpen] = useState(false);
+  const { openCart, totalCount } = useCart();
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -44,6 +46,20 @@ export function MobileNav({
               {item.label}
             </Link>
           ))}
+          <button
+            onClick={() => {
+              setOpen(false);
+              openCart();
+            }}
+            className="flex items-center justify-between rounded-lg px-3 py-3 text-base font-medium hover:bg-secondary/70 text-left transition-colors"
+          >
+            <span>Keranjang Belanja</span>
+            {totalCount > 0 && (
+              <span className="rounded-full bg-gold-deep px-2 py-0.5 text-xs font-bold text-white">
+                {totalCount}
+              </span>
+            )}
+          </button>
           <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
             {user ? (
               <Button asChild>

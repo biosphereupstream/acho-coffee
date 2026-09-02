@@ -3,6 +3,7 @@ import { Coffee } from "lucide-react";
 import { createClient as getSupabaseServer } from "@/lib/server";
 import { AuthButtons } from "@/components/auth-buttons";
 import { MobileNav } from "@/components/mobile-nav";
+import { CartTrigger } from "@/components/cart/cart-trigger";
 
 const NAV = [
   { href: "/", label: "Beranda" },
@@ -13,13 +14,15 @@ const NAV = [
 
 export async function SiteHeader() {
   const supabase = await getSupabaseServer();
-  let user: { email?: string; name?: string } | null = null;
+  let user: { email?: string; name?: string; avatarUrl?: string } | null = null;
   if (supabase) {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
+      const meta = data.user.user_metadata ?? {};
       user = {
         email: data.user.email ?? "",
-        name: (data.user.user_metadata?.full_name as string) ?? data.user.email ?? "",
+        name: (meta.full_name as string) ?? (meta.name as string) ?? data.user.email ?? "",
+        avatarUrl: (meta.avatar_url as string) ?? (meta.picture as string) ?? undefined,
       };
     }
   }
@@ -48,11 +51,15 @@ export async function SiteHeader() {
           ))}
         </nav>
 
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-2 md:flex">
+          <CartTrigger />
           <AuthButtons user={user} />
         </div>
 
-        <MobileNav user={user} />
+        <div className="flex items-center gap-1 md:hidden">
+          <CartTrigger />
+          <MobileNav user={user} />
+        </div>
       </div>
     </header>
   );

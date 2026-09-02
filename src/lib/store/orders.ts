@@ -71,6 +71,8 @@ export async function createOrder(input: OrderInput): Promise<OrderRecord> {
         courierCompany: input.courierCompany ?? null,
         shippingFee: input.shippingFee,
         subtotal: input.subtotal,
+        discountAmount: input.discountAmount ?? 0,
+        voucherCode: input.voucherCode ?? null,
         total: input.total,
         customerName: input.customerName,
         customerEmail: input.customerEmail,
@@ -113,6 +115,8 @@ export async function createOrder(input: OrderInput): Promise<OrderRecord> {
       courierCompany: order.courierCompany,
       shippingFee: order.shippingFee,
       subtotal: order.subtotal,
+      discountAmount: order.discountAmount ?? 0,
+      voucherCode: order.voucherCode ?? null,
       total: order.total,
       customerName: order.customerName,
       customerEmail: order.customerEmail,
@@ -155,6 +159,8 @@ export async function createOrder(input: OrderInput): Promise<OrderRecord> {
     courierCompany: input.courierCompany ?? null,
     shippingFee: input.shippingFee,
     subtotal: input.subtotal,
+    discountAmount: input.discountAmount ?? 0,
+    voucherCode: input.voucherCode ?? null,
     total: input.total,
     customerName: input.customerName,
     customerEmail: input.customerEmail,
@@ -194,6 +200,8 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderRecord
       courierCompany: o.courierCompany,
       shippingFee: o.shippingFee,
       subtotal: o.subtotal,
+      discountAmount: o.discountAmount ?? 0,
+      voucherCode: o.voucherCode ?? null,
       total: o.total,
       customerName: o.customerName,
       customerEmail: o.customerEmail,
@@ -321,6 +329,31 @@ export async function updateOrderStatus(
   store.set(key, rec);
   await writeStore(store);
   return rec;
+}
+
+export async function batchUpdateOrderStatus(
+  orderNumbers: string[],
+  status: OrderStatus,
+  note?: string
+): Promise<{ updatedCount: number; orders: OrderRecord[] }> {
+  const updatedOrders: OrderRecord[] = [];
+  for (const on of orderNumbers) {
+    const res = await updateOrderStatus(on, status, note);
+    if (res) updatedOrders.push(res);
+  }
+  return { updatedCount: updatedOrders.length, orders: updatedOrders };
+}
+
+export async function assignTrackingNumber(
+  orderNumber: string,
+  trackingNo: string,
+  trackingUrl?: string
+): Promise<OrderRecord | null> {
+  const note = `Pesanan diserahkan ke kurir. No. Resi: ${trackingNo}`;
+  return updateOrderStatus(orderNumber, "shipped", note, {
+    trackingNo,
+    trackingUrl: trackingUrl || undefined,
+  });
 }
 
 /* ---------- jadwal antrian pickup ---------- */

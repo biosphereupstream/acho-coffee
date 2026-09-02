@@ -102,6 +102,8 @@ export const orders = pgTable(
     courierCompany: varchar("courier_company", { length: 30 }),
     shippingFee: integer("shipping_fee").notNull().default(0),
     subtotal: integer("subtotal").notNull().default(0),
+    discountAmount: integer("discount_amount").notNull().default(0),
+    voucherCode: varchar("voucher_code", { length: 40 }),
     total: integer("total").notNull().default(0),
     customerName: varchar("customer_name", { length: 120 }).notNull(),
     customerEmail: varchar("customer_email", { length: 160 }).notNull(),
@@ -189,6 +191,52 @@ export const pickupSchedule = pgTable("pickup_schedule", {
   note: text("note"),
 });
 
+export const cartItems = pgTable(
+  "cart_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id"),
+    guestId: varchar("guest_id", { length: 64 }),
+    coffeeSlug: varchar("coffee_slug", { length: 100 }).notNull(),
+    coffeeName: varchar("coffee_name", { length: 120 }).notNull(),
+    roastProfileCode: varchar("roast_profile_code", { length: 30 }).notNull(),
+    roastProfileName: varchar("roast_profile_name", { length: 60 }).notNull(),
+    grindSize: grindSizeEnum("grind_size").notNull(),
+    quantity: integer("quantity").notNull().default(1),
+    unitPriceIdr: integer("unit_price_idr").notNull(),
+    weightGrams: integer("weight_grams").notNull().default(250),
+    imageUrl: text("image_url"),
+    createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("cart_items_user_idx").on(t.userId),
+    index("cart_items_guest_idx").on(t.guestId),
+  ]
+);
+
+export const userAddresses = pgTable(
+  "user_addresses",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    label: varchar("label", { length: 50 }).notNull().default("Rumah"),
+    recipientName: varchar("recipient_name", { length: 120 }).notNull(),
+    phone: varchar("phone", { length: 25 }).notNull(),
+    address: text("address").notNull(),
+    city: varchar("city", { length: 100 }).notNull(),
+    postalCode: varchar("postal_code", { length: 10 }).notNull(),
+    areaId: varchar("area_id", { length: 64 }),
+    areaName: text("area_name"),
+    isDefault: boolean("is_default").notNull().default(false),
+    createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("user_addresses_user_idx").on(t.userId),
+  ]
+);
+
 /* ============ INFERRED TYPES ============ */
 export type Coffee = typeof coffees.$inferSelect;
 export type NewCoffee = typeof coffees.$inferInsert;
@@ -197,6 +245,10 @@ export type Order = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type NewOrderItem = typeof orderItems.$inferInsert;
+export type CartItem = typeof cartItems.$inferSelect;
+export type NewCartItem = typeof cartItems.$inferInsert;
+export type UserAddress = typeof userAddresses.$inferSelect;
+export type NewUserAddress = typeof userAddresses.$inferInsert;
 export type Payment = typeof payments.$inferSelect;
 export type Shipment = typeof shipments.$inferSelect;
 export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];

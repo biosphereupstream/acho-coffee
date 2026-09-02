@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient as getSupabaseServer } from "@/lib/server";
 import { env } from "@/lib/env";
 import { listOrdersByUser } from "@/lib/store/orders";
+import { getUserAddresses } from "@/lib/store/addresses";
 import { AccountTabs } from "@/components/account/account-tabs";
 import { StatusLookup } from "@/components/order/status-lookup";
 
@@ -30,7 +31,13 @@ export default async function AkunPage({
   const { data } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
   if (!data.user) redirect("/masuk");
 
-  const orders = await listOrdersByUser(data.user.id);
+  const [orders, addresses] = await Promise.all([
+    listOrdersByUser(data.user.id),
+    getUserAddresses(data.user.id),
+  ]);
+
+  const initialTab =
+    sp.tab === "alamat" ? "alamat" : sp.tab === "profil" ? "profil" : "pesanan";
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
@@ -39,11 +46,12 @@ export default async function AkunPage({
       <div className="mt-8">
         <AccountTabs
           orders={orders}
+          addresses={addresses}
           profile={{
             name: String(data.user.user_metadata?.full_name ?? data.user.email ?? ""),
             email: data.user.email ?? "",
           }}
-          initialTab={sp.tab === "profil" ? "profil" : "pesanan"}
+          initialTab={initialTab}
         />
       </div>
     </div>

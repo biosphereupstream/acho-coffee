@@ -41,26 +41,40 @@ export function generateSignature(params: {
   return "HMACSHA256=" + hmac;
 }
 
-/** Buat pembayaran via Doku Jokul Checkout API. Fallback demo bila env belum diset. */
+/** Buat pembayaran via Doku Jokul Checkout API. Fallback demo bila env belum diset atau kanal belum aktif. */
 export async function createDokuPayment(params: DokuCreateParams): Promise<DokuPaymentResult> {
+  const isQris = params.channel === "QRIS";
+  const digits = params.invoiceNumber.replace(/\D/g, "").slice(-10);
+  const fakeVa = "8801" + digits + Math.floor(Math.random() * 90 + 10);
+  const fakeQr = `00020101021226680016ID.CO.DOKU.WWW01189360091800000000000215${params.invoiceNumber}520458125303360540${params.amount}5802ID5911ACHO COFFEE6007BANDUNG62070703A016304`;
+
   if (!env.doku.configured()) {
-    // Demo mode: generate VA palsu agar alur bisa dicoba end-to-end
-    const digits = params.invoiceNumber.replace(/\D/g, "").slice(-10);
-    const va = "8801" + digits + Math.floor(Math.random() * 90 + 10);
+    // Demo mode: generate VA / QRIS palsu agar alur bisa dicoba end-to-end
     return {
       demo: true,
       paymentId: "DEMO-" + randomUUID(),
       paymentUrl: null,
-      virtualAccount: va,
+      virtualAccount: isQris ? undefined : fakeVa,
+      qrContent: isQris ? fakeQr : undefined,
       channel: params.channel,
-      howToPay:
-        "Demo: klik tombol \"Simulasi Pembayaran Berhasil\" di halaman pembayaran untuk melanjutkan alur.",
+      howToPay: isQris
+        ? "Scan QRIS di bawah menggunakan aplikasi BCA Mobile, GoPay, OVO, Dana, ShopeePay, atau m-banking lainnya."
+        : "Demo: klik tombol \"Simulasi Pembayaran Berhasil\" di bawah untuk melanjutkan pesanan ke antrean roasting.",
       expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
     };
   }
 
   const timestamp = dokuTimestamp();
   const requestId = randomUUID();
+
+  // Jika DOKU_HOSTED, jangan batasi payment_method_types agar DOKU menampilkan semua metode yang aktif
+  const paymentObj: Record<string, unknown> = {
+    payment_due_date: 60,
+  };
+  if (params.channel !== "DOKU_HOSTED") {
+    paymentObj.payment_method_types = [params.channel];
+  }
+
   const body = JSON.stringify({
     order: {
       amount: params.amount,
@@ -73,10 +87,7 @@ export async function createDokuPayment(params: DokuCreateParams): Promise<DokuP
         quantity: li.quantity,
       })),
     },
-    payment: {
-      payment_due_date: 60,
-      payment_method_types: [params.channel],
-    },
+    payment: paymentObj,
     customer: {
       name: params.customerName,
       email: params.customerEmail,
@@ -113,12 +124,12 @@ export async function createDokuPayment(params: DokuCreateParams): Promise<DokuP
   } catch (e) {
     if (env.doku.demoFallback()) {
       // Jaringan lokal tidak bisa mencapai Doku — kembali ke mode demo
-      const digits = params.invoiceNumber.replace(/\D/g, "").slice(-10);
       return {
         demo: true,
         paymentId: "DEMO-" + randomUUID(),
         paymentUrl: null,
-        virtualAccount: "8801" + digits + Math.floor(Math.random() * 90 + 10),
+        virtualAccount: isQris ? undefined : fakeVa,
+        qrContent: isQris ? fakeQr : undefined,
         channel: params.channel,
         howToPay:
           "Fallback demo: Doku tidak terjangkau dari jaringan ini (pembayaran sungguhan aktif di lingkungan produksi/Vercel).",
@@ -132,15 +143,17 @@ export async function createDokuPayment(params: DokuCreateParams): Promise<DokuP
   if (!res.ok) {
     const detail = "Doku error " + res.status + ": " + JSON.stringify(json).slice(0, 400);
     if (env.doku.demoFallback()) {
-      // Dev lokal: Doku menolak (mis. kanal belum aktif) — tetap beri alur demo
-      const digits = params.invoiceNumber.replace(/\D/g, "").slice(-10);
+      // Dev lokal: Doku menolak (mis. kanal belum aktif) — tetap beri alur demo / simulasi
       return {
         demo: true,
         paymentId: "DEMO-" + randomUUID(),
         paymentUrl: null,
-        virtualAccount: "8801" + digits + Math.floor(Math.random() * 90 + 10),
+        virtualAccount: isQris ? undefined : fakeVa,
+        qrContent: isQris ? fakeQr : undefined,
         channel: params.channel,
-        howToPay: "Fallback demo — " + detail,
+        howToPay: isQris
+          ? "Scan QRIS di bawah menggunakan aplikasi BCA Mobile, GoPay, OVO, Dana, ShopeePay, atau m-banking lainnya."
+          : "Fallback demo — " + detail,
         expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
       };
     }
@@ -149,17 +162,39 @@ export async function createDokuPayment(params: DokuCreateParams): Promise<DokuP
 
   const paymentUrl: string | null = json?.response?.payment?.url ?? null;
   const vaInfo = json?.response?.virtual_account_info ?? null;
+  const qrInfo = json?.response?.qr_code_info ?? null;
+
+  function parseDokuDate(val?: string): string | undefined {
+    if (!val) return undefined;
+    if (val.includes("-") || val.includes("T")) {
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? undefined : d.toISOString();
+    }
+    if (val.length === 14) {
+      const y = val.slice(0, 4);
+      const m = val.slice(4, 6);
+      const d = val.slice(6, 8);
+      const h = val.slice(8, 10);
+      const min = val.slice(10, 12);
+      const s = val.slice(12, 14);
+      const parsed = new Date(`${y}-${m}-${d}T${h}:${min}:${s}Z`);
+      return isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+    }
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? undefined : d.toISOString();
+  }
 
   return {
     demo: false,
     paymentId: json?.response?.payment?.token_id ?? requestId,
     paymentUrl,
     virtualAccount: vaInfo?.virtual_account_number ?? undefined,
-    howToPay: vaInfo?.how_to_pay_page ?? undefined,
+    qrContent: qrInfo?.qr_content ?? undefined,
+    howToPay: vaInfo?.how_to_pay_page ?? qrInfo?.how_to_pay_page ?? undefined,
     channel: params.channel,
-    expiresAt: json?.response?.payment?.expired_date
-      ? new Date(json.response.payment.expired_date).toISOString()
-      : undefined,
+    expiresAt: parseDokuDate(
+      json?.response?.payment?.expired_datetime || json?.response?.payment?.expired_date
+    ),
   };
 }
 

@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Copy, ExternalLink, KeyRound } from "lucide-react";
+import { Copy, ExternalLink, FileText, KeyRound } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,10 +63,10 @@ export function StatusClient({
 
   if (!authorized || !order) {
     return (
-      <div className="glossy-card mx-auto max-w-md rounded-2xl border border-border p-8 text-center">
+      <div className="mx-auto max-w-md glossy-card rounded-2xl border border-border p-8 text-center">
         <KeyRound className="mx-auto h-10 w-10 text-gold-deep" />
-        <h2 className="mt-4 font-[var(--font-display)] text-xl font-bold text-green-deep">Verifikasi Akses</h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        <h2 className="mt-4 font-[var(--font-display)] text-xl font-bold text-green-deep">Akses Terproteksi</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
           Untuk melihat pesanan <b>{orderNumber}</b>, masukkan token yang kami kirim ke emailmu saat memesan.
         </p>
         <div className="mt-5 flex gap-2">
@@ -93,9 +93,16 @@ export function StatusClient({
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nomor Pesanan</p>
             <p className="text-lg font-extrabold text-green-deep">{order.orderNumber}</p>
           </div>
-          <Badge variant={order.paymentStatus === "paid" ? "default" : order.status === "cancelled" ? "destructive" : "gold"}>
-            {STATUS_LABELS[order.status]}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" asChild className="gap-1.5 text-xs font-semibold">
+              <Link href={"/faktur/" + order.orderNumber}>
+                <FileText className="h-3.5 w-3.5 text-muted-foreground" /> Faktur
+              </Link>
+            </Button>
+            <Badge variant={order.paymentStatus === "paid" ? "default" : order.status === "cancelled" ? "destructive" : "gold"}>
+              {STATUS_LABELS[order.status]}
+            </Badge>
+          </div>
         </div>
 
         {order.paymentStatus !== "paid" && order.status === "pending_payment" && (

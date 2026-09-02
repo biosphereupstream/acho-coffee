@@ -1,27 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, PackageOpen } from "lucide-react";
+import { ArrowRight, FileText, PackageOpen } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { AddressBook } from "@/components/account/address-book";
 import { formatIDR } from "@/lib/constants";
-import { STATUS_LABELS, type OrderRecord } from "@/lib/types";
+import { STATUS_LABELS, type OrderRecord, type UserAddressRecord } from "@/lib/types";
 
 export function AccountTabs({
   orders,
+  addresses,
   profile,
   initialTab,
 }: {
   orders: OrderRecord[];
+  addresses: UserAddressRecord[];
   profile: { name: string; email: string };
-  initialTab: "pesanan" | "profil";
+  initialTab: "pesanan" | "alamat" | "profil";
 }) {
   return (
     <Tabs defaultValue={initialTab}>
-      <TabsList>
+      <TabsList className="mb-6">
         <TabsTrigger value="pesanan">Pesanan Saya</TabsTrigger>
+        <TabsTrigger value="alamat">Buku Alamat</TabsTrigger>
         <TabsTrigger value="profil">Profil</TabsTrigger>
       </TabsList>
 
@@ -53,6 +57,12 @@ export function AccountTabs({
                     <Button size="sm" variant="outline" asChild>
                       <Link href={"/status/" + o.orderNumber}>Detail</Link>
                     </Button>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href={"/faktur/" + o.orderNumber}>
+                        <FileText className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+                        Faktur
+                      </Link>
+                    </Button>
                   </div>
                 </div>
                 <Separator className="my-3" />
@@ -74,6 +84,10 @@ export function AccountTabs({
             ))}
           </div>
         )}
+      </TabsContent>
+
+      <TabsContent value="alamat">
+        <AddressBook initialAddresses={addresses} />
       </TabsContent>
 
       <TabsContent value="profil">

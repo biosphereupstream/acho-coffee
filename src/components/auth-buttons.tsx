@@ -12,14 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getSupabaseBrowser } from "@/lib/client";
 import { toast } from "sonner";
 
 export function AuthButtons({
   user,
 }: {
-  user: { email?: string; name?: string } | null;
+  user: { email?: string; name?: string; avatarUrl?: string } | null;
 }) {
   const router = useRouter();
 
@@ -55,6 +55,7 @@ export function AuthButtons({
       <DropdownMenuTrigger asChild>
         <button className="flex items-center gap-2 rounded-full border border-border p-1 pr-3 hover:bg-secondary/60 transition-colors">
           <Avatar className="h-8 w-8">
+            {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name ?? "User"} />}
             <AvatarFallback className="metal-green text-xs text-primary-foreground">{initials}</AvatarFallback>
           </Avatar>
           <span className="max-w-[140px] truncate text-sm font-medium">{user.name}</span>

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function MasukPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; error?: string }>;
 }) {
   const sp = await searchParams;
 
@@ -51,7 +51,11 @@ export default async function MasukPage({
       </div>
 
       <div className="mx-auto w-full max-w-md">
-        <AuthForm initialTab={sp.tab === "daftar" ? "daftar" : "masuk"} supabaseConfigured={env.supabaseConfigured()} />
+        <AuthForm
+          initialTab={sp.tab === "daftar" ? "daftar" : "masuk"}
+          supabaseConfigured={env.supabaseConfigured()}
+          errorMessage={sp.error}
+        />
       </div>
     </div>
   );

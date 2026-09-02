@@ -6,6 +6,8 @@ import { createOrder } from "@/lib/store/orders";
 import { createClient as getSupabaseServer } from "@/lib/server";
 import { emails } from "@/lib/email";
 import { GUEST_COOKIE, GUEST_COOKIE_OPTIONS, appendGuestCookie } from "@/lib/order-access";
+import { GUEST_CART_COOKIE } from "@/lib/cart-access";
+import { clearCart } from "@/lib/store/cart";
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -39,6 +41,10 @@ export async function POST(req: Request) {
   const cookieStore = await cookies();
   const currentRaw = cookieStore.get(GUEST_COOKIE)?.value;
   const appended = appendGuestCookie(currentRaw, order.orderNumber, guestToken);
+
+  // Bersihkan keranjang belanja setelah checkout sukses
+  const guestCartId = cookieStore.get(GUEST_CART_COOKIE)?.value;
+  await clearCart({ userId: user?.id, guestId: guestCartId }).catch(() => {});
 
   const res = NextResponse.json({ orderNumber: order.orderNumber });
   res.cookies.set(GUEST_COOKIE, appended, GUEST_COOKIE_OPTIONS);

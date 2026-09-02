@@ -25,3 +25,11 @@ export function formatIDR(value: number): string {
 export function formatDateID(date: Date): string {
   return new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(date);
 }
+
+export const GRIND_LABELS: Record<string, string> = {
+  bean: "Biji Utuh (Bean)",
+  fine: "Giling Halus (Fine)",
+  medium: "Giling Sedang (Medium)",
+  coarse: "Giling Kasar (Coarse)",
+};
+

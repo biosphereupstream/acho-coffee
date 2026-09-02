@@ -21,6 +21,37 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Pesanan ini sudah dibayar" }, { status: 400 });
   }
 
+  const lineItems: { name: string; quantity: number; price: number }[] = [];
+  let itemsSum = 0;
+
+  for (const it of order.items) {
+    lineItems.push({
+      name: it.coffeeName + " (" + it.roastProfileName + ", " + it.grindSize + ")",
+      quantity: it.quantity,
+      price: it.unitPriceIdr,
+    });
+    itemsSum += it.unitPriceIdr * it.quantity;
+  }
+
+  if (order.shippingFee > 0) {
+    lineItems.push({
+      name: "Ongkos Kirim (" + (order.courierCompany?.toUpperCase() ?? "Kurir") + ")",
+      quantity: 1,
+      price: order.shippingFee,
+    });
+    itemsSum += order.shippingFee;
+  }
+
+  // Jika terdapat diskon voucher atau rincian item tidak persis sama dengan total:
+  if (itemsSum !== order.total || lineItems.length === 0) {
+    lineItems.length = 0;
+    lineItems.push({
+      name: `Pesanan Kopi #${order.orderNumber}`,
+      quantity: 1,
+      price: order.total,
+    });
+  }
+
   let result;
   try {
     result = await createDokuPayment({
@@ -30,11 +61,7 @@ export async function POST(req: Request) {
       customerName: order.customerName,
       customerEmail: order.customerEmail,
       customerPhone: order.customerPhone,
-      lineItems: order.items.map((it) => ({
-        name: it.coffeeName + " (" + it.roastProfileName + ", " + it.grindSize + ")",
-        quantity: it.quantity,
-        price: it.unitPriceIdr,
-      })),
+      lineItems,
     });
   } catch (e) {
     return NextResponse.json(

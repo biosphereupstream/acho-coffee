@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient as getSupabaseServer } from "@/lib/server";
 import { env } from "@/lib/env";
 
@@ -12,7 +13,7 @@ export interface AuthActionResult {
 
 export async function signInWithEmail(formData: FormData): Promise<AuthActionResult> {
   const supabase = await getSupabaseServer();
-  if (!supabase) return { error: "Supabase belum dikonfigurasi. Tambahkan NEXT_PUBLIC_SUPABASE_URL & ANON_KEY di .env.local" };
+  if (!supabase) return { error: "Supabase belum dikonfigurasi. Tambahkan NEXT_PUBLIC_SUPABASE_URL & PUBLISHABLE_KEY di .env.local" };
 
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
@@ -25,7 +26,7 @@ export async function signInWithEmail(formData: FormData): Promise<AuthActionRes
 
 export async function signUpWithEmail(formData: FormData): Promise<AuthActionResult> {
   const supabase = await getSupabaseServer();
-  if (!supabase) return { error: "Supabase belum dikonfigurasi. Tambahkan NEXT_PUBLIC_SUPABASE_URL & ANON_KEY di .env.local" };
+  if (!supabase) return { error: "Supabase belum dikonfigurasi. Tambahkan NEXT_PUBLIC_SUPABASE_URL & PUBLISHABLE_KEY di .env.local" };
 
   const name = String(formData.get("name") ?? "");
   const email = String(formData.get("email") ?? "");
@@ -33,26 +34,32 @@ export async function signUpWithEmail(formData: FormData): Promise<AuthActionRes
   if (!name || !email || !password) return { error: "Semua kolom wajib diisi" };
   if (password.length < 8) return { error: "Kata sandi minimal 8 karakter" };
 
+  const headerList = await headers();
+  const origin = headerList.get("origin") || env.siteUrl();
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: name },
-      emailRedirectTo: env.siteUrl() + "/auth/callback",
+      emailRedirectTo: `${origin}/auth/callback`,
     },
   });
   if (error) return { error: "Gagal mendaftar: " + error.message };
   return { success: "Pendaftaran berhasil! Cek email untuk verifikasi, lalu masuk." };
 }
 
-export async function signInWithGoogle(): Promise<AuthActionResult> {
+export async function signInWithGoogle(returnOrigin?: string): Promise<AuthActionResult> {
   const supabase = await getSupabaseServer();
   if (!supabase) return { error: "Supabase belum dikonfigurasi" };
+
+  const headerList = await headers();
+  const origin = returnOrigin || headerList.get("origin") || env.siteUrl();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: env.siteUrl() + "/auth/callback",
+      redirectTo: `${origin}/auth/callback`,
       queryParams: { access_type: "offline", prompt: "consent" },
     },
   });

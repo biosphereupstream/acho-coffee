@@ -2,10 +2,10 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { ContactShadows, Float, Sparkles } from "@react-three/drei";
+import { ContactShadows, Float, OrbitControls, Sparkles } from "@react-three/drei";
 import * as THREE from "three";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play } from "lucide-react";
+import { Pause, Play, Rotate3d } from "lucide-react";
 import { ROAST_STAGES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -46,7 +46,7 @@ function CoffeeBean({ stage }: { stage: number }) {
     }
     if (group.current) {
       const grinding = stage === 3;
-      group.current.rotation.y += delta * (grinding ? 7 : 0.55);
+      group.current.rotation.y += delta * (grinding ? 7 : 0.4);
       const targetScale = grinding ? 0.1 : 1;
       group.current.scale.setScalar(THREE.MathUtils.lerp(group.current.scale.x, targetScale, 0.09));
     }
@@ -58,6 +58,53 @@ function CoffeeBean({ stage }: { stage: number }) {
         <meshStandardMaterial ref={mat} color="#6f8f3a" roughness={0.42} metalness={0.12} />
       </mesh>
     </group>
+  );
+}
+
+/* ---------- asap roasting (tahap light & medium roast) ---------- */
+function RoastSmoke() {
+  const COUNT = 22;
+  const ref = useRef<THREE.Points>(null);
+
+  const { positions, speeds, drifts } = useMemo(() => {
+    const positions = new Float32Array(COUNT * 3);
+    const speeds = new Float32Array(COUNT);
+    const drifts = new Float32Array(COUNT);
+    for (let i = 0; i < COUNT; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.random() * 0.35;
+      positions[i * 3] = Math.cos(a) * r;
+      positions[i * 3 + 1] = 0.2 + Math.random() * 1.0;
+      positions[i * 3 + 2] = Math.sin(a) * r;
+      speeds[i] = 0.35 + Math.random() * 0.45;
+      drifts[i] = (Math.random() - 0.5) * 0.15;
+    }
+    return { positions, speeds, drifts };
+  }, []);
+
+  useFrame((_, delta) => {
+    const attr = ref.current?.geometry.attributes.position as THREE.BufferAttribute | undefined;
+    if (!attr) return;
+    for (let i = 0; i < COUNT; i++) {
+      let y = attr.getY(i) + speeds[i] * delta;
+      let x = attr.getX(i) + drifts[i] * delta;
+      if (y > 1.6) {
+        y = 0.15;
+        x = (Math.random() - 0.5) * 0.3;
+      }
+      attr.setY(i, y);
+      attr.setX(i, x);
+    }
+    attr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial color="#eedac2" size={0.12} sizeAttenuation transparent opacity={0.35} depthWrite={false} />
+    </points>
   );
 }
 
@@ -103,7 +150,7 @@ function GroundRain() {
   );
 }
 
-/* ---------- cangkir + uap (tahap brew) ---------- */
+/* ---------- cangkir + uap + crema latte (tahap brew) ---------- */
 function Cup() {
   const cupGeo = useMemo(() => {
     const pts = [
@@ -152,10 +199,19 @@ function Cup() {
       <mesh geometry={cupGeo} castShadow>
         <meshStandardMaterial color="#f6f1e6" roughness={0.18} metalness={0.05} />
       </mesh>
-      {/* permukaan kopi */}
+      {/* permukaan kopi pekat */}
       <mesh position={[0, 0.49, 0]}>
         <cylinderGeometry args={[0.465, 0.465, 0.03, 56]} />
-        <meshStandardMaterial color="#3e2415" roughness={0.25} />
+        <meshStandardMaterial color="#301b0f" roughness={0.25} />
+      </mesh>
+      {/* crema cincin emas (latte swirl) */}
+      <mesh position={[0, 0.498, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.16, 0.43, 48]} />
+        <meshStandardMaterial color="#b97c40" roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 0.499, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.03, 0.18, 36]} />
+        <meshStandardMaterial color="#deb887" roughness={0.3} />
       </mesh>
       {/* tatakan */}
       <mesh position={[0, -0.035, 0]}>
@@ -178,28 +234,48 @@ function Cup() {
   );
 }
 
-/* ---------- scene utama ---------- */
-function JourneyScene({ stage }: { stage: number }) {
+/* ---------- scene utama dengan OrbitControls & camera bounds ---------- */
+function JourneyScene({ stage, inView, onInteract }: { stage: number; inView: boolean; onInteract: () => void }) {
   return (
-    <Canvas camera={{ position: [0, 0.35, 4.3], fov: 38 }} dpr={[1, 1.75]} gl={{ antialias: true, alpha: true }} shadows>
+    <Canvas
+      camera={{ position: [0, 0.35, 4.3], fov: 38 }}
+      dpr={[1, 1.5]}
+      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      frameloop={inView ? "always" : "demand"}
+      shadows
+    >
       <ambientLight intensity={0.85} />
       <directionalLight position={[4, 6, 3]} intensity={1.7} castShadow />
       <pointLight position={[-3, 2, 2.5]} intensity={0.9} color="#f5d78e" />
 
       {stage < 4 && (
-        <Float speed={1.6} rotationIntensity={0.35} floatIntensity={0.9}>
+        <Float speed={1.4} rotationIntensity={0.25} floatIntensity={0.8}>
           <CoffeeBean stage={stage} />
         </Float>
       )}
 
       {(stage === 1 || stage === 2) && (
-        <Sparkles count={42} scale={[2.6, 1.8, 1.6]} size={3.5} speed={0.4} color="#f0d678" position={[0, 0.25, 0]} />
+        <>
+          <Sparkles count={36} scale={[2.6, 1.8, 1.6]} size={3.2} speed={0.4} color="#f0d678" position={[0, 0.25, 0]} />
+          <RoastSmoke />
+        </>
       )}
 
       {stage === 3 && <GroundRain />}
       {stage === 4 && <Cup />}
 
       <ContactShadows position={[0, -0.95, 0]} opacity={0.35} scale={7} blur={2.4} far={2.2} color="#0a3d28" />
+
+      {/* OrbitControls: touch damping, no zoom to prevent hijacking page scroll */}
+      <OrbitControls
+        enableZoom={false}
+        enablePan={false}
+        dampingFactor={0.08}
+        rotateSpeed={0.7}
+        minPolarAngle={Math.PI / 4}
+        maxPolarAngle={Math.PI / 1.65}
+        onStart={onInteract}
+      />
     </Canvas>
   );
 }
@@ -208,21 +284,49 @@ function JourneyScene({ stage }: { stage: number }) {
 export default function RoastJourney() {
   const [stage, setStage] = useState(0);
   const [playing, setPlaying] = useState(true);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [inView, setInView] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Viewport IntersectionObserver: matikan frameloop dan interval saat di luar layar
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
-    if (!playing) return;
+    if (!playing || !inView) return;
     const id = setInterval(() => setStage((s) => (s + 1) % ROAST_STAGES.length), STAGE_DURATION);
     return () => clearInterval(id);
-  }, [playing]);
+  }, [playing, inView]);
 
   const current = ROAST_STAGES[stage];
 
   return (
-    <div className="glossy-card relative overflow-hidden rounded-2xl border border-gold/30">
+    <div ref={containerRef} className="glossy-card relative overflow-hidden rounded-2xl border border-gold/30">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-24 metal-green opacity-[0.04]" />
 
-      <div className="relative h-[340px] w-full sm:h-[400px]">
-        <JourneyScene stage={stage} />
+      {/* Hint Badge: Geser untuk memutar */}
+      <div
+        className={cn(
+          "pointer-events-none absolute left-1/2 top-4 z-10 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-gold/40 bg-background/85 px-3 py-1 text-xs font-semibold text-gold-deep shadow-sm backdrop-blur-md transition-all duration-500",
+          hasInteracted ? "opacity-0 -translate-y-2" : "opacity-100 animate-pulse"
+        )}
+      >
+        <Rotate3d className="h-3.5 w-3.5 text-gold" />
+        <span>Geser untuk memutar 3D</span>
+      </div>
+
+      <div className="relative h-[340px] w-full sm:h-[400px] touch-pan-y">
+        <JourneyScene stage={stage} inView={inView} onInteract={() => setHasInteracted(true)} />
       </div>
 
       <div className="relative border-t border-border/60 px-5 pb-5 pt-4 text-center">

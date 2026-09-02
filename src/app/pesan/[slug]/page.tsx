@@ -5,6 +5,7 @@ import { ArrowLeft, MapPin, Mountain, Leaf } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CoffeeBagArt } from "@/components/coffee-bag-art";
 import { OrderBuilder } from "@/components/order/order-builder";
+import { MobileProductHeader } from "@/components/order/mobile-product-header";
 import { getCoffee } from "@/data/coffees";
 import { formatIDR } from "@/lib/constants";
 
@@ -20,7 +21,7 @@ export default async function PesanPage({ params }: { params: Promise<{ slug: st
   if (!coffee) notFound();
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <Link
         href="/kopi"
         className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
@@ -28,9 +29,12 @@ export default async function PesanPage({ params }: { params: Promise<{ slug: st
         <ArrowLeft className="h-4 w-4" /> Kembali ke katalog
       </Link>
 
-      <div className="mt-6 grid gap-10 lg:grid-cols-[420px_1fr]">
-        {/* info produk */}
-        <div>
+      <div className="mt-5 grid gap-8 lg:grid-cols-[420px_1fr]">
+        {/* mobile-only compact collapsible product header */}
+        <MobileProductHeader coffee={coffee} />
+
+        {/* desktop-only full product card */}
+        <div className="hidden lg:block">
           <div className="glossy-card overflow-hidden rounded-2xl border border-border">
             <div className="relative aspect-square bg-gradient-to-b from-secondary/60 to-background p-6">
               <CoffeeBagArt coffee={coffee} />
@@ -82,7 +86,7 @@ export default async function PesanPage({ params }: { params: Promise<{ slug: st
         </div>
 
         {/* wizard pemesanan */}
-        <div>
+        <div className="min-w-0">
           <OrderBuilder coffee={coffee} />
         </div>
       </div>

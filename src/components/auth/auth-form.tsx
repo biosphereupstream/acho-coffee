@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,10 +12,11 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { signInWithEmail, signInWithGoogle, signUpWithEmail } from "@/app/actions/auth";
+import { getSupabaseBrowser } from "@/lib/client";
 
 function GoogleIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
       <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.45a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.1 3.57-5.17 3.57-8.81Z" />
       <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.88-3.01c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.72-4.95H1.28v3.1A12 12 0 0 0 12 24Z" />
       <path fill="#FBBC05" d="M5.28 14.28a7.2 7.2 0 0 1 0-4.56v-3.1H1.28a12 12 0 0 0 0 10.76l4-3.1Z" />
@@ -24,12 +25,32 @@ function GoogleIcon() {
   );
 }
 
+function formatAuthError(err?: string): string | null {
+  if (!err) return null;
+  const lower = err.toLowerCase();
+  if (lower.includes("access_denied") || lower.includes("denied")) {
+    return "Login Google dibatalkan atau izin tidak diberikan.";
+  }
+  if (lower.includes("invalid_grant") || lower.includes("pkce") || lower.includes("code verifier") || lower.includes("flow-state")) {
+    return "Sesi login kedaluwarsa atau terjadi kendala sinkronisasi. Silakan klik 'Lanjutkan dengan Google' kembali.";
+  }
+  if (lower.includes("provider is not enabled") || lower.includes("not enabled")) {
+    return "Google OAuth belum diaktifkan di dashboard Supabase.";
+  }
+  if (err === "auth") {
+    return "Autentikasi belum berhasil diselesaikan. Silakan coba masuk kembali.";
+  }
+  return err;
+}
+
 export function AuthForm({
   initialTab,
   supabaseConfigured,
+  errorMessage,
 }: {
   initialTab: "masuk" | "daftar";
   supabaseConfigured: boolean;
+  errorMessage?: string;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<"masuk" | "daftar">(initialTab);
@@ -53,14 +74,50 @@ export function AuthForm({
 
   async function handleGoogle() {
     setGoogleLoading(true);
-    const result = await signInWithGoogle();
-    setGoogleLoading(false);
-    if (result?.url) {
-      window.location.href = result.url;
-    } else {
-      toast.error(result?.error ?? "Google OAuth belum tersedia");
+    try {
+      // Prioritas 1: Jalankan langsung dari browser client dengan origin yang aktif
+      const supabase = getSupabaseBrowser();
+      if (supabase && typeof window !== "undefined") {
+        const callbackUrl = `${window.location.origin}/auth/callback`;
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: callbackUrl,
+            queryParams: {
+              access_type: "offline",
+              prompt: "consent",
+            },
+          },
+        });
+
+        if (error) {
+          toast.error("Gagal memulai Google OAuth: " + error.message);
+          setGoogleLoading(false);
+          return;
+        }
+
+        if (data?.url) {
+          window.location.assign(data.url);
+          return;
+        }
+      }
+
+      // Fallback: Server action dengan origin aktif
+      const origin = typeof window !== "undefined" ? window.location.origin : undefined;
+      const result = await signInWithGoogle(origin);
+      if (result?.url) {
+        window.location.assign(result.url);
+      } else {
+        toast.error(result?.error ?? "Google OAuth belum tersedia");
+        setGoogleLoading(false);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan saat masuk dengan Google");
+      setGoogleLoading(false);
     }
   }
+
+  const formattedError = formatAuthError(errorMessage);
 
   return (
     <div className="w-full max-w-md">
@@ -71,6 +128,16 @@ export function AuthForm({
         </TabsList>
 
         <div className="mt-6 space-y-4">
+          {formattedError && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive animate-in fade-in duration-200">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Gagal Masuk</p>
+                <p className="mt-0.5 leading-relaxed">{formattedError}</p>
+              </div>
+            </div>
+          )}
+
           {!supabaseConfigured && (
             <div className="rounded-lg border border-gold/40 bg-accent px-4 py-3 text-xs leading-relaxed text-accent-foreground">
               <b>Mode demo:</b> Supabase belum dikonfigurasi, jadi akun belum aktif. Kamu tetap bisa berbelanja sebagai{" "}
@@ -78,8 +145,13 @@ export function AuthForm({
             </div>
           )}
 
-          <Button variant="outline" className="w-full" onClick={handleGoogle} disabled={googleLoading || !supabaseConfigured}>
-            {googleLoading ? <Loader2 className="animate-spin" /> : <GoogleIcon />}
+          <Button
+            variant="outline"
+            className="w-full h-11 font-semibold gap-2 border-border/80 hover:border-gold hover:bg-accent/40 transition-all"
+            onClick={handleGoogle}
+            disabled={googleLoading || !supabaseConfigured}
+          >
+            {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
             Lanjutkan dengan Google
           </Button>
 

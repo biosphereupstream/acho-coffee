@@ -104,6 +104,8 @@ export interface OrderRecord {
   courierCompany?: string | null;
   shippingFee: number;
   subtotal: number;
+  discountAmount?: number;
+  voucherCode?: string | null;
   total: number;
   customerName: string;
   customerEmail: string;
@@ -135,8 +137,93 @@ export interface OrderInput {
   courierCompany?: string;
   shippingFee: number;
   subtotal: number;
+  discountAmount?: number;
+  voucherCode?: string;
   total: number;
   items: OrderItemInput[];
+}
+
+export interface CartItemRecord {
+  id: string;
+  userId?: string | null;
+  guestId?: string | null;
+  coffeeSlug: string;
+  coffeeName: string;
+  roastProfileCode: string;
+  roastProfileName: string;
+  grindSize: GrindSize;
+  quantity: number;
+  unitPriceIdr: number;
+  weightGrams: number;
+  imageUrl?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CartItemInput {
+  coffeeSlug: string;
+  coffeeName: string;
+  roastProfileCode: string;
+  roastProfileName: string;
+  grindSize: GrindSize;
+  quantity: number;
+  unitPriceIdr: number;
+  weightGrams?: number;
+  imageUrl?: string | null;
+}
+
+export interface Voucher {
+  code: string;
+  description: string;
+  type: "percentage" | "fixed" | "free_shipping";
+  value: number; // percentage (e.g. 10 for 10%) or fixed IDR amount (e.g. 20000)
+  minOrder?: number;
+}
+
+export interface CourierRate {
+  courierCode: string;
+  courierName: string;
+  courierServiceName: string;
+  price: number;
+  etd?: string;
+  duration?: string;
+}
+
+export interface PickupSlotInfo {
+  date: string;
+  weekday?: string;
+  bookedBags?: number;
+  remainingBags?: number;
+  remaining?: number;
+  available: boolean;
+}
+
+export interface UserAddressRecord {
+  id: string;
+  userId: string;
+  label: string;
+  recipientName: string;
+  phone: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  areaId?: string | null;
+  areaName?: string | null;
+  isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UserAddressInput {
+  label: string;
+  recipientName: string;
+  phone: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  areaId?: string | null;
+  areaName?: string | null;
+  isDefault?: boolean;
 }
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
