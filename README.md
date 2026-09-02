@@ -105,6 +105,9 @@ menggeser status (antrian → roasting → resting → siap diambil/dikirim).
 2. **Manage R2 API Tokens** → buat token (Object Read & Write) → isi **R2_ACCESS_KEY_ID**, **R2_SECRET_ACCESS_KEY**, **R2_ACCOUNT_ID**.
 3. Supaya file bisa diakses publik, pasang **Custom Domain** pada bucket (mis. **cdn.domainkamu.com**) → **R2_PUBLIC_URL=https://cdn.domainkamu.com** (atau aktifkan public URL r2.dev).
 4. Upload gambar produk dari endpoint admin **POST /api/upload** (multipart **file**) — URL dipakai di kolom **coffees.image_url**.
+   > 🇮🇩 **Catatan r2.dev diblokir ISP Indonesia**: bila `R2_PUBLIC_URL` memakai `*.r2.dev`, aplikasi otomatis
+   > mengarahkan gambar lewat proxy **/api/media/[key]** (streaming dari R2 via server) sehingga tetap tampil bagi customer.
+   > Untuk produksi disarankan custom domain (CDN) seperti **cdn.domainanda.com**.
 
 ## 🌐 Cloudflare sebagai CDN / DNS / Proteksi
 

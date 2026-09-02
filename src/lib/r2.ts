@@ -1,5 +1,5 @@
 import "server-only";
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { env } from "@/lib/env";
 
 let client: S3Client | null = null;
@@ -21,7 +21,33 @@ function getClient(): S3Client | null {
 
 export function r2PublicUrl(key: string): string {
   const base = (process.env.R2_PUBLIC_URL ?? "").replace(/\/$/, "");
-  return base ? base + "/" + key : "";
+  if (!base) return "";
+  // *.r2.dev diblokir ISP Indonesia (Trust Positif) — arahkan lewat proxy server kita
+  if (base.includes("r2.dev")) {
+    return "/api/media/" + key;
+  }
+  return base + "/" + key;
+}
+
+export interface R2Object {
+  body: Uint8Array;
+  contentType: string;
+}
+
+/** Ambil objek dari R2 (dipakai media proxy). */
+export async function getR2Object(key: string): Promise<R2Object | null> {
+  const c = getClient();
+  if (!c) return null;
+  try {
+    const res = await c.send(
+      new GetObjectCommand({ Bucket: process.env.R2_BUCKET, Key: key })
+    );
+    const body = await res.Body?.transformToByteArray();
+    if (!body) return null;
+    return { body, contentType: res.ContentType ?? "application/octet-stream" };
+  } catch {
+    return null;
+  }
 }
 
 /** Upload file ke Cloudflare R2. Return URL publik, atau null bila R2 belum dikonfigurasi. */
