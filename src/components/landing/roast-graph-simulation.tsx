@@ -352,15 +352,15 @@ export function RoastGraphSimulation() {
   return (
     <div
       ref={containerRef}
-      className="glossy-card relative overflow-hidden rounded-3xl border border-gold/40 bg-gradient-to-br from-[#0c1f17] via-[#0d241c] to-[#071711] text-white shadow-2xl"
+      className="glossy-card relative overflow-hidden rounded-2xl sm:rounded-3xl border border-gold/40 bg-gradient-to-br from-[#0c1f17] via-[#0d241c] to-[#071711] text-white shadow-2xl w-full max-w-full"
     >
       {/* Background radial glow */}
       <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-gold/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
 
       {/* Top Header: Telemetry HUD */}
-      <div className="border-b border-white/10 p-5 sm:p-7">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="border-b border-white/10 p-3.5 sm:p-7">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <Badge variant="gold" className="text-primary font-bold px-2.5 py-0.5 text-[11px] gap-1">
@@ -370,7 +370,7 @@ export function RoastGraphSimulation() {
                 BIOSPHERE LAB v2.4
               </span>
             </div>
-            <h3 className="mt-1 font-[var(--font-display)] text-xl font-black tracking-wide text-white sm:text-2xl flex items-center gap-2">
+            <h3 className="mt-1 font-[var(--font-display)] text-lg sm:text-2xl font-black tracking-wide text-white flex flex-wrap items-center gap-2">
               Simulasi Kurva Roasting Kimiawi
               {telemetry.phase.isCritical && (
                 <span className="rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] px-2 py-0.5 font-mono animate-pulse">
@@ -381,7 +381,7 @@ export function RoastGraphSimulation() {
           </div>
 
           {/* Quick Presets Toggle */}
-          <div className="flex items-center gap-1 rounded-2xl border border-white/15 bg-black/40 p-1">
+          <div className="flex items-center gap-1 rounded-xl sm:rounded-2xl border border-white/15 bg-black/40 p-1 overflow-x-auto max-w-full">
             {PRESETS.map((p) => (
               <button
                 key={p.id}
@@ -390,7 +390,7 @@ export function RoastGraphSimulation() {
                   setCurrentTimeSec(p.targetDropSec - 30);
                 }}
                 className={cn(
-                  "rounded-xl px-2.5 py-1 text-xs font-semibold transition-all",
+                  "rounded-lg sm:rounded-xl px-2.5 py-1 text-xs font-semibold transition-all whitespace-nowrap",
                   activePreset === p.id
                     ? "metal-gold text-primary font-extrabold shadow-sm"
                     : "text-white/70 hover:text-white hover:bg-white/5"
@@ -403,50 +403,50 @@ export function RoastGraphSimulation() {
         </div>
 
         {/* Live Gauges Dashboard */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-2xl border border-gold/30 bg-black/30 p-3.5 backdrop-blur-xs">
+        <div className="mt-4 sm:mt-6 grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
+          <div className="rounded-xl sm:rounded-2xl border border-gold/30 bg-black/30 p-2.5 sm:p-3.5 backdrop-blur-xs min-w-0">
             <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-gold-light/80 flex items-center gap-1">
-              <Thermometer className="h-3 w-3 text-gold" /> Bean Temp (BT)
+              <Thermometer className="h-3 w-3 text-gold shrink-0" /> Bean Temp (BT)
             </span>
-            <p className="mt-1 font-mono text-2xl sm:text-3xl font-black text-gold-light">
-              {telemetry.bt.toFixed(1)} <span className="text-sm font-medium text-white/50">°C</span>
+            <p className="mt-1 font-mono text-xl sm:text-3xl font-black text-gold-light">
+              {telemetry.bt.toFixed(1)} <span className="text-xs sm:text-sm font-medium text-white/50">°C</span>
             </p>
             <p className="text-[10px] text-white/60 mt-0.5 truncate">
               {telemetry.phase.title}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-emerald-500/30 bg-black/30 p-3.5 backdrop-blur-xs">
+          <div className="rounded-xl sm:rounded-2xl border border-emerald-500/30 bg-black/30 p-2.5 sm:p-3.5 backdrop-blur-xs min-w-0">
             <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400/80 flex items-center gap-1">
-              <Flame className="h-3 w-3 text-emerald-400" /> Drum / Air (ET)
+              <Flame className="h-3 w-3 text-emerald-400 shrink-0" /> Drum / Air (ET)
             </span>
-            <p className="mt-1 font-mono text-2xl sm:text-3xl font-black text-emerald-300">
-              {telemetry.et.toFixed(1)} <span className="text-sm font-medium text-white/50">°C</span>
+            <p className="mt-1 font-mono text-xl sm:text-3xl font-black text-emerald-300">
+              {telemetry.et.toFixed(1)} <span className="text-xs sm:text-sm font-medium text-white/50">°C</span>
             </p>
-            <p className="text-[10px] text-white/60 mt-0.5">Suhu drum roaster</p>
+            <p className="text-[10px] text-white/60 mt-0.5 truncate">Suhu drum roaster</p>
           </div>
 
-          <div className="rounded-2xl border border-amber-500/30 bg-black/30 p-3.5 backdrop-blur-xs">
+          <div className="rounded-xl sm:rounded-2xl border border-amber-500/30 bg-black/30 p-2.5 sm:p-3.5 backdrop-blur-xs min-w-0">
             <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-400/80 flex items-center gap-1">
-              <Zap className="h-3 w-3 text-amber-400" /> Rate of Rise (RoR)
+              <Zap className="h-3 w-3 text-amber-400 shrink-0" /> Rate of Rise (RoR)
             </span>
-            <p className="mt-1 font-mono text-2xl sm:text-3xl font-black text-amber-300">
+            <p className="mt-1 font-mono text-xl sm:text-3xl font-black text-amber-300">
               {telemetry.ror > 0 ? `+${telemetry.ror.toFixed(1)}` : telemetry.ror.toFixed(1)}{" "}
-              <span className="text-sm font-medium text-white/50">°C/m</span>
+              <span className="text-xs sm:text-sm font-medium text-white/50">°C/m</span>
             </p>
-            <p className="text-[10px] text-white/60 mt-0.5">
-              {telemetry.ror > 0 ? "Declining RoR Stabil" : "Cooling Drop"}
+            <p className="text-[10px] text-white/60 mt-0.5 truncate">
+              {telemetry.ror > 0 ? "Declining RoR" : "Cooling Drop"}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/20 bg-black/30 p-3.5 backdrop-blur-xs">
+          <div className="rounded-xl sm:rounded-2xl border border-white/20 bg-black/30 p-2.5 sm:p-3.5 backdrop-blur-xs min-w-0">
             <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-white/70 flex items-center gap-1">
-              <Clock className="h-3 w-3 text-white/70" /> Roast Timer
+              <Clock className="h-3 w-3 text-white/70 shrink-0" /> Roast Timer
             </span>
-            <p className="mt-1 font-mono text-2xl sm:text-3xl font-black text-white">
+            <p className="mt-1 font-mono text-xl sm:text-3xl font-black text-white">
               {formatTime(currentTimeSec)}
             </p>
-            <p className="text-[10px] text-gold-light mt-0.5 font-mono">
+            <p className="text-[10px] text-gold-light mt-0.5 font-mono truncate">
               Fase {telemetry.phase.label}
             </p>
           </div>
@@ -454,11 +454,11 @@ export function RoastGraphSimulation() {
       </div>
 
       {/* Main SVG Graph Canvas */}
-      <div className="relative px-3 py-4 sm:px-6">
+      <div className="relative px-2 py-3 sm:px-6 sm:py-4 overflow-hidden w-full max-w-full">
         <svg
           viewBox="0 0 680 340"
-          className="w-full h-auto overflow-visible select-none"
-          style={{ maxHeight: "380px" }}
+          className="w-full h-auto select-none block"
+          style={{ maxHeight: "360px" }}
         >
           <defs>
             {/* Gradient untuk Bean Temperature */}
@@ -674,34 +674,34 @@ export function RoastGraphSimulation() {
           </g>
         </svg>
 
-        {/* Legend */}
-        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono border-t border-white/10 pt-3 text-white/60">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 font-bold text-gold-light">
+        {/* Legends & Hints */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2 text-[10px] sm:text-xs">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <span className="flex items-center gap-1.5 font-bold text-gold-light shrink-0">
               <span className="h-2 w-4 rounded-full bg-gradient-to-r from-gold to-amber-500" /> Bean Temp (BT)
             </span>
             <button
               onClick={() => setShowET(!showET)}
-              className={cn("flex items-center gap-1.5 transition-colors", showET ? "text-emerald-400" : "text-white/30 line-through")}
+              className={cn("flex items-center gap-1.5 transition-colors shrink-0", showET ? "text-emerald-400" : "text-white/30 line-through")}
             >
               <span className="h-1.5 w-3 border-b-2 border-dashed border-emerald-400" /> Drum Temp (ET)
             </button>
             <button
               onClick={() => setShowRoR(!showRoR)}
-              className={cn("flex items-center gap-1.5 transition-colors", showRoR ? "text-amber-400" : "text-white/30 line-through")}
+              className={cn("flex items-center gap-1.5 transition-colors shrink-0", showRoR ? "text-amber-400" : "text-white/30 line-through")}
             >
               <span className="h-1.5 w-3 bg-amber-400" /> Rate of Rise (RoR)
             </button>
           </div>
 
           <span className="text-[10px] text-white/40">
-            Geser slider / klik fase di bawah untuk eksplorasi reaksi kimia
+            Geser slider / klik fase untuk eksplorasi reaksi kimia
           </span>
         </div>
       </div>
 
       {/* Scrubbing Slider & Controls */}
-      <div className="border-t border-white/10 bg-black/40 p-4 sm:p-6 space-y-4">
+      <div className="border-t border-white/10 bg-black/40 p-3 sm:p-6 space-y-3 sm:space-y-4">
         <div className="flex items-center gap-3">
           <button
             type="button"

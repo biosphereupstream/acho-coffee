@@ -80,52 +80,52 @@ export default function HomePage() {
               "radial-gradient(60% 50% at 80% 0%, rgba(201,162,39,0.10) 0%, transparent 60%), radial-gradient(50% 40% at 10% 20%, rgba(13,92,58,0.08) 0%, transparent 60%)",
           }}
         />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:py-20">
-          <div>
-            <Badge variant="gold" className="animate-fade-up mb-5 px-3 py-1">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 py-8 sm:px-6 sm:py-14 lg:grid-cols-2 lg:gap-14 lg:py-20 overflow-hidden">
+          <div className="w-full max-w-full">
+            <Badge variant="gold" className="animate-fade-up mb-4 sm:mb-5 px-3 py-1 text-xs">
               ☕ Fresh Roast dalam 72 Jam
             </Badge>
-            <h1 className="animate-fade-up font-[var(--font-display)] text-4xl font-bold leading-[1.12] tracking-tight text-green-deep sm:text-5xl lg:text-[3.4rem]" style={{ animationDelay: "0.05s" }}>
+            <h1 className="animate-fade-up font-[var(--font-display)] text-3xl sm:text-5xl lg:text-[3.4rem] font-bold leading-[1.16] tracking-tight text-green-deep break-words" style={{ animationDelay: "0.05s" }}>
               Dipesan Hari Ini,{" "}
-              <span className="text-gold-gradient">Dipanggang Khusus</span> Untukmu
+              <span className="text-gold-gradient inline-block">Dipanggang Khusus</span> Untukmu
             </h1>
-            <p className="animate-fade-up mt-5 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg" style={{ animationDelay: "0.12s" }}>
+            <p className="animate-fade-up mt-4 sm:mt-5 max-w-xl text-sm sm:text-base lg:text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.12s" }}>
               Pilih single origin atau blend nusantara, tentukan profil roasting & gilingan, lalu jadwalkan pengambilan
               di roastery atau kirim ke rumahmu — lengkap dengan tracing kurir dan update di setiap tahap.
             </p>
 
-            <div className="animate-fade-up mt-8 flex flex-col gap-3 sm:flex-row" style={{ animationDelay: "0.2s" }}>
-              <Button size="lg" variant="gold" asChild>
+            <div className="animate-fade-up mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 w-full" style={{ animationDelay: "0.2s" }}>
+              <Button size="lg" variant="gold" className="w-full sm:w-auto h-12 text-sm font-bold shadow-md justify-center" asChild>
                 <Link href="/kopi">
-                  Pesan Sekarang <ArrowRight className="h-4 w-4" />
+                  Pesan Sekarang <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 text-sm font-semibold justify-center" asChild>
                 <Link href="/#proses">Lihat Prosesnya</Link>
               </Button>
             </div>
 
-            <div className="animate-fade-up mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground" style={{ animationDelay: "0.28s" }}>
-              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-primary" /> Pembayaran Aman</span>
-              <span className="flex items-center gap-1.5"><Flame className="h-4 w-4 text-gold-deep" /> 4 Profil Roasting</span>
-              <span className="flex items-center gap-1.5"><CalendarClock className="h-4 w-4 text-primary" /> Ambil / Kirim</span>
+            <div className="animate-fade-up mt-6 sm:mt-8 flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground" style={{ animationDelay: "0.28s" }}>
+              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-primary shrink-0" /> Pembayaran Aman</span>
+              <span className="flex items-center gap-1.5"><Flame className="h-4 w-4 text-gold-deep shrink-0" /> 4 Profil Roasting</span>
+              <span className="flex items-center gap-1.5"><CalendarClock className="h-4 w-4 text-primary shrink-0" /> Ambil / Kirim</span>
             </div>
 
-            <div className="animate-fade-up mt-8 grid max-w-md grid-cols-3 gap-4 border-t border-border pt-6" style={{ animationDelay: "0.34s" }}>
+            <div className="animate-fade-up mt-6 sm:mt-8 grid max-w-md grid-cols-3 gap-2 sm:gap-4 border-t border-border pt-5 sm:pt-6" style={{ animationDelay: "0.34s" }}>
               {[
                 ["49", "Menu & Varian"],
                 ["7", "Fase Kimiawi"],
-                ["4.9★", "Rating Pelanggan"],
+                ["4.9★", "Kepuasan 500+"],
               ].map(([num, label]) => (
-                <div key={label}>
-                  <p className="text-2xl font-extrabold text-green-deep">{num}</p>
-                  <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                <div key={label} className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-extrabold text-green-deep">{num}</p>
+                  <p className="text-[11px] sm:text-xs font-medium text-muted-foreground truncate">{label}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="animate-fade-up lg:pl-4" style={{ animationDelay: "0.15s" }}>
+          <div className="animate-fade-up lg:pl-4 w-full max-w-full overflow-hidden" style={{ animationDelay: "0.15s" }}>
             <RoastJourney />
           </div>
         </div>

@@ -75,21 +75,21 @@ export default function WholesalePage() {
               <Sparkles className="h-3.5 w-3.5" /> Biosphere Cafe Supply & Roastery Partner
             </Badge>
 
-            <h1 className="font-[var(--font-display)] text-4xl font-extrabold tracking-tight text-green-deep sm:text-5xl lg:text-6xl">
+            <h1 className="font-[var(--font-display)] text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-green-deep break-words">
               Pasokan Biji Kopi Specialty untuk <span className="text-gold-gradient">Kedai Kopi Anda</span>
             </h1>
 
-            <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            <p className="mx-auto max-w-2xl text-sm sm:text-base lg:text-lg leading-relaxed text-muted-foreground">
               Solusi biji kopi sangrai 1kg bulk segar langsung dari roastery kami di Bandung. Diskon volume otomatis hingga 35%, konsistensi sains rasa, dan fleksibilitas tanpa kontrak yang mengikat.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
-              <Button size="lg" variant="gold" asChild className="font-bold gap-2 shadow-md">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 w-full">
+              <Button size="lg" variant="gold" asChild className="w-full sm:w-auto font-bold gap-2 shadow-md justify-center">
                 <a href="#order-matrix">
                   <Coffee className="h-4 w-4" /> Pesan Biji 1kg Sekarang
                 </a>
               </Button>
-              <Button size="lg" variant="outline" asChild className="font-bold border-gold/40 text-gold-deep hover:bg-gold/10">
+              <Button size="lg" variant="outline" asChild className="w-full sm:w-auto font-bold border-gold/40 text-gold-deep hover:bg-gold/10 justify-center">
                 <a href="#sample-request">
                   Request Sampel Barista
                 </a>
@@ -97,18 +97,18 @@ export default function WholesalePage() {
             </div>
 
             {/* Quick stats */}
-            <div className="grid grid-cols-3 gap-4 border-t border-border/80 pt-8 mt-8 text-center">
-              <div>
-                <p className="font-mono text-2xl sm:text-3xl font-black text-green-deep">35%</p>
-                <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground mt-0.5">Maksimal Diskon Grosir</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 border-t border-border/80 pt-6 mt-6 text-center">
+              <div className="min-w-0">
+                <p className="text-xl sm:text-3xl font-black text-green-deep">35%</p>
+                <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground truncate">Maks. Diskon</p>
               </div>
-              <div>
-                <p className="font-mono text-2xl sm:text-3xl font-black text-gold-deep">&lt; 48 Jam</p>
-                <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground mt-0.5">Jaminan Fresh Roast</p>
+              <div className="min-w-0">
+                <p className="text-xl sm:text-3xl font-black text-green-deep">&lt; 48 Jam</p>
+                <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground truncate">Fresh Roast</p>
               </div>
-              <div>
-                <p className="font-mono text-2xl sm:text-3xl font-black text-green-deep">3 kg</p>
-                <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground mt-0.5">Minimal Order (MOQ)</p>
+              <div className="min-w-0">
+                <p className="text-xl sm:text-3xl font-black text-green-deep">3 Kg</p>
+                <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground truncate">Min. Order</p>
               </div>
             </div>
           </div>

@@ -43,10 +43,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className="scroll-smooth">
-      <body className="flex min-h-screen flex-col bg-background">
+      <body className="flex min-h-screen flex-col bg-background overflow-x-hidden w-full max-w-full">
         <Providers>
           <SiteHeader />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
           <SiteFooter />
           <Toaster />
         </Providers>
