@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -99,6 +99,9 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
   const [pickupSlot, setPickupSlot] = useState<string>(PICKUP_SLOTS[0]);
   const [address, setAddress] = useState(EMPTY_ADDRESS);
   const [areaId, setAreaId] = useState("");
+  const [areaResults, setAreaResults] = useState<Array<{ id: string; name: string }>>([]);
+  const [searchingAreas, setSearchingAreas] = useState(false);
+  const [showAreaDropdown, setShowAreaDropdown] = useState(false);
   const [courier, setCourier] = useState<CourierOption | null>(null);
   const [couriers, setCouriers] = useState<CourierOption[]>([]);
   const [loadingRates, setLoadingRates] = useState(false);
@@ -209,20 +212,61 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
     scrollToWizardTop();
   }
 
-  async function handleFindRates() {
-    if (!address.city) {
-      toast.error("Isi kota tujuan dulu");
-      return;
-    }
+  // Debounced search area Biteship saat mengetik kota/kecamatan
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (!address.city || address.city.trim().length < 3) {
+        setAreaResults([]);
+        return;
+      }
+      setSearchingAreas(true);
+      try {
+        const res = await fetch("/api/shipping/areas?input=" + encodeURIComponent(address.city.trim()));
+        if (res.ok) {
+          const data = await res.json();
+          const list = data.areas || (Array.isArray(data) ? data : []);
+          setAreaResults(list);
+          if (list.length > 0) setShowAreaDropdown(true);
+        }
+      } catch {
+        // noop
+      } finally {
+        setSearchingAreas(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [address.city]);
+
+  const handleSelectArea = (item: { id: string; name: string }) => {
+    setAreaId(item.id);
+    setShowAreaDropdown(false);
+    const postalMatch = item.name.match(/\b\d{5}\b/);
+    const updatedPostal = postalMatch ? postalMatch[0] : address.postalCode;
+    setAddress((prev) => ({
+      ...prev,
+      city: item.name,
+      postalCode: updatedPostal,
+    }));
+    fetchShippingRates(item.id, item.name, updatedPostal);
+  };
+
+  async function fetchShippingRates(overrideAreaId?: string, overrideCity?: string, overridePostal?: string) {
     setLoadingRates(true);
     try {
-      let destArea = areaId;
-      if (!destArea) {
-        const areaRes = await fetch("/api/shipping/areas?query=" + encodeURIComponent(address.city));
+      let destArea = overrideAreaId || areaId;
+      const targetCity = overrideCity || address.city;
+      const targetPostal = overridePostal || address.postalCode;
+
+      // Jika belum ada areaId, coba cari dari kode pos atau kota
+      if (!destArea && (targetPostal || targetCity)) {
+        const queryTerm = targetPostal && targetPostal.trim().length >= 4 ? targetPostal.trim() : targetCity.trim();
+        const areaRes = await fetch("/api/shipping/areas?input=" + encodeURIComponent(queryTerm));
         if (areaRes.ok) {
           const areaData = await areaRes.json();
-          if (areaData.areas && areaData.areas.length > 0) {
-            destArea = areaData.areas[0].id;
+          const list = areaData.areas || (Array.isArray(areaData) ? areaData : []);
+          if (list.length > 0) {
+            destArea = list[0].id;
             setAreaId(destArea);
           }
         }
@@ -232,29 +276,40 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          areaId: destArea,
           destinationAreaId: destArea,
-          destinationCity: address.city,
+          destinationCity: targetCity,
+          postalCode: targetPostal,
           weightGrams: currentWeightGrams * qty,
           items: [{ name: finalItemName, quantity: qty, value: subtotal, weight: currentWeightGrams }],
         }),
       });
+
       const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error ?? "Gagal cek ongkir");
-        return;
-      }
-      setCouriers(data.pricing ?? []);
-      if (data.pricing?.length > 0) {
-        setCourier(data.pricing[0]);
-        toast.success(`Ditemukan ${data.pricing.length} opsi kurir`);
+      const list = data.pricing || data.rates || (Array.isArray(data) ? data : []);
+      if (list.length > 0) {
+        setCouriers(list);
+        setCourier(list[0]);
+        toast.success(`Ditemukan ${list.length} opsi kurir Biteship`);
       } else {
-        toast.info("Tidak ada layanan kurir yang tersedia.");
+        toast.info("Layanan kurir reguler disiapkan");
+      }
+      if (data.resolvedAreaId && !areaId) {
+        setAreaId(data.resolvedAreaId);
       }
     } catch {
-      toast.error("Gagal menghubungi layanan ongkir");
+      toast.error("Gagal menghubungi layanan kurir");
     } finally {
       setLoadingRates(false);
     }
+  }
+
+  function handleFindRates() {
+    if (!address.city && !address.postalCode) {
+      toast.error("Isi kota atau kode pos tujuan dulu");
+      return;
+    }
+    fetchShippingRates();
   }
 
   async function handleSubmit() {
@@ -858,26 +913,60 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <Label className="text-xs">Kota / Kecamatan Tujuan</Label>
+                      <div className="relative">
+                        <Label className="text-xs font-semibold">Kota / Kecamatan Tujuan *</Label>
                         <Input
                           value={address.city}
-                          onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                          placeholder="mis. Bandung, Jakarta Selatan"
+                          onChange={(e) => {
+                            setAddress({ ...address, city: e.target.value });
+                            setAreaId("");
+                          }}
+                          onFocus={() => {
+                            if (areaResults.length > 0) setShowAreaDropdown(true);
+                          }}
+                          placeholder="Ketik kecamatan/kota (mis. Citeureup)"
                         />
+                        {searchingAreas && (
+                          <div className="absolute right-3 top-8 flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-gold-deep" />
+                          </div>
+                        )}
+                        {showAreaDropdown && areaResults.length > 0 && (
+                          <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-xl border border-border bg-card p-1 text-xs shadow-xl backdrop-blur-md">
+                            <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/50">
+                              Pilih Area Biteship
+                            </div>
+                            {areaResults.map((a) => (
+                              <button
+                                key={a.id}
+                                type="button"
+                                onClick={() => handleSelectArea(a)}
+                                className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-secondary transition-colors text-foreground text-xs flex items-center justify-between gap-2"
+                              >
+                                <span className="line-clamp-1">{a.name}</span>
+                                <span className="text-[10px] font-mono text-gold-deep shrink-0">Pilih</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {areaId && (
+                          <p className="mt-1 text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                            <Check className="h-3 w-3" /> Area terverifikasi Biteship
+                          </p>
+                        )}
                       </div>
                       <div>
-                        <Label className="text-xs">Kode Pos</Label>
+                        <Label className="text-xs font-semibold">Kode Pos</Label>
                         <Input
                           value={address.postalCode}
                           onChange={(e) => setAddress({ ...address, postalCode: e.target.value })}
-                          placeholder="mis. 40111"
+                          placeholder="mis. 16810"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <Label className="text-xs">Alamat Lengkap</Label>
+                      <Label className="text-xs font-semibold">Alamat Lengkap *</Label>
                       <Textarea
                         value={address.address}
                         onChange={(e) => setAddress({ ...address, address: e.target.value })}
@@ -891,7 +980,7 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
                         type="button"
                         variant="secondary"
                         onClick={handleFindRates}
-                        disabled={loadingRates || !address.city}
+                        disabled={loadingRates || (!address.city && !address.postalCode)}
                         className="w-full gap-2 font-bold"
                       >
                         {loadingRates ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />}

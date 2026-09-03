@@ -182,39 +182,53 @@ export function CheckoutView({
     return () => clearTimeout(t);
   }, [areaSearch]);
 
-  // Fetch shipping rates when areaId or items change
+  // Fetch shipping rates when areaId, postalCode, or items change
   useEffect(() => {
-    if (fulfillment !== "delivery" || !areaId) return;
+    if (fulfillment !== "delivery") return;
+    if (!areaId && !postalCode && !shippingCity) return;
     let active = true;
-    fetch("/api/shipping/rates", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        destinationAreaId: areaId,
-        items: items.map((i) => ({
-          name: `${i.coffeeName} (${i.roastProfileName})`,
-          value: i.unitPriceIdr,
-          quantity: i.quantity,
-          weight: i.weightGrams ?? 250,
-        })),
-      }),
-    })
-      .then((r) => r.json())
-      .then((data: { rates?: CourierRate[] }) => {
-        if (!active) return;
-        if (data.rates && data.rates.length > 0) {
-          setCouriers(data.rates);
-          setSelectedCourier(data.rates[0]);
-        }
-        setLoadingRates(false);
+
+    const timer = setTimeout(() => {
+      setLoadingRates(true);
+      fetch("/api/shipping/rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          areaId: areaId || undefined,
+          destinationAreaId: areaId || undefined,
+          destinationCity: shippingCity || undefined,
+          postalCode: postalCode || undefined,
+          items: items.map((i) => ({
+            name: `${i.coffeeName} (${i.roastProfileName})`,
+            value: i.unitPriceIdr,
+            quantity: i.quantity,
+            weight: i.weightGrams ?? 250,
+          })),
+        }),
       })
-      .catch(() => {
-        if (active) setLoadingRates(false);
-      });
+        .then((r) => r.json())
+        .then((data: { rates?: CourierRate[]; pricing?: CourierRate[]; resolvedAreaId?: string }) => {
+          if (!active) return;
+          const list = data.rates || data.pricing || (Array.isArray(data) ? data : []);
+          if (list && list.length > 0) {
+            setCouriers(list);
+            setSelectedCourier(list[0]);
+          }
+          if (data.resolvedAreaId && !areaId) {
+            setAreaId(data.resolvedAreaId);
+          }
+          setLoadingRates(false);
+        })
+        .catch(() => {
+          if (active) setLoadingRates(false);
+        });
+    }, 150);
+
     return () => {
       active = false;
+      clearTimeout(timer);
     };
-  }, [fulfillment, areaId, items]);
+  }, [fulfillment, areaId, postalCode, shippingCity, items]);
 
   const rawShippingFee = fulfillment === "delivery" ? selectedCourier?.price ?? 18000 : 0;
   const wholesaleAmount = wholesaleDiscount.discountAmount;
@@ -674,6 +688,9 @@ export function CheckoutView({
                           onClick={() => {
                             setAreaId(a.id);
                             setAreaSearch(a.name);
+                            setShippingCity(a.name);
+                            const postalMatch = a.name.match(/\b\d{5}\b/);
+                            if (postalMatch) setPostalCode(postalMatch[0]);
                             setAreaResults([]);
                           }}
                           className="w-full text-left px-3 py-2 rounded hover:bg-secondary transition-colors"
