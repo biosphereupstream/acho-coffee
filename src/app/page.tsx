@@ -14,7 +14,8 @@ import { CoffeeCard } from "@/components/shop/coffee-card";
 import { LandingFAQ } from "@/components/landing/faq";
 import RoastJourney from "@/components/landing/roast-journey-wrapper";
 import { COFFEES } from "@/data/coffees";
-import { ROAST_STAGES } from "@/lib/constants";
+import { ROAST_STAGES, ROAST_IMPORTANT_NOTES } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 const MARQUEE_ITEMS = [
   "FRESH ROASTING",
@@ -141,28 +142,103 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ================= PROSES ================= */}
+      {/* ================= PROSES KIMIAWI ROASTING KOPI ================= */}
       <section id="proses" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="secondary" className="text-primary">Proses Kami</Badge>
+        <div className="mx-auto max-w-3xl text-center">
+          <Badge variant="secondary" className="text-primary font-bold">Proses Kimiawi Roasting Kopi</Badge>
           <h2 className="mt-3 font-[var(--font-display)] text-3xl font-bold text-green-deep sm:text-4xl">
-            Dari Biji Hijau ke <span className="text-gold-gradient">Cangkirmu</span>
+            Tahapan Reaksi Kimia dari Biji Hijau <span className="text-gold-gradient">Hingga Siap Didinginkan</span>
           </h2>
-          <p className="mt-3 text-muted-foreground">
-            Setiap pesanan melewati 5 tahap yang sama seperti animasi di atas — transparan dan bisa kamu pantau.
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+            Roasting kopi bukan sekadar memanaskan biji, melainkan serangkaian reaksi kimia bertahap yang
+            mengubah biji hijau menjadi biji matang dengan warna, aroma, dan rasa yang khas.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+        {/* 7 Tahapan Proses Grid */}
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {ROAST_STAGES.map((stage, i) => (
-            <div key={stage.key} className="gold-ring-hover glossy-card relative rounded-2xl border border-border p-6">
-              <span className="absolute right-4 top-3 font-[var(--font-display)] text-4xl font-bold text-gold/25">
-                {"0" + (i + 1)}
-              </span>
-              <h3 className="mt-6 font-[var(--font-display)] text-lg font-bold text-green-deep">{stage.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{stage.desc}</p>
+            <div
+              key={stage.key}
+              className={cn(
+                "gold-ring-hover glossy-card relative flex flex-col justify-between overflow-hidden rounded-2xl border p-6 transition-all duration-300",
+                stage.isCritical
+                  ? "border-gold/80 bg-gradient-to-br from-accent/50 to-card shadow-md ring-1 ring-gold/40"
+                  : "border-border bg-card shadow-xs"
+              )}
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-black uppercase tracking-wider text-muted-foreground">
+                    Tahap 0{i + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      "rounded-full px-2.5 py-0.5 text-[11px] font-extrabold",
+                      stage.isCritical
+                        ? "bg-rose-500/15 text-rose-700 border border-rose-400/40"
+                        : "bg-secondary text-foreground/80 border border-border"
+                    )}
+                  >
+                    {stage.suhu}
+                  </span>
+                </div>
+
+                <div className="mt-4 flex items-center gap-2">
+                  <h3 className="font-[var(--font-display)] text-lg font-bold text-green-deep">
+                    {stage.title}
+                  </h3>
+                  {stage.isCritical && (
+                    <Badge variant="gold" className="text-[10px] font-bold px-1.5 py-0">
+                      Disorot
+                    </Badge>
+                  )}
+                </div>
+
+                <p className="mt-2 text-xs leading-relaxed text-foreground/80">
+                  {stage.desc}
+                </p>
+              </div>
+
+              <div className="mt-4 border-t border-border/50 pt-3 text-[11px] font-semibold text-muted-foreground flex items-center justify-between">
+                <span>Biosphere Roast Works</span>
+                <span className="text-gold-deep font-mono">Fase 0{i + 1} / 07</span>
+              </div>
             </div>
           ))}
+        </div>
+
+        {/* Catatan Penting Callout Box from PDF */}
+        <div className="mt-12 rounded-2xl border border-gold/40 bg-gradient-to-br from-secondary/50 via-background to-accent/30 p-6 sm:p-8 shadow-xs">
+          <div className="flex items-center gap-2.5 text-green-deep">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg metal-green text-gold-light font-black text-sm">
+              ✦
+            </span>
+            <div>
+              <h3 className="font-[var(--font-display)] text-lg font-bold text-green-deep">
+                Catatan Penting Sains Roasting
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Prinsip kontrol kualitas roasting Biosphere Roast Works — Where Science Meets Soul.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {ROAST_IMPORTANT_NOTES.map((note, idx) => (
+              <div key={idx} className="rounded-xl border border-border/80 bg-background/90 p-4 backdrop-blur-xs">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-black text-gold-deep">
+                    {idx + 1}
+                  </span>
+                  <h4 className="text-xs font-bold text-foreground">{note.title}</h4>
+                </div>
+                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                  {note.desc}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

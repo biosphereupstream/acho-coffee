@@ -11,11 +11,77 @@ export const DAILY_CAPACITY_BAGS = 120;
 export const PICKUP_SLOTS = ["08:00 - 10:00", "10:00 - 12:00", "13:00 - 15:00", "15:00 - 17:00"] as const;
 
 export const ROAST_STAGES = [
-  { key: "green", label: "Green Bean", title: "Biji Kopi Hijau", desc: "Biji kopi pilihan dari petani lokal nusantara, dipilih dengan standar specialty grade." },
-  { key: "light", label: "Light Roast", title: "Light Roast", desc: "First crack — aroma floral & fruity mulai muncul, keasaman cerah khas single origin." },
-  { key: "medium", label: "Medium Roast", title: "Medium Roast", desc: "Keseimbangan sempurna: body mulai terbentuk, rasa karamel & kacang mulai dominan." },
-  { key: "grind", label: "Grind", title: "Digiling Sesuai Pesanan", desc: "Digiling sesuai metode seduhmu — bean utuh, fine, medium, atau coarse." },
-  { key: "brew", label: "Brew", title: "Siap Diseduh", desc: "Fresh dalam 72 jam, diambil di roastery atau dikirim ke pintu rumahmu." },
+  {
+    key: "drying",
+    label: "Tahap 1",
+    suhu: "100–160°C",
+    title: "Drying phase",
+    desc: "Penguapan air bebas dari dalam biji. Belum ada reaksi pencokelatan; biji masih hijau kekuningan.",
+    isCritical: false,
+  },
+  {
+    key: "yellowing",
+    label: "Tahap 2",
+    suhu: "160–170°C",
+    title: "Yellowing",
+    desc: "Kadar air turun drastis, reaksi Maillard mulai antara asam amino dan gula pereduksi. Muncul bau seperti roti panggang.",
+    isCritical: false,
+  },
+  {
+    key: "maillard",
+    label: "Tahap 3",
+    suhu: "170–200°C",
+    title: "Maillard & karamelisasi",
+    desc: "Ratusan senyawa volatil terbentuk di tahap ini. Gula mulai terkaramelisasi, warna coklat dan aroma khas kopi mulai terbentuk.",
+    isCritical: false,
+  },
+  {
+    key: "first_crack",
+    label: "Tahap 4 • Titik Kritis",
+    suhu: "196–205°C",
+    title: "First crack",
+    desc: "Tekanan uap air dan CO2 di dalam biji melebihi kekuatan struktur sel sehingga biji retak dan mengembang. Titik acuan untuk light roast.",
+    isCritical: true,
+  },
+  {
+    key: "development",
+    label: "Tahap 5",
+    suhu: "205–224°C",
+    title: "Development time",
+    desc: "Fase pasca first crack yang menentukan profil rasa akhir. Reaksi Strecker menghasilkan senyawa aromatik kompleks dan membangun body.",
+    isCritical: false,
+  },
+  {
+    key: "second_crack",
+    label: "Tahap 6 • Titik Kritis",
+    suhu: "224–230°C",
+    title: "Second crack",
+    desc: "Struktur sel pecah lebih jauh dan minyak dari dalam biji mulai keluar ke permukaan. Ciri khas dark roast.",
+    isCritical: true,
+  },
+  {
+    key: "cooling",
+    label: "Tahap 7",
+    suhu: "Pendinginan",
+    title: "Cooling",
+    desc: "Pendinginan cepat (biasanya dengan udara) untuk menghentikan reaksi kimia tepat pada titik yang diinginkan, mencegah carryover roast.",
+    isCritical: false,
+  },
+] as const;
+
+export const ROAST_IMPORTANT_NOTES = [
+  {
+    title: "First crack dan second crack adalah titik paling signifikan",
+    desc: "Keduanya menandai perubahan struktur fisik biji akibat tekanan gas internal yang memecahkan dinding sel biji kopi.",
+  },
+  {
+    title: "Development time penentu profil rasa akhir",
+    desc: "Waktu setelah first crack adalah fase yang paling menentukan karakter rasa akhir dan menjadi variabel utama dalam kontrol kualitas roasting Biosphere.",
+  },
+  {
+    title: "Pendinginan cepat mencegah carryover roast",
+    desc: "Proses pendinginan harus dilakukan secepat mungkin karena panas sisa (residual heat) pada biji tetap memicu reaksi kimia meski sudah diangkat dari mesin roasting.",
+  },
 ] as const;
 
 export function formatIDR(value: number): string {

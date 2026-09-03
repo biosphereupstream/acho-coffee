@@ -9,7 +9,15 @@ import { Pause, Play, Rotate3d } from "lucide-react";
 import { ROAST_STAGES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-const STAGE_COLORS = ["#6f8f3a", "#c8a165", "#8b5e3c", "#5b3a21", "#f5efe2"];
+const STAGE_COLORS = [
+  "#7a9a4b", // 0: Drying phase (hijau kekuningan)
+  "#c4a45a", // 1: Yellowing (kuning)
+  "#9c683b", // 2: Maillard & karamelisasi (cokelat harum)
+  "#7a4b28", // 3: First crack (retak mengembang)
+  "#5c351b", // 4: Development time (matang aromatik)
+  "#381e0f", // 5: Second crack (gelap berminyak)
+  "#283b30", // 6: Cooling (pendinginan cepat)
+];
 const STAGE_DURATION = 4200;
 
 /* ---------- geometri biji kopi prosedural (ellipsoid + alur tengah) ---------- */
@@ -36,26 +44,27 @@ function CoffeeBean({ stage }: { stage: number }) {
   const geo = useMemo(() => createBeanGeometry(), []);
   const mat = useRef<THREE.MeshStandardMaterial>(null);
   const group = useRef<THREE.Group>(null);
-  const targetColor = useMemo(() => new THREE.Color(STAGE_COLORS[Math.min(stage, 3)]), [stage]);
+  const targetColor = useMemo(() => new THREE.Color(STAGE_COLORS[Math.min(stage, STAGE_COLORS.length - 1)]), [stage]);
 
   useFrame((_, delta) => {
     if (mat.current) {
       mat.current.color.lerp(targetColor, 0.07);
-      // makin gelap & glossy saat ter-roasting
-      mat.current.roughness = THREE.MathUtils.lerp(mat.current.roughness, stage >= 2 ? 0.22 : 0.42, 0.05);
+      // Makin glossy saat ter-roasting (minyak keluar di second crack)
+      const targetRoughness = stage >= 5 ? 0.16 : stage >= 3 ? 0.26 : 0.44;
+      mat.current.roughness = THREE.MathUtils.lerp(mat.current.roughness, targetRoughness, 0.05);
     }
     if (group.current) {
-      const grinding = stage === 3;
-      group.current.rotation.y += delta * (grinding ? 7 : 0.4);
-      const targetScale = grinding ? 0.1 : 1;
-      group.current.scale.setScalar(THREE.MathUtils.lerp(group.current.scale.x, targetScale, 0.09));
+      group.current.rotation.y += delta * 0.45;
+      // Biji retak & mengembang mulai First Crack (tahap 3+)
+      const targetScale = stage >= 3 ? 1.14 : 1.0;
+      group.current.scale.setScalar(THREE.MathUtils.lerp(group.current.scale.x, targetScale, 0.06));
     }
   });
 
   return (
     <group ref={group}>
       <mesh geometry={geo} castShadow>
-        <meshStandardMaterial ref={mat} color="#6f8f3a" roughness={0.42} metalness={0.12} />
+        <meshStandardMaterial ref={mat} color="#7a9a4b" roughness={0.44} metalness={0.08} />
       </mesh>
     </group>
   );
@@ -108,131 +117,7 @@ function RoastSmoke() {
   );
 }
 
-/* ---------- hujan bubuk kopi (tahap grind) ---------- */
-function GroundRain() {
-  const COUNT = 260;
-  const ref = useRef<THREE.Points>(null);
 
-  const { positions, speeds, rest } = useMemo(() => {
-    const positions = new Float32Array(COUNT * 3);
-    const speeds = new Float32Array(COUNT);
-    const rest = new Float32Array(COUNT);
-    for (let i = 0; i < COUNT; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const r = 0.15 + Math.random() * 1.05;
-      positions[i * 3] = Math.cos(a) * r;
-      positions[i * 3 + 1] = 0.6 + Math.random() * 2.4;
-      positions[i * 3 + 2] = Math.sin(a) * r;
-      speeds[i] = 0.8 + Math.random() * 1.4;
-      rest[i] = 0.02 + Math.random() * 0.16;
-    }
-    return { positions, speeds, rest };
-  }, []);
-
-  useFrame((_, delta) => {
-    const attr = ref.current?.geometry.attributes.position as THREE.BufferAttribute | undefined;
-    if (!attr) return;
-    for (let i = 0; i < COUNT; i++) {
-      let y = attr.getY(i) - speeds[i] * delta;
-      if (y < rest[i]) y = rest[i];
-      attr.setY(i, y);
-    }
-    attr.needsUpdate = true;
-  });
-
-  return (
-    <points ref={ref}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-      </bufferGeometry>
-      <pointsMaterial color="#5b3a21" size={0.055} sizeAttenuation />
-    </points>
-  );
-}
-
-/* ---------- cangkir + uap + crema latte (tahap brew) ---------- */
-function Cup() {
-  const cupGeo = useMemo(() => {
-    const pts = [
-      new THREE.Vector2(0.001, 0),
-      new THREE.Vector2(0.4, 0.002),
-      new THREE.Vector2(0.47, 0.035),
-      new THREE.Vector2(0.5, 0.44),
-      new THREE.Vector2(0.5, 0.5),
-      new THREE.Vector2(0.455, 0.52),
-      new THREE.Vector2(0.44, 0.53),
-    ];
-    return new THREE.LatheGeometry(pts, 56);
-  }, []);
-
-  const steamRef = useRef<THREE.Points>(null);
-  const STEAM = 26;
-
-  const steamData = useMemo(() => {
-    const positions = new Float32Array(STEAM * 3);
-    const speeds = new Float32Array(STEAM);
-    for (let i = 0; i < STEAM; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const r = Math.random() * 0.3;
-      positions[i * 3] = Math.cos(a) * r;
-      positions[i * 3 + 1] = 0.62 + Math.random() * 0.8;
-      positions[i * 3 + 2] = Math.sin(a) * r;
-      speeds[i] = 0.25 + Math.random() * 0.5;
-    }
-    return { positions, speeds };
-  }, []);
-
-  useFrame((_, delta) => {
-    const attr = steamRef.current?.geometry.attributes.position as THREE.BufferAttribute | undefined;
-    if (!attr) return;
-    for (let i = 0; i < STEAM; i++) {
-      let y = attr.getY(i) + steamData.speeds[i] * delta;
-      if (y > 1.5) y = 0.6;
-      attr.setY(i, y);
-    }
-    attr.needsUpdate = true;
-  });
-
-  return (
-    <group position={[0, -0.42, 0]} scale={1.06}>
-      {/* cangkir */}
-      <mesh geometry={cupGeo} castShadow>
-        <meshStandardMaterial color="#f6f1e6" roughness={0.18} metalness={0.05} />
-      </mesh>
-      {/* permukaan kopi pekat */}
-      <mesh position={[0, 0.49, 0]}>
-        <cylinderGeometry args={[0.465, 0.465, 0.03, 56]} />
-        <meshStandardMaterial color="#301b0f" roughness={0.25} />
-      </mesh>
-      {/* crema cincin emas (latte swirl) */}
-      <mesh position={[0, 0.498, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.16, 0.43, 48]} />
-        <meshStandardMaterial color="#b97c40" roughness={0.4} />
-      </mesh>
-      <mesh position={[0, 0.499, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.03, 0.18, 36]} />
-        <meshStandardMaterial color="#deb887" roughness={0.3} />
-      </mesh>
-      {/* tatakan */}
-      <mesh position={[0, -0.035, 0]}>
-        <cylinderGeometry args={[0.72, 0.62, 0.05, 56]} />
-        <meshStandardMaterial color="#f6f1e6" roughness={0.2} />
-      </mesh>
-      {/* gagang */}
-      <mesh position={[0.72, 0.3, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <torusGeometry args={[0.24, 0.055, 12, 28, Math.PI]} />
-        <meshStandardMaterial color="#f6f1e6" roughness={0.18} />
-      </mesh>
-      {/* uap */}
-      <points ref={steamRef}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[steamData.positions, 3]} />
-        </bufferGeometry>
-        <pointsMaterial color="#ffffff" size={0.11} sizeAttenuation transparent opacity={0.4} depthWrite={false} />
-      </points>
-    </group>
-  );
-}
 
 /* ---------- scene utama dengan OrbitControls & camera bounds ---------- */
 function JourneyScene({ stage, inView, onInteract }: { stage: number; inView: boolean; onInteract: () => void }) {
@@ -248,21 +133,36 @@ function JourneyScene({ stage, inView, onInteract }: { stage: number; inView: bo
       <directionalLight position={[4, 6, 3]} intensity={1.7} castShadow />
       <pointLight position={[-3, 2, 2.5]} intensity={0.9} color="#f5d78e" />
 
-      {stage < 4 && (
-        <Float speed={1.4} rotationIntensity={0.25} floatIntensity={0.8}>
-          <CoffeeBean stage={stage} />
-        </Float>
+      <Float speed={1.4} rotationIntensity={0.25} floatIntensity={0.8}>
+        <CoffeeBean stage={stage} />
+      </Float>
+
+      {/* Asap pembentukan senyawa volatil saat Maillard & Roasting (tahap 2-5) */}
+      {stage >= 2 && stage <= 5 && <RoastSmoke />}
+
+      {/* Percikan pelepasan gas First Crack (tahap 3) & Second Crack (tahap 5) */}
+      {(stage === 3 || stage === 5) && (
+        <Sparkles
+          count={48}
+          scale={[2.8, 2.0, 1.8]}
+          size={3.8}
+          speed={0.8}
+          color={stage === 3 ? "#f5d78e" : "#e68a35"}
+          position={[0, 0.25, 0]}
+        />
       )}
 
-      {(stage === 1 || stage === 2) && (
-        <>
-          <Sparkles count={36} scale={[2.6, 1.8, 1.6]} size={3.2} speed={0.4} color="#f0d678" position={[0, 0.25, 0]} />
-          <RoastSmoke />
-        </>
+      {/* Sirkulasi udara pendinginan cepat (tahap 6) */}
+      {stage === 6 && (
+        <Sparkles
+          count={32}
+          scale={[2.4, 2.4, 2.4]}
+          size={2.4}
+          speed={0.4}
+          color="#a8e6cf"
+          position={[0, 0.1, 0]}
+        />
       )}
-
-      {stage === 3 && <GroundRain />}
-      {stage === 4 && <Cup />}
 
       <ContactShadows position={[0, -0.95, 0]} opacity={0.35} scale={7} blur={2.4} far={2.2} color="#0a3d28" />
 
@@ -330,10 +230,21 @@ export default function RoastJourney() {
       </div>
 
       <div className="relative border-t border-border/60 px-5 pb-5 pt-4 text-center">
-        <p key={current.key + "-label"} className="animate-fade-up text-[11px] font-bold uppercase tracking-[0.2em] text-gold-deep">
-          {current.label}
-        </p>
-        <h3 key={current.key + "-title"} className="animate-fade-up mt-1 font-[var(--font-display)] text-xl font-bold text-green-deep">
+        <div className="flex items-center justify-center gap-2">
+          <p key={current.key + "-label"} className="animate-fade-up text-[11px] font-bold uppercase tracking-[0.2em] text-gold-deep">
+            {current.label}
+          </p>
+          <span className="text-[11px] font-bold text-muted-foreground">•</span>
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-extrabold text-foreground border border-border">
+            {current.suhu}
+          </span>
+          {current.isCritical && (
+            <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-extrabold text-rose-700 border border-rose-400/40">
+              Titik Kritis
+            </span>
+          )}
+        </div>
+        <h3 key={current.key + "-title"} className="animate-fade-up mt-1.5 font-[var(--font-display)] text-xl font-bold text-green-deep">
           {current.title}
         </h3>
         <p key={current.key + "-desc"} className="animate-fade-up mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
