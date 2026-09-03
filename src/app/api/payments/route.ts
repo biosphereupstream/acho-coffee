@@ -25,8 +25,12 @@ export async function POST(req: Request) {
   let itemsSum = 0;
 
   for (const it of order.items) {
+    const rawName = `${it.coffeeName} (${it.roastProfileName}, ${it.grindSize})`
+      .replace(/&/g, "dan")
+      .replace(/#/g, "No. ")
+      .replace(/["“”„]/g, "'");
     lineItems.push({
-      name: it.coffeeName + " (" + it.roastProfileName + ", " + it.grindSize + ")",
+      name: rawName,
       quantity: it.quantity,
       price: it.unitPriceIdr,
     });
@@ -35,7 +39,9 @@ export async function POST(req: Request) {
 
   if (order.shippingFee > 0) {
     lineItems.push({
-      name: "Ongkos Kirim (" + (order.courierCompany?.toUpperCase() ?? "Kurir") + ")",
+      name: `Ongkos Kirim (${order.courierCompany?.toUpperCase() ?? "Kurir"})`
+        .replace(/&/g, "dan")
+        .replace(/#/g, "No. "),
       quantity: 1,
       price: order.shippingFee,
     });
@@ -46,7 +52,7 @@ export async function POST(req: Request) {
   if (itemsSum !== order.total || lineItems.length === 0) {
     lineItems.length = 0;
     lineItems.push({
-      name: `Pesanan Kopi #${order.orderNumber}`,
+      name: `Pesanan Kopi ${order.orderNumber}`,
       quantity: 1,
       price: order.total,
     });

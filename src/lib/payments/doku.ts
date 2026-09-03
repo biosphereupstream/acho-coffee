@@ -9,6 +9,50 @@ export { DOKU_CHANNELS } from "@/lib/payments/doku-shared";
 /** Path DOKU yang dituju (dipakai pada komponen Request-Target). */
 const CHECKOUT_PATH = "/checkout/v1/payment";
 
+/**
+ * DOKU Jokul strictly restricts characters in string fields to:
+ * a-z A-Z 0-9 . - / + , = _ : ' @ % ( ) and spaces.
+ * Any character outside this regex causes HTTP 400 "Invalid character".
+ */
+export function sanitizeDokuString(input: string | undefined | null, maxLength = 64): string {
+  if (!input || input === "null" || input === "undefined") return "Pesanan Kopi";
+  let sanitized = String(input)
+    // Replace ampersand with "dan"
+    .replace(/&/g, "dan")
+    // Replace hash with "No."
+    .replace(/#/g, "No. ")
+    // Replace double quotes and fancy quotes with single quote
+    .replace(/["“”„]/g, "'")
+    .replace(/[’‘`]/g, "'")
+    // Replace bullet points, asterisks, stars with hyphen
+    .replace(/[•✦★*~]/g, "-")
+    // Replace exclamation and question marks with dot
+    .replace(/[!?]/g, ".")
+    // Replace brackets with parentheses
+    .replace(/[\[{]/g, "(")
+    .replace(/[\]}]/g, ")")
+    // Replace tabs, newlines with space
+    .replace(/[\r\n\t]/g, " ")
+    // Remove any character NOT in the allowed DOKU character set
+    .replace(/[^a-zA-Z0-9.\-\/+,=_:'@%() ]/g, "")
+    // Collapse multiple spaces
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!sanitized) sanitized = "Pesanan Kopi";
+  return sanitized.slice(0, maxLength).trim();
+}
+
+/**
+ * Sanitize phone number for DOKU (numbers only, min 8 max 16 digits).
+ */
+export function sanitizeDokuPhone(phone: string | undefined | null): string {
+  if (!phone) return "08123456789";
+  const cleaned = String(phone).replace(/[^0-9]/g, "");
+  if (cleaned.length < 8) return "08123456789";
+  return cleaned.slice(0, 16);
+}
+
 /** Format timestamp yang diharapkan Doku: yyyy-MM-ddTHH:mm:ssZ (UTC). */
 function dokuTimestamp(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -46,7 +90,7 @@ export async function createDokuPayment(params: DokuCreateParams): Promise<DokuP
   const isQris = params.channel === "QRIS";
   const digits = params.invoiceNumber.replace(/\D/g, "").slice(-10);
   const fakeVa = "8801" + digits + Math.floor(Math.random() * 90 + 10);
-  const fakeQr = `00020101021226680016ID.CO.DOKU.WWW01189360091800000000000215${params.invoiceNumber}520458125303360540${params.amount}5802ID5911ACHO COFFEE6007BANDUNG62070703A016304`;
+  const fakeQr = `00020101021226680016ID.CO.DOKU.WWW01189360091800000000000215${params.invoiceNumber}520458125303360540${params.amount}5802ID5921BIOSPHERE ROAST WORKS6007BANDUNG62070703A016304`;
 
   if (!env.doku.configured()) {
     // Demo mode: generate VA / QRIS palsu agar alur bisa dicoba end-to-end
@@ -67,6 +111,29 @@ export async function createDokuPayment(params: DokuCreateParams): Promise<DokuP
   const timestamp = dokuTimestamp();
   const requestId = randomUUID();
 
+  // DOKU invoice number only allows alphanumeric, dot, hyphen, underscore (max 64 chars)
+  const sanitizedInvoice = params.invoiceNumber.replace(/[^a-zA-Z0-9.\-_]/g, "").slice(0, 64);
+  const cleanSiteUrl = env.siteUrl().replace(/\/+$/, "");
+
+  // DOKU requires that the sum of line_items[].price * line_items[].quantity EXACTLY equals order.amount
+  const lineItemsSum = params.lineItems.reduce((acc, li) => acc + li.price * li.quantity, 0);
+  const sourceLineItems =
+    lineItemsSum === params.amount && params.lineItems.length > 0
+      ? params.lineItems
+      : [
+          {
+            name: `Pesanan Kopi ${sanitizedInvoice}`,
+            quantity: 1,
+            price: params.amount,
+          },
+        ];
+
+  const sanitizedLineItems = sourceLineItems.map((li) => ({
+    name: sanitizeDokuString(li.name, 64),
+    price: Math.max(1, Math.round(li.price)),
+    quantity: Math.max(1, Math.round(li.quantity)),
+  }));
+
   // Jika DOKU_HOSTED, jangan batasi payment_method_types agar DOKU menampilkan semua metode yang aktif
   const paymentObj: Record<string, unknown> = {
     payment_due_date: 60,
@@ -77,21 +144,17 @@ export async function createDokuPayment(params: DokuCreateParams): Promise<DokuP
 
   const body = JSON.stringify({
     order: {
-      amount: params.amount,
-      invoice_number: params.invoiceNumber,
+      amount: Math.max(1, Math.round(params.amount)),
+      invoice_number: sanitizedInvoice,
       currency: "IDR",
-      callback_url: env.siteUrl() + "/api/webhooks/doku",
-      line_items: params.lineItems.map((li) => ({
-        name: li.name,
-        price: li.price,
-        quantity: li.quantity,
-      })),
+      callback_url: `${cleanSiteUrl}/api/webhooks/doku`,
+      line_items: sanitizedLineItems,
     },
     payment: paymentObj,
     customer: {
-      name: params.customerName,
-      email: params.customerEmail,
-      phone: params.customerPhone,
+      name: sanitizeDokuString(params.customerName || "Pelanggan", 64),
+      email: (params.customerEmail || "customer@example.com").trim().toLowerCase().slice(0, 64),
+      phone: sanitizeDokuPhone(params.customerPhone),
       address: "Indonesia",
       country: "ID",
     },
@@ -122,28 +185,8 @@ export async function createDokuPayment(params: DokuCreateParams): Promise<DokuP
       cache: "no-store",
     });
   } catch (e) {
-    if (env.doku.demoFallback()) {
-      // Jaringan lokal tidak bisa mencapai Doku — kembali ke mode demo
-      return {
-        demo: true,
-        paymentId: "DEMO-" + randomUUID(),
-        paymentUrl: null,
-        virtualAccount: isQris ? undefined : fakeVa,
-        qrContent: isQris ? fakeQr : undefined,
-        channel: params.channel,
-        howToPay:
-          "Fallback demo: Doku tidak terjangkau dari jaringan ini (pembayaran sungguhan aktif di lingkungan produksi/Vercel).",
-        expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-      };
-    }
-    throw new Error("Doku tidak terjangkau: " + (e instanceof Error ? e.message : "network error"));
-  }
-
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const detail = "Doku error " + res.status + ": " + JSON.stringify(json).slice(0, 400);
-    if (env.doku.demoFallback()) {
-      // Dev lokal: Doku menolak (mis. kanal belum aktif) — tetap beri alur demo / simulasi
+    if (env.doku.demoFallback() || env.doku.env() === "sandbox") {
+      // Jaringan lokal / sandbox tidak bisa mencapai Doku — fallback aman ke simulasi
       return {
         demo: true,
         paymentId: "DEMO-" + randomUUID(),
@@ -153,7 +196,29 @@ export async function createDokuPayment(params: DokuCreateParams): Promise<DokuP
         channel: params.channel,
         howToPay: isQris
           ? "Scan QRIS di bawah menggunakan aplikasi BCA Mobile, GoPay, OVO, Dana, ShopeePay, atau m-banking lainnya."
-          : "Fallback demo — " + detail,
+          : "Fallback demo: Doku tidak terjangkau dari jaringan ini (pembayaran sungguhan aktif di lingkungan produksi/Vercel).",
+        expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+      };
+    }
+    throw new Error("Doku tidak terjangkau: " + (e instanceof Error ? e.message : "network error"));
+  }
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = "Doku error " + res.status + ": " + JSON.stringify(json).slice(0, 400);
+    console.error("[DOKU API Error]", res.status, json, "Sent Body:", body);
+    if (env.doku.demoFallback() || env.doku.env() === "sandbox") {
+      // Sandbox fallback jika kanal Doku di akun sandbox belum diaktifkan oleh admin Doku
+      return {
+        demo: true,
+        paymentId: "SANDBOX-" + randomUUID(),
+        paymentUrl: null,
+        virtualAccount: isQris ? undefined : fakeVa,
+        qrContent: isQris ? fakeQr : undefined,
+        channel: params.channel,
+        howToPay: isQris
+          ? "Scan QRIS di bawah menggunakan aplikasi BCA Mobile, GoPay, OVO, Dana, ShopeePay, atau m-banking lainnya."
+          : "Akun Sandbox Doku: Kanal disimulasikan untuk pengujian (" + detail + ")",
         expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
       };
     }
