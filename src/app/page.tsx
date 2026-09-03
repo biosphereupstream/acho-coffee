@@ -184,7 +184,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {COFFEES.slice(0, 3).map((coffee) => (
+            {COFFEES.slice(0, 6).map((coffee) => (
               <CoffeeCard key={coffee.slug} coffee={coffee} />
             ))}
           </div>
@@ -194,9 +194,9 @@ export default function HomePage() {
       {/* ================= KEUNGGULAN ================= */}
       <section id="tentang" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="secondary" className="text-primary">Kenapa ACHO?</Badge>
+          <Badge variant="secondary" className="text-primary">Kenapa Biosphere Roast Works?</Badge>
           <h2 className="mt-3 font-[var(--font-display)] text-3xl font-bold text-green-deep sm:text-4xl">
-            Kopi Serius, <span className="text-gold-gradient">Tanpa Ribet</span>
+            Where Science <span className="text-gold-gradient">Meets Soul</span>
           </h2>
         </div>
 

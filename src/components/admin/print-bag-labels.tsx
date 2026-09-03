@@ -88,10 +88,10 @@ export function PrintBagLabelsView({ orders }: { orders: OrderRecord[] }) {
             <div className="flex items-start justify-between border-b border-neutral-300 pb-2">
               <div>
                 <p className="font-[var(--font-display)] text-sm font-black tracking-wider text-black">
-                  ACHO COFFEE ROASTERY
+                  BIOSPHERE ROAST WORKS
                 </p>
                 <p className="text-[10px] font-semibold text-neutral-600 uppercase tracking-wider">
-                  Micro-Roast Specialty • 250g
+                  Where Science Meets Soul
                 </p>
               </div>
               <div className="text-right">

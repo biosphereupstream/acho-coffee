@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, CheckCircle2, Coffee, Printer, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,18 +48,23 @@ export function InvoiceView({ order }: { order: OrderRecord }) {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between border-b border-border/80 pb-6 gap-6">
           <div>
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-black text-lg">
-                A
+              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-gold/40 bg-secondary/50 p-1">
+                <Image src="/biosphere-logo.png" alt="Biosphere Roast Works" width={40} height={40} className="h-full w-full object-contain" />
               </div>
-              <span className="font-[var(--font-display)] text-2xl font-black tracking-wider text-green-deep">
-                ACHO COFFEE
-              </span>
+              <div className="flex flex-col">
+                <span className="font-[var(--font-display)] text-xl font-black tracking-wider text-green-deep">
+                  BIOSPHERE ROAST WORKS
+                </span>
+                <span className="text-[10px] font-bold tracking-widest text-gold-deep uppercase">
+                  Where Science Meets Soul
+                </span>
+              </div>
             </div>
             <p className="mt-1 text-xs text-muted-foreground font-medium">
-              Micro Roastery & Specialty Coffee Artisans
+              Freshly Brewed · Straight to Your Door
             </p>
             <p className="text-xs text-muted-foreground">
-              Jl. Dago No. 128, Bandung • roastery@acho.coffee
+              Sumur Bandung, Kota Bandung • hello@biosphereroastworks.com
             </p>
           </div>
 
@@ -116,7 +122,7 @@ export function InvoiceView({ order }: { order: OrderRecord }) {
                   </span>
                 </p>
                 <p className="text-muted-foreground">Slot: {order.pickupSlot ?? "14:00 - 17:00 WIB"}</p>
-                <p className="text-[11px] text-muted-foreground">Lokasi: ACHO Roastery Lab, Bandung</p>
+                <p className="text-[11px] text-muted-foreground">Lokasi: Biosphere Roast Works Lab, Bandung</p>
               </div>
             ) : (
               <div className="mt-1.5 space-y-1">
@@ -244,12 +250,12 @@ export function InvoiceView({ order }: { order: OrderRecord }) {
         {/* Footer Note */}
         <div className="mt-10 pt-4 border-t border-border/50 text-center text-[11px] text-muted-foreground">
           <p>
-            Terima kasih telah memesan kopi artisan dari ACHO Coffee. Biji kopi di-roasting dengan dedikasi tinggi
-            dan siap menghasilkan seduhan berkarakter terbaik.
+            Terima kasih telah memesan dari Biosphere Roast Works — Where Science Meets Soul.
+            Produk dipersiapkan dan diseduh dengan standar kualitas terbaik.
           </p>
           <p className="mt-1">
-            Pertanyaan seputar pesanan? Hubungi Barista ACHO di{" "}
-            <span className="font-semibold text-foreground">roastery@acho.coffee</span> atau WhatsApp{" "}
+            Pertanyaan seputar pesanan? Hubungi tim kami di{" "}
+            <span className="font-semibold text-foreground">hello@biosphereroastworks.com</span> atau WhatsApp{" "}
             <span className="font-semibold text-foreground">0812-3456-7890</span>.
           </p>
         </div>

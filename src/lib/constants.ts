@@ -1,5 +1,5 @@
-export const SITE_NAME = "ACHO Coffee";
-export const SITE_TAGLINE = "Fresh Roasting, Dipanggang Sesuai Pesananmu";
+export const SITE_NAME = "Biosphere Roast Works";
+export const SITE_TAGLINE = "Where Science Meets Soul — Freshly Brewed · Straight to Your Door";
 export const CURRENCY = "IDR";
 export const BAG_WEIGHT_GRAMS = 250;
 

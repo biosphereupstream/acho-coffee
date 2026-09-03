@@ -13,7 +13,7 @@ export const env = {
     ),
   databaseUrl: () => process.env.DATABASE_URL ?? "",
   resendApiKey: () => process.env.RESEND_API_KEY ?? "",
-  resendFrom: () => process.env.RESEND_FROM_EMAIL ?? "ACHO Coffee <hello@acho.coffee>",
+  resendFrom: () => process.env.RESEND_FROM_EMAIL ?? "Biosphere Roast Works <hello@biosphereroastworks.com>",
   doku: {
     configured: () => Boolean(process.env.DOKU_CLIENT_ID && process.env.DOKU_SHARED_KEY),
     env: () => (process.env.DOKU_ENV === "production" ? "production" : "sandbox"),
@@ -22,7 +22,7 @@ export const env = {
     apiKey: () => process.env.DOKU_API_KEY ?? "",
     /** Fallback demo bila sandbox Doku tak terjangkau dari jaringan lokal. */
     demoFallback: () => process.env.DOKU_DEMO_FALLBACK === "1" || process.env.DOKU_DEMO_FALLBACK === "true",
-    merchantName: () => process.env.DOKU_MERCHANT_NAME ?? "ACHO Coffee",
+    merchantName: () => process.env.DOKU_MERCHANT_NAME ?? "Biosphere Roast Works",
     baseUrl: () =>
       process.env.DOKU_ENV === "production"
         ? "https://api.doku.com"

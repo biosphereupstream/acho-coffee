@@ -408,7 +408,7 @@ export function OrderManagement({
                 <Badge variant="outline" className="text-[10px]">Otomatis</Badge>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                Jadwalkan kurir {dispatchOrder?.courierCompany?.toUpperCase() ?? "ekspedisi"} untuk menjemput paket langsung di ACHO Roastery. Nomor resi dan tracking URL akan dibuat otomatis.
+                Jadwalkan kurir {dispatchOrder?.courierCompany?.toUpperCase() ?? "ekspedisi"} untuk menjemput paket langsung di Biosphere Roast Works Roastery. Nomor resi dan tracking URL akan dibuat otomatis.
               </p>
               <Button
                 onClick={handleDispatchBiteship}

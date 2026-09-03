@@ -90,7 +90,7 @@ export function PickupScheduleView({
               <Calendar className="h-5 w-5 text-gold-deep" /> Jadwal Pengambilan di Roastery
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Pelanggan yang memilih self-pickup langsung di ACHO Roastery Lab Bandung.
+              Pelanggan yang memilih self-pickup langsung di Biosphere Roast Works Lab Bandung.
             </p>
           </div>
           <Badge variant="outline" className="text-xs font-bold px-3 py-1">

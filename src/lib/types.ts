@@ -18,10 +18,27 @@ export const ORDER_STATUSES = [
 ] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
+export type ProductCategory =
+  | "beans"
+  | "botol_kale"
+  | "pet_can"
+  | "botol_1000"
+  | "simplicity_pouch"
+  | "espresso_pouch";
+
+export interface PackageVariant {
+  size: string;
+  weightGrams: number;
+  priceIdr: number;
+}
+
 export interface CatalogCoffee {
   slug: string;
   name: string;
   type: CoffeeType;
+  category?: ProductCategory;
+  subCategory?: "refreshing" | "creamy" | "single_origin" | "beans" | "espresso";
+  packageType?: string;
   origin: string;
   region: string;
   process: string;
@@ -32,6 +49,8 @@ export interface CatalogCoffee {
   story: string;
   priceIdr: number;
   weightGrams: number;
+  volumeMl?: number;
+  packageVariants?: PackageVariant[];
   imageUrl: string | null;
   badge?: string;
   art: { bg: string; accent: string; bean: string };

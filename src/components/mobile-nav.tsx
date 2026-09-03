@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,8 +32,18 @@ export function MobileNav({
       </SheetTrigger>
       <SheetContent side="right" className="w-72">
         <SheetHeader>
-          <SheetTitle className="text-left text-lg font-extrabold">
-            ACHO <span className="text-gold-gradient">COFFEE</span>
+          <SheetTitle className="text-left flex items-center gap-2.5">
+            <div className="h-8 w-8 shrink-0 overflow-hidden rounded-lg border border-gold/30 bg-secondary/50 p-0.5">
+              <Image src="/biosphere-logo.png" alt="Biosphere Roast Works" width={32} height={32} className="h-full w-full object-contain" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-[var(--font-display)] text-sm font-extrabold tracking-wider leading-none text-green-deep">
+                BIOSPHERE
+              </span>
+              <span className="text-[9px] font-bold tracking-widest text-gold-deep uppercase leading-tight mt-0.5">
+                Roast Works
+              </span>
+            </div>
           </SheetTitle>
         </SheetHeader>
         <nav className="mt-6 flex flex-col gap-1">

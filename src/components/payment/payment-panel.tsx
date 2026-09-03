@@ -192,7 +192,7 @@ export function PaymentPanel({ order }: { order: OrderRecord }) {
       </div>
       {channelFee > 0 && (
         <p className="mt-1 text-right text-xs text-muted-foreground">
-          Biaya transaksi kanal {formatIDR(channelFee)} <span className="font-semibold text-emerald-600">ditanggung ACHO Coffee 🎁</span>
+          Biaya transaksi kanal {formatIDR(channelFee)} <span className="font-semibold text-emerald-600">ditanggung Biosphere Roast Works 🎁</span>
         </p>
       )}
 
@@ -242,9 +242,9 @@ export function PaymentPanel({ order }: { order: OrderRecord }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-                payment.qrContent || `https://acho.coffee/status/${order.orderNumber}`
+                payment.qrContent || `https://biosphereroastery.vercel.app/status/${order.orderNumber}`
               )}`}
-              alt="QRIS ACHO Coffee"
+              alt="QRIS Biosphere Roast Works"
               className="h-full w-full object-contain"
             />
           </div>
@@ -254,7 +254,7 @@ export function PaymentPanel({ order }: { order: OrderRecord }) {
               {formatIDR(order.total)}
             </p>
             <p className="text-[11px] text-muted-foreground font-mono">
-              NMID: ID1020038918231 • ACHO COFFEE ROASTERY
+              NMID: ID1020038918231 • BIOSPHERE ROAST WORKS
             </p>
           </div>
 

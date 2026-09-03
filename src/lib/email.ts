@@ -13,11 +13,11 @@ function shell(inner: string): string {
   parts.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f9f8;padding:24px 12px;"><tr><td align="center">');
   parts.push('<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5ebe8;">');
   parts.push('<tr><td style="background:linear-gradient(120deg,' + BRAND + ' 0%,#0a5234 60%,#0d3b26 100%);padding:28px 32px;">');
-  parts.push('<div style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:1px;">ACHO <span style="color:' + GOLD + ';">COFFEE</span></div>');
-  parts.push('<div style="font-size:12px;color:#d9e8e0;margin-top:4px;">Fresh Roasting • Dipesan Hari Ini, Dipanggang Khusus</div>');
+  parts.push('<div style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:1px;">BIOSPHERE <span style="color:' + GOLD + ';">ROAST WORKS</span></div>');
+  parts.push('<div style="font-size:12px;color:#d9e8e0;margin-top:4px;">Where Science Meets Soul • Freshly Brewed · Straight to Your Door</div>');
   parts.push("</td></tr>");
   parts.push('<tr><td style="padding:32px;">' + inner + "</td></tr>");
-  parts.push('<tr><td style="padding:20px 32px;background:#0d3b26;color:#9fc3b2;font-size:11px;text-align:center;">&copy; ACHO Coffee Roastery — Jl. Kopi No. 1, Bandung, Indonesia</td></tr>');
+  parts.push('<tr><td style="padding:20px 32px;background:#0d3b26;color:#9fc3b2;font-size:11px;text-align:center;">&copy; Biosphere Roast Works — Bandung, Indonesia</td></tr>');
   parts.push("</table></td></tr></table></body></html>");
   return parts.join("");
 }

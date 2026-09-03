@@ -34,7 +34,7 @@ export function MobileProductHeader({ coffee }: { coffee: CatalogCoffee }) {
             {coffee.name}
           </h1>
           <p className="truncate text-xs text-muted-foreground">
-            {coffee.region} • {formatIDR(coffee.priceIdr)} / {coffee.weightGrams}g
+            {coffee.packageType || coffee.region} • {coffee.packageVariants ? "Mulai " + formatIDR(coffee.priceIdr) : formatIDR(coffee.priceIdr)}
           </p>
         </div>
 

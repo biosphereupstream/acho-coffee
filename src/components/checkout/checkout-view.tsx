@@ -720,8 +720,8 @@ export function CheckoutView({
               {/* Pickup Tab Content */}
               <TabsContent value="pickup" className="mt-6 space-y-4">
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Ambil langsung kopi segar di roastery kami: <b>ACHO Coffee Roastery, Jl. Kopi No. 1, Bandung</b>.
-                  Kapasitas roasting harian dipantau secara real-time.
+                  Ambil langsung pesanan segar di roastery kami: <b>Biosphere Roast Works, Sumur Bandung, Kota Bandung</b>.
+                  Kapasitas harian dipantau secara real-time.
                 </p>
 
                 <div>

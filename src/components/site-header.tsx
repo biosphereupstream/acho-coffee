@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Coffee } from "lucide-react";
+import Image from "next/image";
 import { createClient as getSupabaseServer } from "@/lib/server";
 import { AuthButtons } from "@/components/auth-buttons";
 import { MobileNav } from "@/components/mobile-nav";
@@ -30,13 +30,25 @@ export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-white/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg metal-green shadow-sm">
-            <Coffee className="h-5 w-5 text-gold-light" />
-          </span>
-          <span className="text-lg font-extrabold tracking-wide">
-            ACHO <span className="text-gold-gradient">COFFEE</span>
-          </span>
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-gold/30 bg-secondary/50 p-1 shadow-sm transition-transform duration-300 group-hover:scale-105">
+            <Image
+              src="/biosphere-logo.png"
+              alt="Biosphere Roast Works Logo"
+              width={40}
+              height={40}
+              className="h-full w-full object-contain"
+              priority
+            />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-[var(--font-display)] text-base font-extrabold tracking-wider leading-none text-green-deep group-hover:text-gold-deep transition-colors">
+              BIOSPHERE
+            </span>
+            <span className="text-[10px] font-bold tracking-widest text-gold-deep uppercase leading-tight mt-0.5">
+              Roast Works
+            </span>
+          </div>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

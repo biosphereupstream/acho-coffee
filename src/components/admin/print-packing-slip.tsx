@@ -41,7 +41,7 @@ export function PrintPackingSlipView({ order }: { order: OrderRecord }) {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-[var(--font-display)] text-xl font-black tracking-wider text-black">
-                ACHO ROASTERY
+                BIOSPHERE ROAST WORKS
               </span>
               <span className="rounded bg-black px-2 py-0.5 text-[10px] font-bold text-white uppercase">
                 SURAT JALAN / RESI
@@ -94,10 +94,10 @@ export function PrintPackingSlipView({ order }: { order: OrderRecord }) {
             <p className="font-bold text-neutral-500 uppercase tracking-wider text-[10px]">
               Pengirim:
             </p>
-            <p className="font-bold text-sm text-black mt-1">ACHO Coffee Roastery</p>
+            <p className="font-bold text-sm text-black mt-1">Biosphere Roast Works</p>
             <p className="text-neutral-700">0812-3456-7890</p>
             <p className="text-neutral-600 mt-1">
-              Jl. Dago No. 128, Coblong, Kota Bandung, Jawa Barat 40135
+              Sumur Bandung, Kota Bandung, Jawa Barat 40111
             </p>
           </div>
 

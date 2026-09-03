@@ -1,21 +1,30 @@
 import Link from "next/link";
-import { Coffee, Mail, MapPin, Phone } from "lucide-react";
+import Image from "next/image";
+import { Mail, MapPin, Phone } from "lucide-react";
 
 export function SiteFooter() {
   return (
     <footer className="metal-green-strong mt-auto text-primary-foreground/90">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10">
-              <Coffee className="h-5 w-5 text-gold-light" />
-            </span>
-            <span className="text-lg font-extrabold text-white">
-              ACHO <span className="text-gold-light">COFFEE</span>
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-white/20 bg-white/10 p-1">
+              <Image src="/biosphere-logo.png" alt="Biosphere Roast Works" width={40} height={40} className="h-full w-full object-contain" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-[var(--font-display)] text-base font-extrabold tracking-wider leading-none text-white">
+                BIOSPHERE
+              </span>
+              <span className="text-[10px] font-bold tracking-widest text-gold-light uppercase leading-tight mt-0.5">
+                Roast Works
+              </span>
+            </div>
           </div>
-          <p className="mt-4 text-sm leading-relaxed text-white/70">
-            Roastery kopi nusantara. Setiap pesanan dipanggang fresh setelah kamu bayar — bukan stok lama di rak.
+          <p className="mt-3 text-xs font-semibold text-gold-light tracking-wide uppercase">
+            Where Science Meets Soul
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-white/70">
+            Freshly brewed · straight to your door. Pilihan Classic Origin Beans, Botol Kale 250ml, Pet Can sealed, Botol 1 Liter, dan Simplicity Pouch.
           </p>
         </div>
 
@@ -44,19 +53,19 @@ export function SiteFooter() {
           <ul className="mt-4 space-y-3 text-sm">
             <li className="flex items-start gap-2">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold-light" />
-              Jl. Kopi No. 1, Bandung, Jawa Barat
+              Sumur Bandung, Kota Bandung, Jawa Barat
             </li>
             <li className="flex items-center gap-2">
               <Phone className="h-4 w-4 shrink-0 text-gold-light" /> +62 812-3456-7890
             </li>
             <li className="flex items-center gap-2">
-              <Mail className="h-4 w-4 shrink-0 text-gold-light" /> hello@acho.coffee
+              <Mail className="h-4 w-4 shrink-0 text-gold-light" /> hello@biosphereroastworks.com
             </li>
           </ul>
         </div>
       </div>
       <div className="border-t border-white/10 py-4 text-center text-xs text-white/50">
-        © {new Date().getFullYear()} ACHO Coffee Roastery — Dipanggang dengan cinta di Bandung ☕
+        © {new Date().getFullYear()} Biosphere Roast Works — Where Science Meets Soul ☕
       </div>
     </footer>
   );

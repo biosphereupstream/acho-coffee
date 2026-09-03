@@ -78,8 +78,12 @@ export default async function PesanPage({ params }: { params: Promise<{ slug: st
               </blockquote>
 
               <div className="mt-5 flex items-baseline gap-2 border-t border-border/70 pt-4">
-                <p className="text-2xl font-extrabold text-primary">{formatIDR(coffee.priceIdr)}</p>
-                <p className="text-sm text-muted-foreground">/ {coffee.weightGrams}g</p>
+                <p className="text-2xl font-extrabold text-primary">
+                  {coffee.packageVariants ? "Mulai " + formatIDR(coffee.priceIdr) : formatIDR(coffee.priceIdr)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {coffee.packageVariants ? "(Pilihan 100g - 1kg)" : coffee.volumeMl ? `/ ${coffee.volumeMl}ml` : `/ ${coffee.weightGrams}g`}
+                </p>
               </div>
             </div>
           </div>

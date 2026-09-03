@@ -33,11 +33,14 @@ export function CoffeeBagArt({ coffee, className }: { coffee: CatalogCoffee; cla
 
       {/* label */}
       <rect x="150" y="185" width="100" height="130" rx="10" fill="#fdfaf3" stroke={"url(#" + goldId + ")"} strokeWidth="3" />
-      <text x="200" y="215" textAnchor="middle" fontSize="17" fontWeight="800" fill="#0d3b26" fontFamily="Georgia, serif">
-        ACHO
+      <text x="200" y="210" textAnchor="middle" fontSize="12" fontWeight="900" fill="#0d3b26" letterSpacing="1">
+        BIOSPHERE
       </text>
-      <text x="200" y="238" textAnchor="middle" fontSize="12" fontWeight="700" fill="#c9a227" letterSpacing="2">
-        {coffee.type === "single_origin" ? "SINGLE ORIGIN" : "HOUSE BLEND"}
+      <text x="200" y="223" textAnchor="middle" fontSize="8" fontWeight="800" fill="#c9a227" letterSpacing="1.5">
+        ROAST WORKS
+      </text>
+      <text x="200" y="238" textAnchor="middle" fontSize="10" fontWeight="700" fill="#666" letterSpacing="1">
+        {coffee.category === "beans" ? (coffee.type === "single_origin" ? "SINGLE ORIGIN" : "HOUSE BLEND") : (coffee.packageType || "FRESH BREW")}
       </text>
 
       {/* biji kopi */}

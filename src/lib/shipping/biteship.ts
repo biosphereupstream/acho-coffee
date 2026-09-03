@@ -163,11 +163,11 @@ export async function createShipment(params: {
     }>("/orders", {
       method: "POST",
       body: JSON.stringify({
-        shipper_contact_name: "ACHO Coffee Roastery",
+        shipper_contact_name: "Biosphere Roast Works",
         shipper_contact_phone: "081234567890",
-        shipper_contact_email: "hello@acho.coffee",
-        shipper_organization: "ACHO Coffee",
-        origin_contact_name: "ACHO Coffee Roastery",
+        shipper_contact_email: "hello@biosphereroastworks.com",
+        shipper_organization: "Biosphere Roast Works",
+        origin_contact_name: "Biosphere Roast Works",
         origin_contact_phone: "081234567890",
         origin_address: env.biteship.originAddress(),
         origin_area_id: env.biteship.originAreaId(),
