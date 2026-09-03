@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { createContext, useContext, useEffect, useState, useTransition } from "react";
-import type { CartItemInput, CartItemRecord } from "@/lib/types";
+import type { CartItemInput, CartItemRecord, WholesaleDiscountResult } from "@/lib/types";
+import { calculateWholesaleDiscount } from "@/lib/constants";
 import { toast } from "sonner";
 
 interface AppliedVoucher {
@@ -21,6 +22,7 @@ interface CartContextValue {
   subtotal: number;
   totalWeightGrams: number;
   appliedVoucher: AppliedVoucher | null;
+  wholesaleDiscount: WholesaleDiscountResult;
   addItem: (input: CartItemInput) => Promise<boolean>;
   updateQty: (id: string, quantity: number) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
@@ -195,6 +197,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     toast.info("Voucher dibatalkan");
   }
 
+  const wholesaleDiscount = React.useMemo(() => calculateWholesaleDiscount(items), [items]);
+
   return (
     <CartContext.Provider
       value={{
@@ -207,6 +211,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         subtotal,
         totalWeightGrams,
         appliedVoucher,
+        wholesaleDiscount,
         addItem,
         updateQty,
         removeItem,

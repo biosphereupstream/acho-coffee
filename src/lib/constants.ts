@@ -99,3 +99,54 @@ export const GRIND_LABELS: Record<string, string> = {
   coarse: "Giling Kasar (Coarse)",
 };
 
+export const WHOLESALE_TIERS = [
+  { minKg: 3, maxKg: 5, discountPercent: 15, label: "Starter Cafe (3–5 kg)", badge: "Diskon 15%" },
+  { minKg: 6, maxKg: 10, discountPercent: 25, label: "Busy Coffee Shop (6–10 kg)", badge: "Diskon 25%" },
+  { minKg: 11, maxKg: Infinity, discountPercent: 35, label: "Roastery Partner (>10 kg)", badge: "Diskon 35%" },
+] as const;
+
+export function calculateWholesaleDiscount(items: Array<{ weightGrams?: number; quantity: number; unitPriceIdr: number }>) {
+  let totalBeanGrams = 0;
+  let beanSubtotal = 0;
+
+  for (const item of items) {
+    const weight = item.weightGrams ?? 0;
+    // Biji kopi memiliki bobot gram (100g, 200g, 500g, 1000g)
+    if (weight >= 100) {
+      totalBeanGrams += weight * item.quantity;
+      beanSubtotal += item.unitPriceIdr * item.quantity;
+    }
+  }
+
+  const totalBeanKg = Math.round((totalBeanGrams / 1000) * 10) / 10;
+
+  let currentTier: (typeof WHOLESALE_TIERS)[number] | null = null;
+  let nextTier: (typeof WHOLESALE_TIERS)[number] | null = null;
+
+  for (let i = 0; i < WHOLESALE_TIERS.length; i++) {
+    const t = WHOLESALE_TIERS[i];
+    if (totalBeanKg >= t.minKg) {
+      currentTier = t;
+    } else if (!nextTier && totalBeanKg < t.minKg) {
+      nextTier = t;
+      break;
+    }
+  }
+
+  const eligible = currentTier !== null;
+  const discountPercent = currentTier ? currentTier.discountPercent : 0;
+  const discountAmount = currentTier ? Math.round((beanSubtotal * discountPercent) / 100) : 0;
+  const kgNeededForNextTier = nextTier ? Math.max(0, Math.round((nextTier.minKg - totalBeanKg) * 10) / 10) : 0;
+
+  return {
+    totalBeanKg,
+    eligible,
+    tier: currentTier,
+    discountPercent,
+    discountAmount,
+    nextTier,
+    kgNeededForNextTier,
+  };
+}
+
+

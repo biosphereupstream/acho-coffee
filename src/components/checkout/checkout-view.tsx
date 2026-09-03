@@ -60,6 +60,7 @@ export function CheckoutView({
     subtotal,
     totalWeightGrams,
     appliedVoucher,
+    wholesaleDiscount,
     applyVoucherCode,
     removeVoucher,
     clearCartItems,
@@ -216,12 +217,14 @@ export function CheckoutView({
   }, [fulfillment, areaId, items]);
 
   const rawShippingFee = fulfillment === "delivery" ? selectedCourier?.price ?? 18000 : 0;
-  let discount = appliedVoucher ? appliedVoucher.discountAmount : 0;
+  const wholesaleAmount = wholesaleDiscount.discountAmount;
+  let voucherDiscount = appliedVoucher ? appliedVoucher.discountAmount : 0;
   if (appliedVoucher?.code === "FREESHIP") {
-    discount = rawShippingFee;
+    voucherDiscount = rawShippingFee;
   }
   const effectiveShippingFee = appliedVoucher?.code === "FREESHIP" ? 0 : rawShippingFee;
-  const grandTotal = Math.max(0, subtotal + effectiveShippingFee - (appliedVoucher?.code === "FREESHIP" ? 0 : discount));
+  const totalDiscount = wholesaleAmount + (appliedVoucher?.code === "FREESHIP" ? 0 : voucherDiscount);
+  const grandTotal = Math.max(0, subtotal + effectiveShippingFee - totalDiscount);
 
   async function handleApplyVoucher(e: React.FormEvent) {
     e.preventDefault();
@@ -278,7 +281,7 @@ export function CheckoutView({
         courierCode: fulfillment === "delivery" ? selectedCourier?.courierCode : undefined,
         shippingFee: rawShippingFee,
         subtotal,
-        discountAmount: discount,
+        discountAmount: totalDiscount,
         voucherCode: appliedVoucher?.code || undefined,
         total: grandTotal,
         items: items.map((i) => ({
@@ -879,29 +882,35 @@ export function CheckoutView({
             )}
 
             {/* Rincian Harga */}
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div className="flex justify-between">
-                <span>Subtotal ({totalCount} bag)</span>
-                <span className="font-semibold text-foreground">{formatIDR(subtotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Ongkos Kirim ({fulfillment === "pickup" ? "Ambil Sendiri" : "Kurir"})</span>
-                <span className="font-semibold text-foreground">
-                  {fulfillment === "pickup" ? "Gratis" : formatIDR(rawShippingFee)}
-                </span>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-green-600 font-semibold">
-                  <span>Potongan Voucher</span>
-                  <span>-{formatIDR(discount)}</span>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Subtotal ({totalCount} item)</span>
+                  <span className="font-semibold text-foreground">{formatIDR(subtotal)}</span>
                 </div>
-              )}
-              <Separator className="my-3" />
-              <div className="flex items-baseline justify-between text-base font-extrabold text-foreground">
-                <span>Total Bayar</span>
-                <span className="text-xl text-green-deep">{formatIDR(grandTotal)}</span>
+                {wholesaleAmount > 0 && (
+                  <div className="flex justify-between text-gold-deep font-semibold">
+                    <span>Diskon Grosir Kafe ({wholesaleDiscount.discountPercent}%)</span>
+                    <span>-{formatIDR(wholesaleAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Ongkos Kirim ({fulfillment === "pickup" ? "Ambil Sendiri" : "Kurir"})</span>
+                  <span className="font-semibold text-foreground">
+                    {fulfillment === "pickup" ? "Gratis" : formatIDR(rawShippingFee)}
+                  </span>
+                </div>
+                {voucherDiscount > 0 && (
+                  <div className="flex justify-between text-green-600 font-semibold">
+                    <span>Potongan Voucher ({appliedVoucher?.code})</span>
+                    <span>-{formatIDR(voucherDiscount)}</span>
+                  </div>
+                )}
+                <Separator className="my-3" />
+                <div className="flex items-baseline justify-between text-base font-extrabold text-foreground">
+                  <span>Total Bayar</span>
+                  <span className="text-xl text-green-deep">{formatIDR(grandTotal)}</span>
+                </div>
               </div>
-            </div>
 
             <Button
               variant="gold"

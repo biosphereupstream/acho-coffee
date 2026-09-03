@@ -10,6 +10,7 @@ import {
   Minus,
   Plus,
   ShoppingBag,
+  Sparkles,
   Tag,
   Trash2,
   X,
@@ -36,6 +37,7 @@ export function CartDrawer() {
     totalCount,
     subtotal,
     totalWeightGrams,
+    wholesaleDiscount,
     updateQty,
     removeItem,
     appliedVoucher,
@@ -48,7 +50,8 @@ export function CartDrawer() {
   const [validatingVoucher, setValidatingVoucher] = useState(false);
 
   const discount = appliedVoucher ? appliedVoucher.discountAmount : 0;
-  const grandTotal = Math.max(0, subtotal - discount);
+  const wholesaleAmount = wholesaleDiscount.discountAmount;
+  const grandTotal = Math.max(0, subtotal - wholesaleAmount - discount);
 
   async function handleApplyVoucher(e: React.FormEvent) {
     e.preventDefault();
@@ -187,6 +190,43 @@ export function CartDrawer() {
 
             {/* Voucher and Totals Footer */}
             <div className="border-t border-border/80 bg-card p-5 space-y-4">
+              {/* Wholesale Tier Notice Card */}
+              {wholesaleDiscount.eligible ? (
+                <div className="rounded-2xl border border-gold/50 bg-gradient-to-r from-accent/50 to-card p-3 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-gold-deep shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-foreground">
+                          Grosir: {wholesaleDiscount.tier?.label}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Total {wholesaleDiscount.totalBeanKg} kg biji kopi
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="gold" className="text-[11px] font-black">
+                      Diskon {wholesaleDiscount.discountPercent}%
+                    </Badge>
+                  </div>
+                  {wholesaleDiscount.nextTier && (
+                    <p className="mt-2 text-[10px] text-gold-deep font-semibold border-t border-gold/20 pt-1.5">
+                      Tambah {wholesaleDiscount.kgNeededForNextTier} kg lagi untuk membuka diskon {wholesaleDiscount.nextTier.discountPercent}%!
+                    </p>
+                  )}
+                </div>
+              ) : wholesaleDiscount.totalBeanKg > 0 ? (
+                <div className="rounded-2xl border border-border bg-secondary/40 p-3 text-xs text-muted-foreground flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-foreground">Program Grosir Kafe</p>
+                    <p className="text-[11px]">Beli min. 3 kg untuk diskon otomatis 15%</p>
+                  </div>
+                  <span className="font-mono font-bold text-green-deep">
+                    {wholesaleDiscount.totalBeanKg} / 3 kg
+                  </span>
+                </div>
+              ) : null}
+
               {/* Voucher Section */}
               {appliedVoucher ? (
                 <div className="flex items-center justify-between rounded-xl bg-gold/10 border border-gold/30 p-2.5 px-3 text-xs">
@@ -228,9 +268,15 @@ export function CartDrawer() {
               {/* Price Breakdown */}
               <div className="space-y-1.5 text-xs text-muted-foreground">
                 <div className="flex justify-between">
-                  <span>Subtotal Produk ({totalCount} bag)</span>
+                  <span>Subtotal Produk ({totalCount} item)</span>
                   <span className="font-medium text-foreground">{formatIDR(subtotal)}</span>
                 </div>
+                {wholesaleAmount > 0 && (
+                  <div className="flex justify-between text-gold-deep font-bold">
+                    <span>Diskon Grosir Kafe ({wholesaleDiscount.discountPercent}%)</span>
+                    <span>-{formatIDR(wholesaleAmount)}</span>
+                  </div>
+                )}
                 {discount > 0 && (
                   <div className="flex justify-between text-green-600 font-medium">
                     <span>Diskon Voucher ({appliedVoucher?.code})</span>

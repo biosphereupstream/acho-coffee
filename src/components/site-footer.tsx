@@ -32,6 +32,7 @@ export function SiteFooter() {
           <h4 className="text-sm font-bold uppercase tracking-wider text-gold-light">Jelajahi</h4>
           <ul className="mt-4 space-y-2 text-sm">
             <li><Link href="/kopi" className="hover:text-gold-light">Katalog Kopi</Link></li>
+            <li><Link href="/wholesale" className="hover:text-gold-light font-semibold text-gold-light">Kemitraan Kafe (Wholesale)</Link></li>
             <li><Link href="/#proses" className="hover:text-gold-light">Proses Roasting</Link></li>
             <li><Link href="/masuk" className="hover:text-gold-light">Masuk / Daftar</Link></li>
             <li><Link href="/status" className="hover:text-gold-light">Lacak Pesanan</Link></li>

@@ -258,3 +258,35 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   completed: "Selesai",
   cancelled: "Dibatalkan",
 };
+
+export interface WholesaleTier {
+  minKg: number;
+  maxKg: number;
+  discountPercent: number;
+  label: string;
+  badge: string;
+}
+
+export interface WholesaleDiscountResult {
+  totalBeanKg: number;
+  eligible: boolean;
+  tier: WholesaleTier | null;
+  discountPercent: number;
+  discountAmount: number;
+  nextTier: WholesaleTier | null;
+  kgNeededForNextTier: number;
+}
+
+export interface WholesaleSampleRequest {
+  businessName: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  city: string;
+  address: string;
+  espressoMachine?: string;
+  monthlyEstimateKg?: string;
+  samplePreferences?: string[];
+  notes?: string;
+}
+

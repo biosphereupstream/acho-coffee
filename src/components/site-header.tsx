@@ -8,6 +8,7 @@ import { CartTrigger } from "@/components/cart/cart-trigger";
 const NAV = [
   { href: "/", label: "Beranda" },
   { href: "/kopi", label: "Kopi" },
+  { href: "/wholesale", label: "Wholesale (B2B)" },
   { href: "/#proses", label: "Proses" },
   { href: "/#tentang", label: "Tentang" },
 ];
