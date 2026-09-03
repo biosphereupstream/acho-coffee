@@ -538,11 +538,11 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
                     </span>
                   </div>
 
-                  <div className="mt-5 flex flex-wrap items-center gap-3 pt-4 border-t border-border/60">
+                  <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 pt-4 border-t border-border/60">
                     <Button
                       type="button"
                       variant="outline"
-                      className="gap-2 font-bold border-gold/70 text-gold-deep hover:bg-gold/10 h-11"
+                      className="w-full sm:w-auto gap-2 font-bold border-gold/70 text-gold-deep hover:bg-gold/10 h-11 justify-center"
                       onClick={handleAddToCart}
                       disabled={addingToCart}
                     >
@@ -551,7 +551,7 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
                     </Button>
                     <Button
                       type="button"
-                      className="gap-2 font-bold h-11"
+                      className="w-full sm:w-auto gap-2 font-bold h-11 justify-center"
                       onClick={nextStep}
                     >
                       Lanjut ke Pengiriman <ChevronRight className="h-4 w-4" />
@@ -776,11 +776,11 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
                     </span>
                   </div>
 
-                  <div className="mt-6 flex flex-wrap items-center gap-3 pt-4 border-t border-border/60">
+                  <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 pt-4 border-t border-border/60">
                     <Button
                       type="button"
                       variant="outline"
-                      className="gap-2 font-bold border-gold/70 text-gold-deep hover:bg-gold/10 h-11"
+                      className="w-full sm:w-auto gap-2 font-bold border-gold/70 text-gold-deep hover:bg-gold/10 h-11 justify-center"
                       onClick={handleAddToCart}
                       disabled={addingToCart}
                     >
@@ -789,7 +789,7 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
                     </Button>
                     <Button
                       type="button"
-                      className="gap-2 font-bold h-11"
+                      className="w-full sm:w-auto gap-2 font-bold h-11 justify-center"
                       onClick={nextStep}
                     >
                       Lanjut Beli Langsung <ChevronRight className="h-4 w-4" />
@@ -813,11 +813,15 @@ export function OrderBuilder({ coffee }: { coffee: CatalogCoffee }) {
 
                 <Tabs value={fulfillment} onValueChange={(v) => setFulfillment(v as "pickup" | "delivery")}>
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="pickup" className="gap-2">
-                      <CalendarClock className="h-4 w-4" /> Ambil Sendiri (Pickup)
+                    <TabsTrigger value="pickup" className="gap-1.5 font-semibold text-xs sm:text-sm">
+                      <CalendarClock className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                      <span>Ambil Sendiri</span>
+                      <span className="hidden sm:inline">(Pickup)</span>
                     </TabsTrigger>
-                    <TabsTrigger value="delivery" className="gap-2">
-                      <Truck className="h-4 w-4" /> Kirim Kurir (Delivery)
+                    <TabsTrigger value="delivery" className="gap-1.5 font-semibold text-xs sm:text-sm">
+                      <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                      <span>Kirim Kurir</span>
+                      <span className="hidden sm:inline">(Delivery)</span>
                     </TabsTrigger>
                   </TabsList>
 

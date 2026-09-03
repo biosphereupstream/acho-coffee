@@ -5,7 +5,7 @@ import { Mail, MapPin, Phone } from "lucide-react";
 export function SiteFooter() {
   return (
     <footer className="metal-green-strong mt-auto text-primary-foreground/90">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-4">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:gap-10 sm:px-6 sm:py-14 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-white/20 bg-white/10 p-1">

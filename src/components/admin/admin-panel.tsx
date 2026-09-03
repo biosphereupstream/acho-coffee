@@ -26,9 +26,9 @@ export function AdminPanel({ orders, demo }: { orders: OrderRecord[]; demo: bool
       )}
 
       {/* Top Bar Header with Refresh & Quick Print */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-[var(--font-display)] text-2xl font-black text-green-deep">
+          <h2 className="font-[var(--font-display)] text-xl sm:text-2xl font-black text-green-deep">
             Roastery Command Center
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -36,10 +36,10 @@ export function AdminPanel({ orders, demo }: { orders: OrderRecord[]; demo: bool
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs font-semibold">
             <Link href="/admin/print/bag-labels">
-              <Tag className="h-3.5 w-3.5 text-gold-deep" /> Cetak Semua Label Kantong
+              <Tag className="h-3.5 w-3.5 text-gold-deep" /> Cetak Semua Label
             </Link>
           </Button>
 
@@ -51,18 +51,18 @@ export function AdminPanel({ orders, demo }: { orders: OrderRecord[]; demo: bool
 
       {/* 3-Tab Command Center */}
       <Tabs defaultValue="planner" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg h-11 p-1 bg-secondary/80">
-          <TabsTrigger value="planner" className="flex items-center gap-1.5 text-xs font-bold">
-            <Flame className="h-3.5 w-3.5 text-amber-600" />
-            <span className="hidden sm:inline">Batch</span> Planner
+        <TabsList className="grid w-full grid-cols-3 max-w-lg h-auto sm:h-11 p-1 bg-secondary/80">
+          <TabsTrigger value="planner" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 py-2 text-[11px] sm:text-xs font-bold">
+            <Flame className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+            <span>Planner</span>
           </TabsTrigger>
-          <TabsTrigger value="orders" className="flex items-center gap-1.5 text-xs font-bold">
-            <Package className="h-3.5 w-3.5 text-primary" />
-            Kelola Pesanan
+          <TabsTrigger value="orders" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 py-2 text-[11px] sm:text-xs font-bold">
+            <Package className="h-3.5 w-3.5 text-primary shrink-0" />
+            <span>Pesanan</span>
           </TabsTrigger>
-          <TabsTrigger value="pickups" className="flex items-center gap-1.5 text-xs font-bold">
-            <Calendar className="h-3.5 w-3.5 text-gold-deep" />
-            Jadwal Pickup
+          <TabsTrigger value="pickups" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 py-2 text-[11px] sm:text-xs font-bold">
+            <Calendar className="h-3.5 w-3.5 text-gold-deep shrink-0" />
+            <span>Pickup</span>
           </TabsTrigger>
         </TabsList>
 

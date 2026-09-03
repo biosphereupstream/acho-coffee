@@ -87,13 +87,13 @@ export function StatusClient({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <div className="glossy-card rounded-2xl border border-border p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-4">
+      <div className="glossy-card rounded-2xl border border-border p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3 sm:pb-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nomor Pesanan</p>
-            <p className="text-lg font-extrabold text-green-deep">{order.orderNumber}</p>
+            <p className="text-base sm:text-lg font-extrabold text-green-deep">{order.orderNumber}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <Button size="sm" variant="outline" asChild className="gap-1.5 text-xs font-semibold">
               <Link href={"/faktur/" + order.orderNumber}>
                 <FileText className="h-3.5 w-3.5 text-muted-foreground" /> Faktur
@@ -106,9 +106,9 @@ export function StatusClient({
         </div>
 
         {order.paymentStatus !== "paid" && order.status === "pending_payment" && (
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gold/40 bg-accent/60 px-4 py-3">
-            <p className="text-sm font-semibold text-accent-foreground">Pesanan menunggu pembayaran sebesar {formatIDR(order.total)}</p>
-            <Button size="sm" variant="gold" asChild>
+          <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-gold/40 bg-accent/60 p-3 sm:px-4 sm:py-3">
+            <p className="text-xs sm:text-sm font-semibold text-accent-foreground">Pesanan menunggu pembayaran sebesar {formatIDR(order.total)}</p>
+            <Button size="sm" variant="gold" asChild className="w-full sm:w-auto">
               <Link href={"/pembayaran/" + order.orderNumber}>Bayar Sekarang</Link>
             </Button>
           </div>
@@ -119,15 +119,15 @@ export function StatusClient({
         </div>
 
         {order.trackingNo && (
-          <div className="mt-6 rounded-xl border border-border bg-secondary/40 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-bold text-green-deep">🚚 Tracing Kurir — {order.courierCompany?.toUpperCase() ?? "Kurir"}</p>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => copyText(order.trackingNo ?? "")}>
-                  <Copy className="h-3.5 w-3.5" /> {order.trackingNo}
+          <div className="mt-6 rounded-xl border border-border bg-secondary/40 p-3.5 sm:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <p className="text-xs sm:text-sm font-bold text-green-deep">🚚 Tracing Kurir — {order.courierCompany?.toUpperCase() ?? "Kurir"}</p>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => copyText(order.trackingNo ?? "")} className="max-w-[180px] truncate text-xs">
+                  <Copy className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{order.trackingNo}</span>
                 </Button>
                 {order.trackingUrl && (
-                  <Button size="sm" variant="ghost" asChild>
+                  <Button size="sm" variant="ghost" asChild className="text-xs">
                     <a href={order.trackingUrl} target="_blank" rel="noreferrer">
                       <ExternalLink className="h-3.5 w-3.5" /> Lacak
                     </a>

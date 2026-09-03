@@ -389,7 +389,7 @@ export function OrderManagement({
 
       {/* Courier Dispatch / Resi Dialog */}
       <Dialog open={Boolean(dispatchOrder)} onOpenChange={(open) => !open && setDispatchOrder(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[95vw] sm:w-full sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-green-deep">
               <Truck className="h-5 w-5 text-primary" /> Kirim Pesanan {dispatchOrder?.orderNumber}

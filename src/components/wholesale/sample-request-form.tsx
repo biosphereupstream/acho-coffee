@@ -105,7 +105,7 @@ export function SampleRequestForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="glossy-card rounded-3xl border border-border bg-card p-6 sm:p-10 shadow-md space-y-6"
+      className="glossy-card rounded-3xl border border-border bg-card p-4 sm:p-10 shadow-md space-y-5 sm:space-y-6"
     >
       <div className="border-b border-border/80 pb-4">
         <Badge variant="secondary" className="text-primary font-bold gap-1">

@@ -42,22 +42,22 @@ export function AccountTabs({
         ) : (
           <div className="space-y-4">
             {orders.map((o) => (
-              <div key={o.orderNumber} className="glossy-card rounded-2xl border border-border p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
+              <div key={o.orderNumber} className="glossy-card rounded-2xl border border-border p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-extrabold text-green-deep">{o.orderNumber}</p>
                     <p className="text-xs text-muted-foreground">
                       {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(o.createdAt))}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge variant={o.paymentStatus === "paid" ? "default" : o.status === "cancelled" ? "destructive" : "gold"}>
                       {STATUS_LABELS[o.status]}
                     </Badge>
-                    <Button size="sm" variant="outline" asChild>
+                    <Button size="sm" variant="outline" asChild className="text-xs h-8">
                       <Link href={"/status/" + o.orderNumber}>Detail</Link>
                     </Button>
-                    <Button size="sm" variant="outline" asChild>
+                    <Button size="sm" variant="outline" asChild className="text-xs h-8">
                       <Link href={"/faktur/" + o.orderNumber}>
                         <FileText className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
                         Faktur
@@ -66,7 +66,7 @@ export function AccountTabs({
                   </div>
                 </div>
                 <Separator className="my-3" />
-                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs sm:text-sm">
                   <p className="text-muted-foreground">
                     {o.items.map((it) => it.coffeeName).join(", ")} • {o.items.reduce((s, it) => s + it.quantity, 0)} pcs •{" "}
                     {o.fulfillment === "pickup" ? "Ambil di Roastery" : "Dikirim"}
@@ -75,7 +75,7 @@ export function AccountTabs({
                 </div>
                 {o.paymentStatus !== "paid" && o.status === "pending_payment" && (
                   <div className="mt-3">
-                    <Button size="sm" variant="gold" asChild>
+                    <Button size="sm" variant="gold" asChild className="w-full sm:w-auto">
                       <Link href={"/pembayaran/" + o.orderNumber}>Bayar Sekarang</Link>
                     </Button>
                   </div>

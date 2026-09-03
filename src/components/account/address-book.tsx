@@ -345,9 +345,9 @@ export function AddressBook({
 
       {/* Add / Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full sm:max-w-lg p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="font-[var(--font-display)] text-xl font-bold text-green-deep">
+            <DialogTitle className="font-[var(--font-display)] text-lg sm:text-xl font-bold text-green-deep">
               {editingId ? "Ubah Alamat Pengiriman" : "Tambah Alamat Baru"}
             </DialogTitle>
           </DialogHeader>

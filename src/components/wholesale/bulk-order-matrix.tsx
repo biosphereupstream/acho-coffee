@@ -187,7 +187,7 @@ export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
           return (
             <div
               key={coffee.slug}
-              className={`gold-ring-hover glossy-card relative flex flex-col justify-between rounded-3xl border p-6 transition-all duration-300 ${
+              className={`gold-ring-hover glossy-card relative flex flex-col justify-between rounded-3xl border p-4 sm:p-6 transition-all duration-300 ${
                 isSelected
                   ? "border-gold bg-accent/20 shadow-md ring-1 ring-gold/40"
                   : "border-border bg-card shadow-xs"
@@ -197,7 +197,7 @@ export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-[var(--font-display)] text-lg font-black text-green-deep">
+                      <h4 className="font-[var(--font-display)] text-base sm:text-lg font-black text-green-deep">
                         {coffee.name}
                       </h4>
                       <Badge variant="outline" className="text-[10px] font-mono">1kg Bag</Badge>
@@ -214,7 +214,7 @@ export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <span className="font-mono text-base font-extrabold text-green-deep">
                       {formatIDR(price1kg)}
                     </span>
@@ -223,7 +223,7 @@ export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
                 </div>
 
                 {/* Profil Roasting & Gilingan Picker */}
-                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border/60 pt-4 text-xs">
+                <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-border/60 pt-4 text-xs">
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1">
                       <Flame className="h-3 w-3 text-gold-deep" /> Profil Roasting
@@ -298,8 +298,8 @@ export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
       </div>
 
       {/* Sticky Bottom Summary & Add-to-cart Bar */}
-      <div className="rounded-3xl border border-gold/50 bg-gradient-to-r from-card via-secondary/40 to-card p-6 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+      <div className="rounded-3xl border border-gold/50 bg-gradient-to-r from-card via-secondary/40 to-card p-4 sm:p-6 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Ringkasan Pemesanan Bulk:</span>

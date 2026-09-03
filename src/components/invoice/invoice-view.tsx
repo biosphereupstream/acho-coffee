@@ -42,10 +42,10 @@ export function InvoiceView({ order }: { order: OrderRecord }) {
       {/* Invoice Document Container */}
       <div
         id="invoice-document"
-        className="rounded-2xl border border-border bg-card p-6 sm:p-10 shadow-sm print:border-none print:p-0 print:shadow-none print:bg-white text-foreground"
+        className="rounded-2xl border border-border bg-card p-4 sm:p-10 shadow-sm print:border-none print:p-0 print:shadow-none print:bg-white text-foreground"
       >
         {/* Header: Brand & Invoice Meta */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between border-b border-border/80 pb-6 gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between border-b border-border/80 pb-6 gap-4 sm:gap-6">
           <div>
             <div className="flex items-center gap-2">
               <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-gold/40 bg-secondary/50 p-1">
@@ -72,7 +72,7 @@ export function InvoiceView({ order }: { order: OrderRecord }) {
             <Badge variant="outline" className="text-xs tracking-wider uppercase font-bold px-2.5 py-0.5 border-primary/40 text-primary">
               Faktur Resmi
             </Badge>
-            <p className="mt-2 font-mono text-xl font-black text-green-deep">
+            <p className="mt-2 font-mono text-lg sm:text-xl font-black text-green-deep">
               {order.orderNumber}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -149,8 +149,8 @@ export function InvoiceView({ order }: { order: OrderRecord }) {
           <p className="font-bold text-muted-foreground uppercase tracking-wider text-[11px] mb-3">
             Rincian Pesanan
           </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full min-w-[520px] text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-border bg-secondary/30 text-muted-foreground font-semibold">
                   <th className="py-2.5 px-3">No.</th>

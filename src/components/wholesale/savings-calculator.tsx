@@ -33,32 +33,32 @@ export function SavingsCalculator() {
   const savingsPerCup = estimatedCups > 0 ? Math.round(savingsAmount / estimatedCups) : 0;
 
   return (
-    <div className="glossy-card relative overflow-hidden rounded-3xl border border-gold/40 bg-gradient-to-br from-card via-background to-secondary/30 p-6 sm:p-10 shadow-lg">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/80 pb-6">
+    <div className="glossy-card relative overflow-hidden rounded-3xl border border-gold/40 bg-gradient-to-br from-card via-background to-secondary/30 p-4 sm:p-10 shadow-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-5 sm:pb-6">
         <div>
           <Badge variant="gold" className="text-primary font-bold gap-1.5">
             <Calculator className="h-3.5 w-3.5" /> Simulasi Keuntungan Kafe
           </Badge>
-          <h3 className="mt-2 font-[var(--font-display)] text-2xl font-black text-green-deep sm:text-3xl">
+          <h3 className="mt-2 font-[var(--font-display)] text-xl sm:text-2xl lg:text-3xl font-black text-green-deep">
             Kalkulator Penghematan Grosir
           </h3>
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Geser slider sesuai estimasi kebutuhan biji kopi kedai Anda tiap bulan.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-gold/30 bg-secondary/50 px-4 py-2 text-right">
+        <div className="rounded-2xl border border-gold/30 bg-secondary/50 px-3.5 py-2 sm:px-4 sm:py-2 text-left sm:text-right self-start sm:self-auto">
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tier Kemitraan</span>
-          <p className="font-[var(--font-display)] text-sm font-extrabold text-gold-deep">{tierLabel}</p>
+          <p className="font-[var(--font-display)] text-xs sm:text-sm font-extrabold text-gold-deep">{tierLabel}</p>
         </div>
       </div>
 
-      <div className="mt-8 space-y-6">
+      <div className="mt-6 sm:mt-8 space-y-6">
         {/* Slider input */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-bold text-foreground">Kebutuhan Biji Kopi per Bulan:</span>
-            <span className="font-mono text-2xl font-black text-green-deep">{kgPerMonth} <span className="text-sm font-semibold text-muted-foreground">kg/bulan</span></span>
+            <span className="text-xs sm:text-sm font-bold text-foreground">Kebutuhan per Bulan:</span>
+            <span className="font-mono text-xl sm:text-2xl font-black text-green-deep">{kgPerMonth} <span className="text-xs sm:text-sm font-semibold text-muted-foreground">kg/bulan</span></span>
           </div>
 
           <input
@@ -71,17 +71,17 @@ export function SavingsCalculator() {
             className="w-full h-3 bg-secondary rounded-lg appearance-none cursor-pointer accent-amber-600 dark:accent-amber-500"
           />
 
-          <div className="flex justify-between text-[11px] text-muted-foreground font-mono mt-1">
+          <div className="flex justify-between text-[10px] sm:text-[11px] text-muted-foreground font-mono mt-1.5">
             <span>1 kg</span>
-            <span className="text-gold-deep font-bold">Tier 1 (3kg / 15%)</span>
-            <span className="text-gold-deep font-bold">Tier 2 (6kg / 25%)</span>
-            <span className="text-gold-deep font-bold">Tier 3 (11kg+ / 35%)</span>
+            <span className="text-gold-deep font-bold">Tier 1 (15%)</span>
+            <span className="text-gold-deep font-bold hidden sm:inline">Tier 2 (25%)</span>
+            <span className="text-gold-deep font-bold">Tier 3 (35%)</span>
             <span>60 kg</span>
           </div>
         </div>
 
         {/* Results cards */}
-        <div className="grid gap-4 sm:grid-cols-3 pt-4">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-3 pt-2 sm:pt-4">
           <div className="rounded-2xl border border-border bg-card/80 p-5 backdrop-blur-xs">
             <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase">
               <Coffee className="h-4 w-4 text-gold-deep" /> Estimasi Cup Yield

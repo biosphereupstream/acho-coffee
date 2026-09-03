@@ -386,46 +386,46 @@ export function CheckoutView({
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="mb-8">
-        <h1 className="font-[var(--font-display)] text-3xl font-extrabold text-green-deep">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 pb-24 lg:pb-10">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="font-[var(--font-display)] text-2xl sm:text-3xl font-extrabold text-green-deep">
           Checkout Pesanan ({totalCount} Bag)
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
           Semua kopi di-roasting segar sesuai profil pilihanmu. Lengkapi data pengiriman dan pembayaran di bawah.
         </p>
       </div>
 
-      <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
+      <div className="grid gap-6 sm:gap-10 lg:grid-cols-[1fr_380px]">
         {/* Kolom Kiri: Form Checkout */}
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* 1. Item Recap */}
-          <div className="glossy-card rounded-2xl border border-border p-6 shadow-sm">
-            <div className="flex items-center justify-between border-b border-border/70 pb-4">
-              <h2 className="font-[var(--font-display)] text-lg font-bold text-green-deep flex items-center gap-2">
-                <Coffee className="h-5 w-5 text-gold-deep" /> Biji Kopi Pesananmu
+          <div className="glossy-card rounded-2xl border border-border p-4 sm:p-6 shadow-sm">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 sm:pb-4">
+              <h2 className="font-[var(--font-display)] text-base sm:text-lg font-bold text-green-deep flex items-center gap-2">
+                <Coffee className="h-4 w-4 sm:h-5 sm:w-5 text-gold-deep" /> Biji Kopi Pesananmu
               </h2>
-              <Badge variant="outline" className="text-xs">
-                Total Berat: {totalWeightGrams >= 1000 ? `${(totalWeightGrams / 1000).toFixed(1)} kg` : `${totalWeightGrams}g`}
+              <Badge variant="outline" className="text-[11px] sm:text-xs">
+                Total: {totalWeightGrams >= 1000 ? `${(totalWeightGrams / 1000).toFixed(1)} kg` : `${totalWeightGrams}g`}
               </Badge>
             </div>
 
-            <div className="mt-4 divide-y divide-border/40">
+            <div className="mt-3 sm:mt-4 divide-y divide-border/40">
               {items.map((item) => (
-                <div key={item.id} className="py-3.5 first:pt-0 flex items-center justify-between gap-4">
+                <div key={item.id} className="py-3 first:pt-0 flex items-center justify-between gap-3 sm:gap-4">
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm text-foreground truncate">{item.coffeeName}</p>
-                    <div className="mt-1 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
-                      <Badge variant="gold" className="text-[10px] px-2 py-0">
+                    <p className="font-bold text-xs sm:text-sm text-foreground truncate">{item.coffeeName}</p>
+                    <div className="mt-1 flex flex-wrap gap-1 text-[11px] sm:text-xs text-muted-foreground">
+                      <Badge variant="gold" className="text-[9px] sm:text-[10px] px-1.5 py-0">
                         {item.roastProfileName}
                       </Badge>
-                      <Badge variant="outline" className="text-[10px] px-2 py-0">
+                      <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1.5 py-0">
                         {GRIND_LABELS[item.grindSize]}
                       </Badge>
-                      <span>• {item.quantity} x {item.weightGrams ?? 250}g</span>
+                      <span>• {item.quantity}x {item.weightGrams ?? 250}g</span>
                     </div>
                   </div>
-                  <p className="font-extrabold text-sm text-green-deep whitespace-nowrap">
+                  <p className="font-extrabold text-xs sm:text-sm text-green-deep whitespace-nowrap">
                     {formatIDR(item.unitPriceIdr * item.quantity)}
                   </p>
                 </div>
@@ -434,18 +434,22 @@ export function CheckoutView({
           </div>
 
           {/* 2. Metode Pemenuhan (Fulfillment) */}
-          <div className="glossy-card rounded-2xl border border-border p-6 shadow-sm">
-            <h2 className="font-[var(--font-display)] text-lg font-bold text-green-deep mb-4">
+          <div className="glossy-card rounded-2xl border border-border p-4 sm:p-6 shadow-sm">
+            <h2 className="font-[var(--font-display)] text-base sm:text-lg font-bold text-green-deep mb-3 sm:mb-4">
               Metode Pengiriman / Pengambilan
             </h2>
 
             <Tabs value={fulfillment} onValueChange={(v) => setFulfillment(v as "pickup" | "delivery")}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="delivery" className="gap-2 font-semibold">
-                  <Truck className="h-4 w-4" /> Kirim Kurir (Delivery)
+                <TabsTrigger value="delivery" className="gap-1.5 font-semibold text-xs sm:text-sm">
+                  <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                  <span>Kirim Kurir</span>
+                  <span className="hidden sm:inline">(Delivery)</span>
                 </TabsTrigger>
-                <TabsTrigger value="pickup" className="gap-2 font-semibold">
-                  <CalendarClock className="h-4 w-4" /> Ambil Sendiri (Pickup)
+                <TabsTrigger value="pickup" className="gap-1.5 font-semibold text-xs sm:text-sm">
+                  <CalendarClock className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                  <span>Ambil Sendiri</span>
+                  <span className="hidden sm:inline">(Pickup)</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -800,11 +804,11 @@ export function CheckoutView({
           </div>
 
           {/* 3. Kontak Pemesan */}
-          <div className="glossy-card rounded-2xl border border-border p-6 shadow-sm space-y-4">
-            <h2 className="font-[var(--font-display)] text-lg font-bold text-green-deep">
+          <div className="glossy-card rounded-2xl border border-border p-4 sm:p-6 shadow-sm space-y-4">
+            <h2 className="font-[var(--font-display)] text-base sm:text-lg font-bold text-green-deep">
               Informasi Pemesan
             </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="cName">Nama Pemesan</Label>
                 <Input
@@ -854,14 +858,14 @@ export function CheckoutView({
 
         {/* Kolom Kanan: Ringkasan Biaya & Submit */}
         <div className="lg:sticky lg:top-24 lg:self-start space-y-6">
-          <div className="glossy-card rounded-2xl border border-border p-6 shadow-md space-y-5">
-            <h3 className="font-[var(--font-display)] text-lg font-bold text-green-deep">
+          <div className="glossy-card rounded-2xl border border-border p-4 sm:p-6 shadow-md space-y-4 sm:space-y-5">
+            <h3 className="font-[var(--font-display)] text-base sm:text-lg font-bold text-green-deep">
               Ringkasan Pembayaran
             </h3>
 
             {/* Voucher Box */}
             {appliedVoucher ? (
-              <div className="flex items-center justify-between rounded-xl bg-gold/10 border border-gold/30 p-3 text-xs">
+              <div className="flex items-center justify-between rounded-xl bg-gold/10 border border-gold/30 p-2.5 sm:p-3 text-xs">
                 <div className="flex items-center gap-2">
                   <Tag className="h-4 w-4 text-gold-deep" />
                   <div>
@@ -899,59 +903,80 @@ export function CheckoutView({
             )}
 
             {/* Rincian Harga */}
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <div className="flex justify-between">
-                  <span>Subtotal ({totalCount} item)</span>
-                  <span className="font-semibold text-foreground">{formatIDR(subtotal)}</span>
-                </div>
-                {wholesaleAmount > 0 && (
-                  <div className="flex justify-between text-gold-deep font-semibold">
-                    <span>Diskon Grosir Kafe ({wholesaleDiscount.discountPercent}%)</span>
-                    <span>-{formatIDR(wholesaleAmount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span>Ongkos Kirim ({fulfillment === "pickup" ? "Ambil Sendiri" : "Kurir"})</span>
-                  <span className="font-semibold text-foreground">
-                    {fulfillment === "pickup" ? "Gratis" : formatIDR(rawShippingFee)}
-                  </span>
-                </div>
-                {voucherDiscount > 0 && (
-                  <div className="flex justify-between text-green-600 font-semibold">
-                    <span>Potongan Voucher ({appliedVoucher?.code})</span>
-                    <span>-{formatIDR(voucherDiscount)}</span>
-                  </div>
-                )}
-                <Separator className="my-3" />
-                <div className="flex items-baseline justify-between text-base font-extrabold text-foreground">
-                  <span>Total Bayar</span>
-                  <span className="text-xl text-green-deep">{formatIDR(grandTotal)}</span>
-                </div>
+            <div className="space-y-2 text-xs sm:text-sm text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Subtotal ({totalCount} item)</span>
+                <span className="font-semibold text-foreground">{formatIDR(subtotal)}</span>
               </div>
+              {wholesaleAmount > 0 && (
+                <div className="flex justify-between text-gold-deep font-semibold">
+                  <span>Diskon Grosir Kafe ({wholesaleDiscount.discountPercent}%)</span>
+                  <span>-{formatIDR(wholesaleAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span>Ongkos Kirim ({fulfillment === "pickup" ? "Ambil Sendiri" : "Kurir"})</span>
+                <span className="font-semibold text-foreground">
+                  {fulfillment === "pickup" ? "Gratis" : formatIDR(rawShippingFee)}
+                </span>
+              </div>
+              {voucherDiscount > 0 && (
+                <div className="flex justify-between text-green-600 font-semibold">
+                  <span>Potongan Voucher ({appliedVoucher?.code})</span>
+                  <span>-{formatIDR(voucherDiscount)}</span>
+                </div>
+              )}
+              <Separator className="my-2 sm:my-3" />
+              <div className="flex items-baseline justify-between text-sm sm:text-base font-extrabold text-foreground">
+                <span>Total Bayar</span>
+                <span className="text-lg sm:text-xl text-green-deep">{formatIDR(grandTotal)}</span>
+              </div>
+            </div>
 
             <Button
               variant="gold"
               size="lg"
-              className="w-full font-bold h-12 gap-2 shadow-lg shadow-gold/20"
+              className="w-full font-bold h-11 sm:h-12 gap-2 shadow-lg shadow-gold/20 text-sm sm:text-base"
               onClick={handlePlaceOrder}
               disabled={submitting}
             >
               {submitting ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" /> Memproses...
+                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> Memproses...
                 </>
               ) : (
                 <>
-                  Bayar Sekarang <ArrowRight className="h-5 w-5" />
+                  Bayar Sekarang <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 </>
               )}
             </Button>
 
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-1">
+            <div className="flex items-center justify-center gap-2 text-[11px] sm:text-xs text-muted-foreground pt-1">
               <ShieldCheck className="h-4 w-4 text-gold-deep" />
               <span>Pembayaran aman dengan enkripsi Doku</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Mobile Sticky Checkout Bar */}
+      <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border/80 bg-background/95 backdrop-blur-md px-4 py-3 shadow-[0_-8px_25px_rgba(0,0,0,0.08)] pb-[calc(env(safe-area-inset-bottom,0px)+12px)] lg:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <span className="text-[10px] uppercase font-bold text-muted-foreground block leading-none">Total Tagihan</span>
+            <p className="text-base font-black text-green-deep truncate">{formatIDR(grandTotal)}</p>
+            <span className="text-[10px] text-muted-foreground">{totalCount} item</span>
+          </div>
+          <Button
+            variant="gold"
+            size="sm"
+            className="h-10 px-4 font-bold gap-1.5 shadow-md shrink-0"
+            onClick={handlePlaceOrder}
+            disabled={submitting}
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+            Bayar Sekarang
+          </Button>
         </div>
       </div>
     </div>

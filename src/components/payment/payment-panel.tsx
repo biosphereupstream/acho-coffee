@@ -89,23 +89,23 @@ export function PaymentPanel({ order }: { order: OrderRecord }) {
   }
 
   return (
-    <div className="glossy-card rounded-2xl border border-border p-6 sm:p-8">
-      <div className="flex items-center justify-between">
+    <div className="glossy-card rounded-2xl border border-border p-4 sm:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="font-[var(--font-display)] text-xl font-bold text-green-deep">
+          <h2 className="font-[var(--font-display)] text-lg sm:text-xl font-bold text-green-deep">
             Pilih Metode Pembayaran
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Transaksi aman dan terverifikasi otomatis via DOKU Payment Gateway
           </p>
         </div>
-        <Badge variant="secondary" className="gap-1 font-semibold text-xs border border-primary/20">
+        <Badge variant="secondary" className="gap-1 font-semibold text-xs border border-primary/20 self-start sm:self-auto">
           <ShieldCheck className="h-3.5 w-3.5 text-primary" /> DOKU Secure
         </Badge>
       </div>
 
       {/* QRIS & Hosted Option */}
-      <div className="mt-6 space-y-2">
+      <div className="mt-5 sm:mt-6 space-y-2">
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
           <QrCode className="h-3.5 w-3.5 text-gold-deep" /> Rekomendasi Instan
         </p>
@@ -128,11 +128,11 @@ export function PaymentPanel({ order }: { order: OrderRecord }) {
       </div>
 
       {/* Virtual Accounts */}
-      <div className="mt-6 space-y-2">
+      <div className="mt-5 sm:mt-6 space-y-2">
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
           <Landmark className="h-3.5 w-3.5 text-primary" /> Virtual Account Bank
         </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {VA_CHANNELS.map((c) => (
             <ChannelButton
               key={c.id}
@@ -150,7 +150,7 @@ export function PaymentPanel({ order }: { order: OrderRecord }) {
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
           <Store className="h-3.5 w-3.5 text-muted-foreground" /> Gerai Retail
         </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {RETAIL_CHANNELS.map((c) => (
             <ChannelButton
               key={c.id}
@@ -168,7 +168,7 @@ export function PaymentPanel({ order }: { order: OrderRecord }) {
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
           <Smartphone className="h-3.5 w-3.5 text-muted-foreground" /> E-Wallet
         </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {WALLET_CHANNELS.map((c) => (
             <ChannelButton
               key={c.id}
@@ -181,7 +181,7 @@ export function PaymentPanel({ order }: { order: OrderRecord }) {
         </div>
       </div>
 
-      <Separator className="my-6" />
+      <Separator className="my-5 sm:my-6" />
 
       {/* Bill Summary */}
       <div className="flex items-center justify-between text-sm">

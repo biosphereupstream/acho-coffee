@@ -189,7 +189,7 @@ export function CartDrawer() {
             </div>
 
             {/* Voucher and Totals Footer */}
-            <div className="border-t border-border/80 bg-card p-5 space-y-4">
+            <div className="border-t border-border/80 bg-card p-4 sm:p-5 space-y-3.5 sm:space-y-4 pb-[calc(env(safe-area-inset-bottom,0px)+16px)]">
               {/* Wholesale Tier Notice Card */}
               {wholesaleDiscount.eligible ? (
                 <div className="rounded-2xl border border-gold/50 bg-gradient-to-r from-accent/50 to-card p-3 shadow-xs">
