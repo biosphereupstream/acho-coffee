@@ -113,8 +113,8 @@ export default function HomePage() {
 
             <div className="animate-fade-up mt-8 grid max-w-md grid-cols-3 gap-4 border-t border-border pt-6" style={{ animationDelay: "0.34s" }}>
               {[
-                ["7", "Varian Kopi"],
-                ["4", "Profil Roasting"],
+                ["49", "Menu & Varian"],
+                ["7", "Fase Kimiawi"],
                 ["4.9★", "Rating Pelanggan"],
               ].map(([num, label]) => (
                 <div key={label}>
