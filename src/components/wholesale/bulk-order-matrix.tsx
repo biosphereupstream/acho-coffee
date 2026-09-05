@@ -16,6 +16,16 @@ interface BulkItemState {
   grindSize: GrindSize;
 }
 
+export function get1kgVariantPrice(coffee: CatalogCoffee): number {
+  const variant = coffee.packageVariants?.find(
+    (v) =>
+      v.weightGrams === 1000 ||
+      v.size.toLowerCase().replace(/\s+/g, "") === "1kg" ||
+      v.size.toLowerCase().includes("1000")
+  );
+  return variant ? variant.priceIdr : coffee.priceIdr;
+}
+
 export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
   const { addItem, openCart } = useCart();
 
@@ -74,9 +84,7 @@ export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
 
   for (const b of beans) {
     const qty = itemsState[b.slug]?.quantity || 0;
-    // Cari harga 1kg dari packageVariants jika ada, atau fallback priceIdr
-    const variant1kg = b.packageVariants?.find((v) => v.size === "1kg");
-    const price1kg = variant1kg ? variant1kg.priceIdr : b.priceIdr;
+    const price1kg = get1kgVariantPrice(b);
 
     totalKg += qty;
     rawSubtotal += qty * price1kg;
@@ -114,8 +122,7 @@ export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
     for (const b of beans) {
       const state = itemsState[b.slug];
       if (state && state.quantity > 0) {
-        const variant1kg = b.packageVariants?.find((v) => v.size === "1kg");
-        const price1kg = variant1kg ? variant1kg.priceIdr : b.priceIdr;
+        const price1kg = get1kgVariantPrice(b);
 
         await addItem({
           coffeeSlug: b.slug,
@@ -180,8 +187,7 @@ export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
             roastName: "Medium Roast",
             grindSize: "bean",
           };
-          const variant1kg = coffee.packageVariants?.find((v) => v.size === "1kg");
-          const price1kg = variant1kg ? variant1kg.priceIdr : coffee.priceIdr;
+          const price1kg = get1kgVariantPrice(coffee);
           const isSelected = state.quantity > 0;
 
           return (
