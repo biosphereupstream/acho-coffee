@@ -1,19 +1,7 @@
 import { NextResponse } from "next/server";
 import { updateOrderDetails, deleteOrder, bulkDeleteOrders } from "@/lib/store/orders";
-import { createClient as getSupabaseServer } from "@/lib/server";
-import { env } from "@/lib/env";
+import { checkAdminAuth } from "@/lib/admin-auth";
 import type { OrderStatus } from "@/lib/types";
-
-async function checkAdminAuth(req: Request): Promise<boolean> {
-  const supabase = await getSupabaseServer();
-  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  const isAdmin = user?.email ? env.adminEmails().includes(user.email.toLowerCase()) : false;
-  const isDevBypass =
-    process.env.NODE_ENV === "development" &&
-    (req.headers.get("x-admin") === "true" || !env.supabaseConfigured());
-
-  return isAdmin || isDevBypass || !env.supabaseConfigured();
-}
 
 export async function PUT(req: Request) {
   if (!(await checkAdminAuth(req))) {

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDateID, GRIND_LABELS } from "@/lib/constants";
 import { STATUS_LABELS, type OrderRecord } from "@/lib/types";
+import { getAdminHeaders } from "@/lib/admin-client";
 import { toast } from "sonner";
 
 const DAILY_CAPACITY = 120; // 120 bags per day capacity
@@ -68,7 +69,7 @@ export function PickupScheduleView({
     try {
       const res = await fetch("/api/admin/status", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({ orderNumber, status: "completed" }),
       });
       if (!res.ok) throw new Error("Gagal memperbarui status");

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { AdminLogin } from "@/components/admin/admin-login";
@@ -14,6 +14,7 @@ export function AdminGate({ orders, demo }: { orders: OrderRecord[]; demo: boole
     const token = localStorage.getItem("acho_admin_token") || sessionStorage.getItem("acho_admin_token");
     const user = localStorage.getItem("acho_admin_user") || sessionStorage.getItem("acho_admin_user");
     if (token) {
+      document.cookie = `acho_admin_token=${encodeURIComponent(token)}; path=/; max-age=86400; SameSite=Lax`;
       setAuthenticated(true);
       if (user) setAdminUser(user);
     } else {
@@ -22,6 +23,7 @@ export function AdminGate({ orders, demo }: { orders: OrderRecord[]; demo: boole
   }, []);
 
   function handleLoginSuccess(token: string, username: string) {
+    document.cookie = `acho_admin_token=${encodeURIComponent(token)}; path=/; max-age=86400; SameSite=Lax`;
     setAuthenticated(true);
     setAdminUser(username);
   }
@@ -42,6 +44,7 @@ export function AdminGate({ orders, demo }: { orders: OrderRecord[]; demo: boole
       localStorage.removeItem("acho_admin_user");
       sessionStorage.removeItem("acho_admin_token");
       sessionStorage.removeItem("acho_admin_user");
+      document.cookie = "acho_admin_token=; path=/; max-age=0; SameSite=Lax";
       setAuthenticated(false);
     }
   }

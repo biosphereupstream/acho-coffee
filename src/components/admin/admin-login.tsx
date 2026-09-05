@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -54,7 +54,8 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
         throw new Error(json.error || "Username atau password salah");
       }
 
-      // Store in storage
+      // Store in storage & cookie
+      document.cookie = `acho_admin_token=${encodeURIComponent(json.token)}; path=/; max-age=86400; SameSite=Lax`;
       if (rememberMe) {
         localStorage.setItem("acho_admin_token", json.token);
         localStorage.setItem("acho_admin_user", json.username);

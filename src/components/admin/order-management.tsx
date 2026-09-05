@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatIDR, GRIND_LABELS } from "@/lib/constants";
 import { STATUS_LABELS, type OrderRecord, type OrderStatus } from "@/lib/types";
+import { getAdminHeaders } from "@/lib/admin-client";
 import { toast } from "sonner";
 
 const NEXT: Record<OrderStatus, OrderStatus[]> = {
@@ -124,7 +125,7 @@ export function OrderManagement({
     try {
       const res = await fetch("/api/admin/status", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({ orderNumber, status }),
       });
       if (!res.ok) throw new Error("Gagal memperbarui status pesanan");
@@ -143,7 +144,7 @@ export function OrderManagement({
     try {
       const res = await fetch("/api/admin/dispatch", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({
           orderNumber: dispatchOrder.orderNumber,
           mode: "biteship",
@@ -170,7 +171,7 @@ export function OrderManagement({
     try {
       const res = await fetch("/api/admin/dispatch", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({
           orderNumber: dispatchOrder.orderNumber,
           mode: "manual",
@@ -227,7 +228,7 @@ export function OrderManagement({
     try {
       const res = await fetch("/api/admin/orders", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({
           orderNumber: editingOrder.orderNumber,
           customerName: editCustomerName,
@@ -271,7 +272,7 @@ export function OrderManagement({
     try {
       const res = await fetch("/api/admin/orders", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({ orderNumber }),
       });
       const data = await res.json();
@@ -290,7 +291,7 @@ export function OrderManagement({
     try {
       const res = await fetch("/api/admin/batch-status", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({
           orderNumbers: selectedOrders,
           status: targetBulkStatus,
@@ -316,7 +317,7 @@ export function OrderManagement({
     try {
       const res = await fetch("/api/admin/orders", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({
           orderNumbers: selectedOrders,
         }),

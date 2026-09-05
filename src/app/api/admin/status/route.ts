@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrderByNumber, updateOrderStatus } from "@/lib/store/orders";
-import { createClient as getSupabaseServer } from "@/lib/server";
-import { env } from "@/lib/env";
+import { checkAdminAuth } from "@/lib/admin-auth";
 import { emails } from "@/lib/email";
 import { ensureShipment } from "@/lib/order-lifecycle";
 import type { OrderStatus } from "@/lib/types";
@@ -31,11 +30,7 @@ const NOTES: Record<string, string> = {
 };
 
 export async function POST(req: Request) {
-  // Otorisasi: email admin (Supabase) atau mode demo
-  const supabase = await getSupabaseServer();
-  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  const isAdmin = user?.email ? env.adminEmails().includes(user.email.toLowerCase()) : false;
-  if (!isAdmin && !(env.supabaseConfigured() === false)) {
+  if (!(await checkAdminAuth(req))) {
     return NextResponse.json({ error: "Tidak diizinkan" }, { status: 403 });
   }
 

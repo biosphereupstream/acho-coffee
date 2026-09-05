@@ -1,22 +1,11 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { uploadToR2, deleteFromR2, purgeCloudflareCache } from "@/lib/r2";
-import { createClient as getSupabaseServer } from "@/lib/server";
+import { checkAdminAuth } from "@/lib/admin-auth";
 import { env } from "@/lib/env";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
-
-async function checkAdminAuth(req: Request): Promise<boolean> {
-  const supabase = await getSupabaseServer();
-  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  const isAdmin = user?.email ? env.adminEmails().includes(user.email.toLowerCase()) : false;
-  const isDevBypass =
-    process.env.NODE_ENV === "development" &&
-    (req.headers.get("x-admin") === "true" || !env.supabaseConfigured());
-
-  return isAdmin || isDevBypass || !env.supabaseConfigured();
-}
 
 /** Upload gambar produk (admin) ke Cloudflare R2. */
 export async function POST(req: Request) {

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { GRIND_LABELS } from "@/lib/constants";
 import { STATUS_LABELS, type OrderRecord, type OrderStatus } from "@/lib/types";
+import { getAdminHeaders } from "@/lib/admin-client";
 import { toast } from "sonner";
 
 interface RoastingBatch {
@@ -134,7 +135,7 @@ export function BatchPlanner({
       const orderNumbers = batch.orders.map((o) => o.orderNumber);
       const res = await fetch("/api/admin/batch-status", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({
           orderNumbers,
           status: targetStatus,
@@ -191,7 +192,7 @@ export function BatchPlanner({
     try {
       const res = await fetch("/api/admin/batch-status", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({
           orderNumbers: allOrderNumbers,
           status: targetStatus,
@@ -229,7 +230,7 @@ export function BatchPlanner({
     try {
       const res = await fetch("/api/admin/orders", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({
           orderNumbers: allOrderNumbers,
         }),
@@ -259,7 +260,7 @@ export function BatchPlanner({
     try {
       const res = await fetch("/api/admin/orders", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
         body: JSON.stringify({
           orderNumbers,
         }),

@@ -1,18 +1,6 @@
 import { NextResponse } from "next/server";
 import { getR2Object, deleteFromR2, purgeCloudflareCache } from "@/lib/r2";
-import { createClient as getSupabaseServer } from "@/lib/server";
-import { env } from "@/lib/env";
-
-async function checkAdminAuth(req: Request): Promise<boolean> {
-  const supabase = await getSupabaseServer();
-  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  const isAdmin = user?.email ? env.adminEmails().includes(user.email.toLowerCase()) : false;
-  const isDevBypass =
-    process.env.NODE_ENV === "development" &&
-    (req.headers.get("x-admin") === "true" || !env.supabaseConfigured());
-
-  return isAdmin || isDevBypass || !env.supabaseConfigured();
-}
+import { checkAdminAuth } from "@/lib/admin-auth";
 
 /**
  * Media proxy: streaming file R2 lewat server sendiri.

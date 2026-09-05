@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { batchUpdateOrderStatus } from "@/lib/store/orders";
-import { createClient as getSupabaseServer } from "@/lib/server";
-import { env } from "@/lib/env";
+import { checkAdminAuth } from "@/lib/admin-auth";
 import type { OrderStatus } from "@/lib/types";
 
 const ALLOWED: OrderStatus[] = [
@@ -29,14 +28,7 @@ const NOTES: Record<string, string> = {
 };
 
 export async function POST(req: Request) {
-  const supabase = await getSupabaseServer();
-  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  const isAdmin = user?.email ? env.adminEmails().includes(user.email.toLowerCase()) : false;
-  const isDevBypass =
-    process.env.NODE_ENV === "development" &&
-    (req.headers.get("x-admin") === "true" || !env.supabaseConfigured());
-
-  if (!isAdmin && !isDevBypass && env.supabaseConfigured()) {
+  if (!(await checkAdminAuth(req))) {
     return NextResponse.json({ error: "Tidak diizinkan" }, { status: 403 });
   }
 

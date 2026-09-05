@@ -36,7 +36,7 @@ interface BackendState {
 // Global singleton in serverless module
 const globalBackend = globalThis as unknown as { __acho_backend_state?: BackendState };
 
-function getBackendState(): BackendState {
+export function getBackendState(): BackendState {
   if (!globalBackend.__acho_backend_state) {
     globalBackend.__acho_backend_state = {
       frontendConfig: {
@@ -119,7 +119,7 @@ export async function handleServerlessBackend(
       const token = "acho_adm_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
       state.activeSessions.add(token);
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         token,
         username: "admin",
@@ -127,6 +127,13 @@ export async function handleServerlessBackend(
         message: "Login berhasil. Selamat datang di Panel Admin ACHO Coffee!",
         expires_at: new Date(Date.now() + 86400000).toISOString(),
       });
+      response.cookies.set("acho_admin_token", token, {
+        path: "/",
+        maxAge: 86400,
+        sameSite: "lax",
+        httpOnly: false,
+      });
+      return response;
     } catch (err) {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
@@ -137,7 +144,9 @@ export async function handleServerlessBackend(
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.replace("Bearer ", "").trim();
     state.activeSessions.delete(token);
-    return NextResponse.json({ success: true, message: "Berhasil keluar dari sesi admin" });
+    const response = NextResponse.json({ success: true, message: "Berhasil keluar dari sesi admin" });
+    response.cookies.delete("acho_admin_token");
+    return response;
   }
 
   // 3. AUTH: Me
