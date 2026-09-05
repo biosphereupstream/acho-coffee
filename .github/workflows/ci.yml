@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   validate-and-build:
-    name: Typecheck, Lint & Build
+    name: Monorepo Frontend & Backend Check
     runs-on: ubuntu-latest
 
     steps:
@@ -31,16 +31,27 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Type Check (TypeScript)
-        run: npx tsc --noEmit
+      - name: Type Check (Frontend TypeScript)
+        run: npm run typecheck
 
-      - name: Lint (ESLint)
+      - name: Lint (Frontend ESLint)
         run: npm run lint
 
-      - name: Production Build
+      - name: Production Build (Frontend Next.js)
         env:
           NEXT_PUBLIC_SITE_URL: https://acho.coffee
           NEXT_PUBLIC_SUPABASE_URL: https://lhohaqrhcrghoqkczvbt.supabase.co
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_dummy_key_for_ci_build
           DOKU_ENV: production
         run: npm run build
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache-dependency-path: backend/go.sum
+
+      - name: Run Backend Tests
+        run: |
+          cd backend
+          go test -v ./...

@@ -27,8 +27,14 @@ async function main() {
   const sql = postgres(dbUrl);
 
   // Read the COFFEES list by requiring the module via tsx or dynamic require
-  // Or we can evaluate the list directly
-  const { COFFEES } = await import("../src/data/coffees.ts");
+  let COFFEES;
+  try {
+    const mod = await import("../frontend/src/data/coffees.ts");
+    COFFEES = mod.COFFEES;
+  } catch {
+    const mod = await import("../src/data/coffees.ts");
+    COFFEES = mod.COFFEES;
+  }
 
   console.log(`Found ${COFFEES.length} official menu items to sync.`);
 

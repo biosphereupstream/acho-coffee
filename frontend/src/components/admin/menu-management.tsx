@@ -103,7 +103,7 @@ export function MenuManagement() {
   async function handleBulkSubmit() {
     if (selectedIds.length === 0 && !selectAll) return;
 
-    let payload: any = {
+    const payload: any = {
       select_all: selectAll,
       item_ids: selectedIds,
     };

@@ -1,5 +1,6 @@
-# Postgres lokal untuk development (opsional — produksi memakai Supabase)
+# ACHO Coffee Monorepo — Local Development & Deployment Stack
 services:
+  # 1. Database PostgreSQL Lokal (opsional — produksi memakai Supabase)
   db:
     image: postgres:16-alpine
     container_name: acho-postgres
@@ -12,6 +13,44 @@ services:
       - "5432:5432"
     volumes:
       - acho_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Golang Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: acho-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      DATABASE_URL: "postgres://postgres:postgres@db:5432/acho?sslmode=disable"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # 3. Next.js TypeScript Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: acho-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: "production"
+      PORT: "3000"
+      DATABASE_URL: "postgres://postgres:postgres@db:5432/acho?sslmode=disable"
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+    depends_on:
+      - backend
 
 volumes:
   acho_pgdata:

@@ -1,188 +1,142 @@
-# ☕ ACHO Coffee — Fresh Roasting On-Demand
+# ☕ ACHO Coffee — Monorepo (Golang Backend & TypeScript Frontend)
 
-Aplikasi web responsive (smartphone • tablet • laptop) untuk memesan kopi **fresh roasting terjadwal**.
-Customer membuka landing page dengan **animasi 3D perjalanan kopi** (green bean → light roast → medium roast → grind → brew),
-lalu bisa langsung sign in / sign up / Google OAuth / **one-time buyer**, memilih kopi, profil roasting (dengan rekomendasi),
-grind size, jadwal ambil (antrian) atau kirim (tracing Biteship), membayar via Doku, dan memantau status sampai selesai.
-
-## ✨ Fitur
-
-- **Landing page animasi 3D** — biji kopi prosedural (Three.js + React Three Fiber) yang berubah warna per tahap: green bean → light → medium → grind (hujan bubuk kopi) → brew (cangkir + uap), auto-play dengan kontrol.
-- **Autentikasi lengkap** — email/password, **Google OAuth** (Supabase Auth), dan **guest / one-time buyer** (tanpa akun, akses status via token di email).
-- **Katalog** — 7 varian single origin & blend nusantara (seed siap pakai).
-- **Rekomendasi profil roasting** — berdasarkan metode seduh + selera + jenis kopi.
-- **Grind size** — bean / fine / medium / coarse.
-- **Jadwal antrian pickup** — tanggal ambil dihitung dari lead time roasting (+2 hari) dan kapasitas harian (120 bungkus), slot otomatis.
-- **Pengiriman + tracing** — integrasi **Biteship** (JNE, J&T, SiCepat, AnterAja), webhook status kurir.
-- **Pembayaran** — integrasi **Doku Jokul Checkout** (VA BCA/Mandiri/BRI/BNI, OVO, DANA, LinkAja, ShopeePay, QRIS) + webhook notifikasi.
-- **Email transaksional** — **Resend**: konfirmasi pesanan, pembayaran sukses, update tiap tahap.
-- **Status real-time** — timeline proses (polling 8 detik) + riwayat tracing kurir.
-- **Panel admin** — **/admin**: kelola status pesanan & lihat antrian pickup per tanggal.
-- **Mode demo** — tanpa env apa pun, seluruh alur (pesan → bayar simulasi → status) tetap bisa dicoba; katalog dari seed, pesanan di memory store.
-
-## 🧱 Tech Stack
-
-| Layer | Teknologi |
-|---|---|
-| Framework | **Next.js 16** (App Router, TypeScript, Turbopack) |
-| Styling | **Tailwind CSS 4** + **shadcn/ui** (green metallic, gold metallic, white glossy) |
-| Database | **Supabase Postgres** + **Drizzle ORM** |
-| Auth | **Supabase Auth** (email/password + Google OAuth) |
-| State | **React Query** (TanStack Query v5) |
-| Email | **Resend** |
-| Pembayaran | **Doku / Jokul Checkout API** |
-| Kirim | **Biteship API** |
-| Storage | **Cloudflare R2** (S3-compatible) |
-| CDN/DNS | **Cloudflare** (proxy + proteksi) |
-| Hosting | **Vercel** |
-
-## 🚀 Mulai Cepat
-
-```bash
-# 1. install
-npm install          # atau pnpm install
-
-# 2. env (lihat .env.example)
-cp .env.example .env.local
-
-# 3a. OPSI A: langsung jalan di MODE DEMO (tanpa DB/keys)
-npm run dev          # → http://localhost:3000
-
-# 3b. OPSI B: dengan database lokal
-docker compose up -d
-npm run db:push     # push schema Drizzle ke Postgres lokal
-npm run dev
-```
-
-Alur demo: buka katalog → pilih kopi → isi wizard → **buat pesanan** → halaman pembayaran menampilkan
-VA simulasi → klik **"Simulasi Pembayaran Berhasil"** → status berubah real-time → buka **/admin** untuk
-menggeser status (antrian → roasting → resting → siap diambil/dikirim).
-
-> Pesanan tersimpan di memory store saat **DATABASE_URL** kosong (reset saat server restart).
-> Setelah **DATABASE_URL** diisi, seluruh data otomatis masuk ke Postgres via Drizzle.
-
-## 🔐 Supabase (Auth + Database)
-
-1. Buat project di [supabase.com](https://supabase.com) (region terdekat: Singapore).
-2. **Auth → Providers → Google** → aktifkan, isi Client ID & Secret dari Google Cloud Console.
-   - Authorized redirect URI: **https://<project-ref>.supabase.co/auth/v1/callback**
-   - Di Google Cloud: **APIs → OAuth consent screen** (tambahkan test user untuk development).
-3. **Project Settings → API**: salin URL & anon key → **NEXT_PUBLIC_SUPABASE_URL**, **NEXT_PUBLIC_SUPABASE_ANON_KEY**.
-4. **Project Settings → Database → Connection string** (URI, port 6543) → **DATABASE_URL**.
-5. Jalankan migrasi: **npm run db:push** — bila koneksi memakai pooler dan `drizzle-kit push` terkendala introspeksi,
-   gunakan **node scripts/apply-migration.js** (menerapkan `drizzle/0000_init.sql` langsung lewat driver postgres).
-   > 💡 **Region pooler**: host pooler harus sesuai region project (`aws-0-<region>.pooler.supabase.com`).
-   > Cek region persisnya dari URL di tombol **Connect** dashboard (contoh proyek ini: ap-southeast-2).
-6. **Authentication → URL Configuration**:
-   - Site URL: **https://domainkamu.com**
-   - Redirect URLs: **https://domainkamu.com/auth/callback** dan **http://localhost:3000/auth/callback**
-
-## 💳 Doku (Pembayaran)
-
-1. Daftar di [Jokul Doku](https://jokul.doku.com) → dapatkan **Client ID** & **Shared Key** (sandbox dulu).
-2. Isi env: **DOKU_ENV=sandbox**, **DOKU_CLIENT_ID**, **DOKU_SHARED_KEY**.
-3. Webhook notifikasi: daftarkan **https://domainkamu.com/api/webhooks/doku** di dashboard Doku.
-4. Kode memakai **Checkout API v1** (POST /checkout/v1/payment) dengan skema signature resmi Doku:
-   komponen **Client-Id / Request-Id / Request-Timestamp / Request-Target / Digest** (Digest = base64 SHA-256 body),
-   ditandatangani HMAC-SHA256 dengan **Shared Key** lalu diberi prefix **HMACSHA256=**. Verifikasi webhook sudah diimplementasikan.
-   > Catatan: kanal pembayaran (VA/e-wallet/QRIS) harus **diaktifkan dulu di back-office Jokul** — jika belum,
-   > Doku membalas "PAYMENT CHANNEL IS INACTIVE".
-
-## 📦 Biteship (Kurir & Tracing)
-
-1. Daftar di [biteship.com](https://biteship.com) → salin **API key** → **BITESHIP_API_KEY**.
-2. Cari **area_id** asal roastery: GET /v1/maps/areas?countries=ID&input=Bandung → **BITESHIP_ORIGIN_AREA_ID**.
-3. Webhook: daftarkan **https://domainkamu.com/api/webhooks/biteship** di dashboard Biteship.
-
-## ✉️ Resend (Email)
-
-1. Daftar di [resend.com](https://resend.com) (free tier 3.000 email/bulan) → API key → **RESEND_API_KEY**.
-2. Verifikasi domain pengirim → **RESEND_FROM_EMAIL="ACHO Coffee <hello@domainkamu.com>"**.
-
-## ☁️ Cloudflare R2 (Object Storage)
-
-1. Cloudflare Dashboard → **R2** → buat bucket **acho-coffee**.
-2. **Manage R2 API Tokens** → buat token (Object Read & Write) → isi **R2_ACCESS_KEY_ID**, **R2_SECRET_ACCESS_KEY**, **R2_ACCOUNT_ID**.
-3. Supaya file bisa diakses publik, pasang **Custom Domain** pada bucket (mis. **cdn.domainkamu.com**) → **R2_PUBLIC_URL=https://cdn.domainkamu.com** (atau aktifkan public URL r2.dev).
-4. Upload gambar produk dari endpoint admin **POST /api/upload** (multipart **file**) — URL dipakai di kolom **coffees.image_url**.
-   > 🇮🇩 **Catatan r2.dev diblokir ISP Indonesia**: bila `R2_PUBLIC_URL` memakai `*.r2.dev`, aplikasi otomatis
-   > mengarahkan gambar lewat proxy **/api/media/[key]** (streaming dari R2 via server) sehingga tetap tampil bagi customer.
-   > Untuk produksi disarankan custom domain (CDN) seperti **cdn.domainanda.com**.
-
-## 🌐 Cloudflare sebagai CDN / DNS / Proteksi
-
-1. Tambahkan domain ke Cloudflare → ganti nameserver di registrar → tunggu aktif.
-2. **DNS → Records**: buat **CNAME @ → cname.vercel-dns.com** (dan www), **Proxy: 🟠 on**.
-3. **SSL/TLS → Mode: Full (strict)** (Vercel sudah menyediakan sertifikat).
-4. Rekomendasi proteksi:
-   - **Security → WAF**: aktifkan managed rules + rate limiting (mis. 100 req/10 dtk per IP).
-   - **Speed → Optimization**: aktifkan Brotli, Early Hints, minify JS/CSS/HTML.
-   - **Caching → Cache Rules**: cache **_next/static/*** dengan Edge TTL panjang.
-   - **DDoS**: mode "Under Attack" hanya saat insiden.
-
-## ▲ Deploy ke Vercel
-
-1. Push repo ini ke GitHub (lihat bawah) → import di [vercel.com](https://vercel.com) → framework otomatis terdeteksi (Next.js).
-2. Isi **semua environment variable** dari **.env.example** (Production & Preview).
-3. Deploy → setelah sukses, arahkan domain custom sesuai langkah Cloudflare di atas.
-4. **next.config.ts** sudah menyiapkan security headers & remotePatterns gambar (R2/Supabase).
-
-## 🐙 Push ke GitHub
-
-```bash
-git init
-git add .
-git commit -m "feat: ACHO Coffee — fresh roasting on-demand"
-gh auth login                       # atau git remote pakai token
-gh repo create acho-coffee --public --source=. --push
-```
-
-## 📁 Struktur
-
-```
-src/
-  app/
-    page.tsx                    # landing + 3D journey
-    kopi/                       # katalog
-    pesan/[slug]/               # detail + order wizard
-    pembayaran/[orderNumber]/   # pembayaran Doku
-    status/…                    # lacak + status pesanan
-    masuk/  akun/  admin/       # auth, dashboard, admin
-    auth/callback/route.ts      # Google OAuth callback
-    actions/auth.ts             # server actions auth
-    api/                        # orders, payments, webhooks doku & biteship,
-                                # pickup-slots, shipping, demo/pay, upload, health
-  components/
-    landing/roast-journey.tsx   # scene 3D (green→light→medium→grind→brew)
-    order/order-builder.tsx     # wizard: roasting+rekomendasi, grind, jadwal, data
-    order/status-timeline.tsx   # timeline proses
-    payment/  admin/  account/  auth/  shop/  ui/   # panel & komponen
-  db/        schema.ts + client Drizzle
-  data/      seed katalog & profil roasting
-  lib/       supabase, store pesanan (DB/memory), doku, biteship, email, r2, env
-drizzle/0000_init.sql           # migrasi SQL siap pakai
-```
-
-## ⚙️ Skrip
-
-| Perintah | Fungsi |
-|---|---|
-| **npm run dev** | Dev server |
-| **npm run build** | Build produksi |
-| **npm run db:generate** | Generate migrasi dari schema Drizzle |
-| **npm run db:push** | Push schema ke database |
-| **npm run db:studio** | Drizzle Studio |
-
-## ✅ Checklist Produksi
-
-- [ ] Ganti **DOKU_ENV=production** + Client ID/Shared Key produksi
-- [ ] Ganti **BITESHIP_API_KEY** produksi
-- [ ] **ADMIN_EMAILS** diisi email pemilik
-- [ ] Domain custom + Cloudflare proxy aktif (SSL Full strict)
-- [ ] Webhook Doku & Biteship didaftarkan ke URL produksi
-- [ ] Resend domain terverifikasi
-- [ ] Google OAuth di mode production (bukan testing)
-- [ ] Foto produk asli diunggah ke R2 (saat ini pakai ilustrasi SVG bawaan)
+Aplikasi web responsive (smartphone • tablet • laptop) untuk memesan kopi **fresh roasting terjadwal** dan sistem manajemen roastery terintegrasi.
+Arsitektur project dibangun sebagai **Monorepo** dengan pemisahan folder khusus untuk **Backend (Golang)** dan **Frontend (TypeScript / Next.js)**.
 
 ---
-Dibuat dengan ☕ dan ❤️ — ACHO Coffee Roastery, Bandung.
+
+## 🏛️ Struktur Monorepo
+
+```
+acho/
+├── backend/                              # 🐹 Layanan Backend Go (Golang 1.27)
+│   ├── cmd/server/main.go               # Entrypoint HTTP server (Chi Router)
+│   ├── internal/                        # Config, DB connection pool, handlers, middleware
+│   ├── Dockerfile                       # Container build produksi backend
+│   ├── go.mod / go.sum                  # Manajemen dependensi Go
+│   └── README.md                        # Dokumentasi teknis backend
+│
+├── frontend/                             # ⚡ Aplikasi Frontend (TypeScript / Next.js 16)
+│   ├── src/                             # App Router, components, Drizzle DB, styles
+│   ├── public/                          # Gambar, logo, icon, aset statis
+│   ├── drizzle/                         # Migrasi skema database SQL Drizzle
+│   ├── Dockerfile                       # Container build produksi frontend
+│   ├── package.json                     # Dependensi paket @acho/frontend
+│   ├── tsconfig.json                    # Konfigurasi TypeScript
+│   ├── next.config.ts                   # Konfigurasi Next.js & optimasi kompresi
+│   ├── components.json                  # Shadcn UI configuration
+│   ├── drizzle.config.js                # Konfigurasi Drizzle ORM
+│   ├── eslint.config.mjs                # Konfigurasi ESLint
+│   ├── postcss.config.mjs               # Konfigurasi Tailwind CSS
+│   └── README.md                        # Dokumentasi teknis frontend
+│
+├── scripts/                             # 🛠️ Skrip Operasional & Database
+│   ├── ship.js                          # Auto-validate, commit, & ship ke GitHub
+│   ├── sync-vercel-env.js               # Sinkronisasi environment variable ke Vercel
+│   └── seed-official-menu.js            # Seeder menu resmi Biosphere Roast Works
+│
+├── .github/workflows/
+│   └── ci.yml                           # GitHub Actions CI memvalidasi frontend & backend
+│
+├── package.json                         # Orkestrasi root monorepo (npm workspaces)
+├── docker-compose.yml                   # Multi-service local stack (DB + Go + Next.js)
+├── vercel.json                          # Konfigurasi deployment Vercel monorepo
+├── .env.example                         # Blueprint variabel lingkungan
+└── README.md                            # Dokumentasi utama proyek
+```
+
+---
+
+## ✨ Fitur Utama
+
+- **Landing page animasi 3D** — biji kopi prosedural (Three.js + React Three Fiber) yang berubah warna per tahap: green bean → light → medium → grind → brew.
+- **Autentikasi lengkap** — email/password, **Google OAuth** (Supabase Auth), dan **guest / one-time buyer** (tanpa akun, akses status via token).
+- **Katalog Real-Time & Micro-Cache** — waktu respon < 1ms untuk menu kopi sangrai & minuman, tersinkronisasi instan dengan perubahan admin.
+- **Custom Order Roasting Wizard** — 4 profil roasting presisi, pilihan grind size, kemasan 100g hingga 1kg.
+- **Wholesale B2B Portal** — matriks pemesanan volume B2B dengan batas diskon otomatis maks 10% dan form permintaan sampel.
+- **Pengiriman Multi-Kurir** — integrasi **Biteship** (JNE, J&T, SiCepat, AnterAja, GoSend, GrabExpress) + pelacakan nomor resi.
+- **Pembayaran Multi-Channel** — integrasi **Doku Jokul Checkout** (QRIS, VA BCA/Mandiri/BRI/BNI, e-Wallets, Kartu Kredit).
+- **Panel Admin Roastery (`/admin`)**:
+  - Proteksi login akun admin.
+  - Dashboard analitik omzet & pesanan real-time.
+  - Manajemen katalog menu (**Select All**, **Bulk Edit**, **Hapus Menu**).
+  - Manajemen stok inventaris bahan baku & audit mutasi.
+  - Manajemen pelanggan, tiering B2B, dan promosi WhatsApp/Email.
+  - Cetak label kantong (*bag labels*) dan *packing slip*.
+- **Layanan Backend Golang Berkinerja Tinggi**:
+  - Routing cepat via Chi Router.
+  - Connection pooling ke Supabase PostgreSQL (`pgxpool`).
+  - Integrasi Cloudflare R2 untuk penyimpanan foto produk.
+  - Auto-purge CDN Cloudflare untuk pembaruan instan.
+
+---
+
+## 🚀 Panduan Memulai Cepat
+
+### 1. Instalasi Dependensi Monorepo
+```bash
+# Di direktori root
+npm install
+```
+Perintah ini akan mengonfigurasi npm workspaces dan menghubungkan paket `@acho/frontend`.
+
+### 2. Konfigurasi Environment Variable
+```bash
+cp .env.example .env.local
+```
+*(File `.env.local` akan otomatis terbaca oleh server Next.js di `frontend/` maupun server Go di `backend/`).*
+
+### 3. Menjalankan Frontend (TypeScript / Next.js)
+```bash
+# Dari root
+npm run dev
+
+# Atau masuk ke direktori frontend
+cd frontend
+npm run dev
+```
+Buka browser di `http://localhost:3000`.
+
+### 4. Menjalankan Backend (Golang)
+```bash
+# Dari root
+npm run backend:start
+
+# Atau masuk ke direktori backend
+cd backend
+go run ./cmd/server
+```
+Server backend berjalan di `http://localhost:8080`.
+
+### 5. Menjalankan Stack Lengkap dengan Docker
+```bash
+docker compose up --build
+```
+Menjalankan container PostgreSQL lokal, server Go Backend, dan aplikasi Next.js Frontend secara bersamaan.
+
+---
+
+## 📋 Perintah Root Monorepo
+
+| Command | Deskripsi |
+|---|---|
+| `npm run dev` | Menjalankan Next.js development server |
+| `npm run build` | Build produksi Next.js teroptimasi |
+| `npm run start` | Menjalankan server hasil build produksi |
+| `npm run typecheck` | Pengecekan tipe TypeScript seluruh frontend |
+| `npm run lint` | Pemeriksaan linting ESLint |
+| `npm run validate` | Menjalankan typecheck & linting sekaligus |
+| `npm run backend:start` | Menjalankan Go backend server |
+| `npm run backend:build` | Mengompilasi binary Go backend |
+| `npm run backend:test` | Menjalankan unit test Go backend |
+| `npm run db:push` | Menerapkan skema Drizzle ke PostgreSQL |
+| `npm run db:studio` | Membuka Drizzle Studio web GUI |
+| `npm run ship` | Validasi, commit otomatis, dan push ke GitHub |
+
+---
+
+## 🚢 Deployment ke Vercel
+
+Repository ini telah dikonfigurasi agar dapat dideploy langsung ke Vercel:
+1. **Opsi A (Rekomendasi)**: Di pengaturan Vercel Dashboard (**Settings > General > Root Directory**), atur Root Directory ke `frontend`.
+2. **Opsi B**: Deploy dari root monorepo. File `vercel.json` di root telah disiapkan dengan konfigurasi build command `npm run build --workspace=@acho/frontend` dan output directory `frontend/.next`.

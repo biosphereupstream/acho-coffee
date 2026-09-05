@@ -1,7 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
+frontend/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -13,20 +14,25 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
+# next.js & frontend builds
+.next/
+frontend/.next/
+out/
+frontend/out/
+build/
 
-# production
-/build
+# Go backend binaries & caches
+*.exe
+backend/*.exe
+backend/bin/
+backend/server
+backend/acho-server.exe
+acho-server.exe
 
 # local tool caches
 .npm-cache/
 .tmp-scaffold/
 *.log
-*.exe
-/backend/server
-/backend/server.exe
 
 # demo store (mode tanpa DATABASE_URL)
 .data/
@@ -46,11 +52,15 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+frontend/.env*
 !.env.example
+!frontend/.env.example
 
 # vercel
 .vercel
+frontend/.vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+frontend/next-env.d.ts
