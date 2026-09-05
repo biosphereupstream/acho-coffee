@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { FeaturedSection } from "@/components/shop/featured-section";
 import { LandingFAQ } from "@/components/landing/faq";
 import RoastJourney from "@/components/landing/roast-journey-wrapper";
-import { getLiveMenu } from "@/lib/menu";
+import { getLiveFrontendConfig, getLiveMenu } from "@/lib/menu";
 import { ROAST_STAGES, ROAST_IMPORTANT_NOTES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -73,6 +73,7 @@ const TESTIMONIALS = [
 
 export default async function HomePage() {
   const coffees = await getLiveMenu({ includeInactive: false });
+  const config = await getLiveFrontendConfig();
 
   return (
     <div>
@@ -87,9 +88,17 @@ export default async function HomePage() {
         />
         <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 py-8 sm:px-6 sm:py-14 lg:grid-cols-2 lg:gap-14 lg:py-20 overflow-hidden">
           <div className="w-full max-w-full">
-            <Badge variant="gold" className="animate-fade-up mb-4 sm:mb-5 px-3 py-1 text-xs">
-              ☕ Fresh Roast dalam 72 Jam
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2 mb-4 sm:mb-5">
+              <Badge variant="gold" className="animate-fade-up px-3 py-1 text-xs">
+                ☕ Fresh Roast dalam 72 Jam
+              </Badge>
+              {config?.announcement_text && (
+                <div className="animate-fade-up inline-flex items-center gap-1.5 rounded-full bg-gold/15 border border-gold/40 px-3 py-1 text-xs text-gold-deep font-semibold">
+                  <Sparkles className="h-3 w-3 text-gold-deep shrink-0" />
+                  <span>{config.announcement_text}</span>
+                </div>
+              )}
+            </div>
             <h1 className="animate-fade-up font-[var(--font-display)] text-3xl sm:text-5xl lg:text-[3.4rem] font-bold leading-[1.16] tracking-tight text-green-deep break-words" style={{ animationDelay: "0.05s" }}>
               Dipesan Hari Ini,{" "}
               <span className="text-gold-gradient inline-block">Dipanggang Khusus</span> Untukmu

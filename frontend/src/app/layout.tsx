@@ -38,6 +38,9 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -52,7 +55,7 @@ export default async function RootLayout({
           <AnnouncementBanner initialConfig={initialConfig} />
           <SiteHeader />
           <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
-          <SiteFooter />
+          <SiteFooter config={initialConfig} />
           <Toaster />
         </Providers>
       </body>

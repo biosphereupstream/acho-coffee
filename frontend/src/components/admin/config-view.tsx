@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { 
@@ -14,6 +14,7 @@ import {
   Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface DatabaseTelemetry {
   database: {
@@ -121,11 +122,19 @@ export function ConfigView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(frontendCfg),
       });
-      if (!res.ok) throw new Error("Gagal menyimpan konfigurasi");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Gagal menyimpan konfigurasi");
+      }
+      const data = await res.json().catch(() => ({}));
+      if (data.config) {
+        setFrontendCfg(data.config);
+      }
       setSavedSuccess(true);
+      toast.success("Konfigurasi frontend berhasil disimpan dan disinkronkan ke toko!");
       setTimeout(() => setSavedSuccess(false), 4000);
-    } catch (err) {
-      alert("Error: " + String(err));
+    } catch (err: any) {
+      toast.error("Gagal menyimpan: " + (err.message || String(err)));
     } finally {
       setSaving(false);
     }
@@ -379,9 +388,29 @@ export function ConfigView() {
           </div>
 
           <div className="flex justify-end pt-3 border-t border-border/50">
-            <Button type="submit" disabled={saving} size="sm" className="gap-1.5 font-bold">
-              {saving ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-              Simpan Konfigurasi Frontend
+            <Button
+              type="submit"
+              disabled={saving}
+              size="sm"
+              className={`gap-1.5 font-bold transition-all ${
+                savedSuccess
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                  : ""
+              }`}
+            >
+              {saving ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Menyimpan...
+                </>
+              ) : savedSuccess ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-white" /> Berhasil Tersimpan!
+                </>
+              ) : (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Simpan Konfigurasi Frontend
+                </>
+              )}
             </Button>
           </div>
         </form>

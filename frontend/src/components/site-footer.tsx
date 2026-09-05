@@ -1,8 +1,25 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Clock, Mail, MapPin, Phone } from "lucide-react";
 
-export function SiteFooter() {
+interface SiteFooterProps {
+  config?: {
+    operating_hours?: string;
+    contact_whatsapp?: string;
+    contact_email?: string;
+    shop_open?: boolean;
+    shop_notice?: string;
+  } | null;
+}
+
+export function SiteFooter({ config }: SiteFooterProps = {}) {
+  const whatsapp = (config?.contact_whatsapp || "6281234567890").replace(/\D/g, "");
+  const formattedPhone = whatsapp.startsWith("62")
+    ? `+62 ${whatsapp.slice(2, 5)}-${whatsapp.slice(5, 9)}-${whatsapp.slice(9)}`
+    : `+${whatsapp}`;
+  const email = config?.contact_email || "hello@acho.coffee";
+  const hours = config?.operating_hours || "08:00 - 20:00 WIB";
+
   return (
     <footer className="metal-green-strong mt-auto text-primary-foreground/90">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:gap-10 sm:px-6 sm:py-14 md:grid-cols-4">
@@ -58,10 +75,28 @@ export function SiteFooter() {
               Sumur Bandung, Kota Bandung, Jawa Barat
             </li>
             <li className="flex items-center gap-2">
-              <Phone className="h-4 w-4 shrink-0 text-gold-light" /> +62 812-3456-7890
+              <Clock className="h-4 w-4 shrink-0 text-gold-light" />
+              <span>Jam Operasional: {hours}</span>
             </li>
             <li className="flex items-center gap-2">
-              <Mail className="h-4 w-4 shrink-0 text-gold-light" /> hello@biosphereroastworks.com
+              <Phone className="h-4 w-4 shrink-0 text-gold-light" />
+              <a
+                href={`https://wa.me/${whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-gold-light transition-colors underline-offset-2 hover:underline"
+              >
+                {formattedPhone}
+              </a>
+            </li>
+            <li className="flex items-center gap-2">
+              <Mail className="h-4 w-4 shrink-0 text-gold-light" />
+              <a
+                href={`mailto:${email}`}
+                className="hover:text-gold-light transition-colors underline-offset-2 hover:underline"
+              >
+                {email}
+              </a>
             </li>
           </ul>
         </div>

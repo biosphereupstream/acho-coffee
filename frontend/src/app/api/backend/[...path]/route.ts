@@ -20,15 +20,18 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
 }
 
 async function dispatchRequest(req: NextRequest, { path }: { path: string[] }) {
-  const isVercel = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
-  const isLocalBackend =
-    !process.env.GO_BACKEND_URL ||
-    GO_BACKEND_URL.includes("127.0.0.1") ||
-    GO_BACKEND_URL.includes("localhost");
+  const hasRemoteGoBackend = Boolean(
+    process.env.GO_BACKEND_URL &&
+    !process.env.GO_BACKEND_URL.includes("127.0.0.1") &&
+    !process.env.GO_BACKEND_URL.includes("localhost")
+  );
 
-  // On Vercel / serverless cloud without a remote Go daemon, route directly to the embedded serverless engine
-  if (isVercel && isLocalBackend) {
-    return handleServerlessBackend(req, path);
+  // If no remote Go daemon is configured, route directly to the embedded serverless engine
+  if (!hasRemoteGoBackend) {
+    const body = ["POST", "PUT", "PATCH"].includes(req.method)
+      ? await req.text()
+      : undefined;
+    return handleServerlessBackend(req, path, body);
   }
 
   let body: string | undefined = undefined;
