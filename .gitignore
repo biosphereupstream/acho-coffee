@@ -24,6 +24,9 @@
 .npm-cache/
 .tmp-scaffold/
 *.log
+*.exe
+/backend/server
+/backend/server.exe
 
 # demo store (mode tanpa DATABASE_URL)
 .data/
