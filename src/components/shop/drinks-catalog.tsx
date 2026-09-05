@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Coffee, Flame, Milk, Search, Sparkles, Zap } from "lucide-react";
 import { CoffeeCard } from "@/components/shop/coffee-card";
@@ -26,10 +26,39 @@ const SUB_FILTERS = [
   { id: "single_origin", label: "Single Origin Brew" },
 ] as const;
 
-export function DrinksCatalog({ coffees }: { coffees: CatalogCoffee[] }) {
+export function DrinksCatalog({ coffees: initialCoffees }: { coffees: CatalogCoffee[] }) {
+  const [coffees, setCoffees] = useState<CatalogCoffee[]>(initialCoffees);
   const [activeCategory, setActiveCategory] = useState<"semua" | ProductCategory>("semua");
   const [activeSubFilter, setActiveSubFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    setCoffees(initialCoffees);
+  }, [initialCoffees]);
+
+  // Real-time synchronization with /api/menu on window focus and interval
+  useEffect(() => {
+    let mounted = true;
+    async function refresh() {
+      try {
+        const res = await fetch("/api/menu", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (mounted && Array.isArray(data.coffees)) {
+          setCoffees(data.coffees);
+        }
+      } catch {}
+    }
+
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    const timer = setInterval(refresh, 12000);
+    return () => {
+      mounted = false;
+      window.removeEventListener("focus", onFocus);
+      clearInterval(timer);
+    };
+  }, []);
 
   // Only drinks
   const drinksOnly = useMemo(() => coffees.filter((c) => c.category !== "beans"), [coffees]);

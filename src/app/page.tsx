@@ -13,9 +13,12 @@ import { Button } from "@/components/ui/button";
 import { CoffeeCard } from "@/components/shop/coffee-card";
 import { LandingFAQ } from "@/components/landing/faq";
 import RoastJourney from "@/components/landing/roast-journey-wrapper";
-import { COFFEES } from "@/data/coffees";
+import { getLiveMenu } from "@/lib/menu";
 import { ROAST_STAGES, ROAST_IMPORTANT_NOTES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const MARQUEE_ITEMS = [
   "FRESH ROASTING",
@@ -68,7 +71,9 @@ const TESTIMONIALS = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const coffees = await getLiveMenu({ includeInactive: false });
+
   return (
     <div>
       {/* ================= HERO ================= */}
@@ -267,7 +272,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {COFFEES.filter((c) => c.category === "beans").map((coffee) => (
+            {coffees.filter((c) => c.category === "beans").map((coffee) => (
               <CoffeeCard key={coffee.slug} coffee={coffee} />
             ))}
           </div>
@@ -290,13 +295,13 @@ export default function HomePage() {
             </div>
             <Button variant="ghost" asChild className="font-bold text-primary">
               <Link href="/minuman">
-                Lihat Semua 45 Minuman <ArrowRight className="h-4 w-4 ml-1.5" />
+                Lihat Semua Minuman <ArrowRight className="h-4 w-4 ml-1.5" />
               </Link>
             </Button>
           </div>
 
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {COFFEES.filter((c) => c.category !== "beans").slice(0, 4).map((coffee) => (
+            {coffees.filter((c) => c.category !== "beans").slice(0, 4).map((coffee) => (
               <CoffeeCard key={coffee.slug} coffee={coffee} />
             ))}
           </div>

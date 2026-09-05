@@ -326,6 +326,25 @@ func (db *Database) CreateMenuItem(ctx context.Context, item models.MenuItem) (*
 
 	db.menuItems[item.ID] = &item
 	db.saveToFile()
+
+	// Sync insert to Supabase PostgreSQL if connected
+	if db.isPG && db.pgPool != nil {
+		go func(it models.MenuItem) {
+			ctxBg, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_, _ = db.pgPool.Exec(ctxBg, `
+				INSERT INTO coffees (slug, name, type, origin, region, process, description, price_idr, weight_grams, image_url, is_active)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				ON CONFLICT (slug) DO UPDATE SET
+					name = EXCLUDED.name,
+					price_idr = EXCLUDED.price_idr,
+					description = EXCLUDED.description,
+					image_url = EXCLUDED.image_url,
+					is_active = EXCLUDED.is_active
+			`, it.Slug, it.Name, "single_origin", "Indonesia", "Jawa Barat", it.Process, it.Description, it.PriceIDR, it.WeightGrams, it.ImageURL, it.IsActive)
+		}(item)
+	}
+
 	return &item, nil
 }
 
@@ -342,6 +361,25 @@ func (db *Database) UpdateMenuItem(ctx context.Context, item models.MenuItem) (*
 	item.UpdatedAt = time.Now()
 	db.menuItems[item.ID] = &item
 	db.saveToFile()
+
+	// Sync update to Supabase PostgreSQL if connected
+	if db.isPG && db.pgPool != nil {
+		go func(it models.MenuItem) {
+			ctxBg, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_, _ = db.pgPool.Exec(ctxBg, `
+				UPDATE coffees SET
+					name = $1,
+					price_idr = $2,
+					image_url = $3,
+					is_active = $4,
+					description = $5,
+					process = $6
+				WHERE id::text = $7 OR slug = $8
+			`, it.Name, it.PriceIDR, it.ImageURL, it.IsActive, it.Description, it.Process, it.ID, it.Slug)
+		}(item)
+	}
+
 	return &item, nil
 }
 

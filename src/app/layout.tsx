@@ -3,6 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/site-header";
+import { AnnouncementBanner } from "@/components/announcement-banner";
 import { SiteFooter } from "@/components/site-footer";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
 
@@ -45,6 +46,7 @@ export default function RootLayout({
     <html lang="id" className="scroll-smooth">
       <body className="flex min-h-screen flex-col bg-background overflow-x-hidden w-full max-w-full">
         <Providers>
+          <AnnouncementBanner />
           <SiteHeader />
           <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
           <SiteFooter />

@@ -1,8 +1,11 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Badge } from "@/components/ui/badge";
 import { MenuSwitcher } from "@/components/shop/menu-switcher";
 import { BeansCatalog } from "@/components/shop/beans-catalog";
-import { COFFEES } from "@/data/coffees";
+import { getLiveMenu } from "@/lib/menu";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Biji Kopi Sangrai (Roasted Beans) — Biosphere Roast Works",
@@ -10,7 +13,9 @@ export const metadata: Metadata = {
     "Pilihan biji kopi sangrai specialty Classic Origin Ciwidey & Garut. Disangrai on-demand segar dengan 4 profil roasting dan ukuran kemasan 100g s/d 1kg.",
 };
 
-export default function KopiPage() {
+export default async function KopiPage() {
+  const coffees = await getLiveMenu({ includeInactive: false });
+
   return (
     <div>
       <section className="metal-green-strong relative overflow-hidden">
@@ -34,7 +39,7 @@ export default function KopiPage() {
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 space-y-8">
         <MenuSwitcher current="beans" />
-        <BeansCatalog coffees={COFFEES} />
+        <BeansCatalog coffees={coffees} />
       </section>
     </div>
   );

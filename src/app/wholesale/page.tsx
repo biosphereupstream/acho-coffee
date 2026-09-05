@@ -9,10 +9,13 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { COFFEES } from "@/data/coffees";
+import { getLiveMenu } from "@/lib/menu";
 import { SavingsCalculator } from "@/components/wholesale/savings-calculator";
 import { BulkOrderMatrix } from "@/components/wholesale/bulk-order-matrix";
 import { SampleRequestForm } from "@/components/wholesale/sample-request-form";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Kemitraan Kafe & Wholesale Supply B2B",
@@ -62,8 +65,9 @@ const B2B_FAQS = [
   },
 ];
 
-export default function WholesalePage() {
-  const beanCoffees = COFFEES.filter((c) => c.category === "beans");
+export default async function WholesalePage() {
+  const coffees = await getLiveMenu({ includeInactive: false });
+  const beanCoffees = coffees.filter((c) => c.category === "beans");
 
   return (
     <div className="space-y-20 pb-24">

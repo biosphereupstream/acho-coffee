@@ -6,18 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import { CoffeeBagArt } from "@/components/coffee-bag-art";
 import { OrderBuilder } from "@/components/order/order-builder";
 import { MobileProductHeader } from "@/components/order/mobile-product-header";
-import { getCoffee } from "@/data/coffees";
+import { getLiveCoffee } from "@/lib/menu";
 import { formatIDR } from "@/lib/constants";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const coffee = getCoffee(slug);
+  const coffee = await getLiveCoffee(slug);
   return { title: coffee ? "Pesan " + coffee.name : "Pesan Kopi" };
 }
 
 export default async function PesanPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const coffee = getCoffee(slug);
+  const coffee = await getLiveCoffee(slug);
   if (!coffee) notFound();
 
   const isBeans = coffee.category === "beans";

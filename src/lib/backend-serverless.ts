@@ -201,6 +201,8 @@ export async function handleServerlessBackend(
           b2b_max_discount_percent: 10, // Enforced 10%
           updated_at: new Date().toISOString(),
         };
+        // Purge Cloudflare edge cache for storefront
+        purgeCloudflareCache(["/", "/kopi", "/minuman", "/wholesale", "/api/backend/config/frontend"]).catch(() => {});
         return NextResponse.json({
           message: "Konfigurasi frontend berhasil diperbarui",
           config: state.frontendConfig,
@@ -704,6 +706,8 @@ export async function handleServerlessBackend(
     try {
       const body = await parseJson();
       let updated = 0;
+      const updatedSlugs: string[] = [];
+
       for (const c of COFFEES) {
         if (body.select_all || (body.item_ids && body.item_ids.includes(c.slug))) {
           const current = state.menuOverrides.get(c.slug) || {};
@@ -718,9 +722,53 @@ export async function handleServerlessBackend(
             current.stock_quantity = Number(body.set_stock);
           }
           state.menuOverrides.set(c.slug, current);
+          updatedSlugs.push(c.slug);
           updated++;
         }
       }
+
+      // Also update custom menu items
+      for (const [id, custom] of state.customMenuItems.entries()) {
+        if (body.select_all || (body.item_ids && body.item_ids.includes(id))) {
+          if (body.action === "price_adjust_percent") {
+            const mult = 1 + (Number(body.adjust_percent) / 100);
+            custom.price_idr = Math.round(((custom.price_idr || 85000) * mult) / 1000) * 1000;
+          } else if (body.action === "price_adjust_fixed") {
+            custom.price_idr = (custom.price_idr || 85000) + Number(body.adjust_fixed);
+          } else if (body.action === "set_active") {
+            custom.is_active = Boolean(body.set_active);
+          } else if (body.action === "set_stock") {
+            custom.stock_quantity = Number(body.set_stock);
+          }
+          state.customMenuItems.set(id, custom);
+          if (!updatedSlugs.includes(id)) {
+            updatedSlugs.push(id);
+            updated++;
+          }
+        }
+      }
+
+      // Sync bulk edit to Supabase PostgreSQL
+      if (db && updatedSlugs.length > 0) {
+        try {
+          if (body.action === "set_active") {
+            await db.update(schema.coffees).set({ isActive: Boolean(body.set_active) }).where(inArray(schema.coffees.slug, updatedSlugs));
+          }
+          if (body.action === "price_adjust_percent" || body.action === "price_adjust_fixed") {
+            for (const slug of updatedSlugs) {
+              const current = state.menuOverrides.get(slug) || state.customMenuItems.get(slug);
+              if (current && current.price_idr) {
+                await db.update(schema.coffees).set({ priceIdr: current.price_idr }).where(eq(schema.coffees.slug, slug));
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("[Supabase] Failed bulk update coffees:", err);
+        }
+      }
+
+      purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu", "/api/menu", "/"]).catch(() => {});
+
       return NextResponse.json({ message: `Berhasil memperbarui ${updated} item menu`, updated_count: updated });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -736,6 +784,31 @@ export async function handleServerlessBackend(
       if (state.customMenuItems.has(id)) {
         state.customMenuItems.set(id, { ...state.customMenuItems.get(id), ...body });
       }
+
+      // Sync update to Supabase PostgreSQL (coffees table)
+      if (db) {
+        try {
+          const updateData: any = {};
+          if (body.name !== undefined) updateData.name = body.name;
+          if (body.price_idr !== undefined) updateData.priceIdr = Number(body.price_idr);
+          if (body.weight_grams !== undefined) updateData.weightGrams = Number(body.weight_grams);
+          if (body.image_url !== undefined) updateData.imageUrl = body.image_url;
+          if (body.is_active !== undefined) updateData.isActive = Boolean(body.is_active);
+          if (body.description !== undefined) updateData.description = body.description;
+          if (body.process !== undefined) updateData.process = body.process;
+          if (body.origin !== undefined) updateData.origin = body.origin;
+          if (body.region !== undefined) updateData.region = body.region;
+          if (Object.keys(updateData).length > 0) {
+            await db.update(schema.coffees).set(updateData).where(or(eq(schema.coffees.slug, id), eq(schema.coffees.id, id)));
+          }
+        } catch (err) {
+          console.warn("[Supabase] Failed to update coffee row:", err);
+        }
+      }
+
+      // Invalidate Cloudflare CDN Edge Cache
+      purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu", "/api/menu", `/pesan/${id}`, "/"]).catch(() => {});
+
       return NextResponse.json({ ...body, id });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });

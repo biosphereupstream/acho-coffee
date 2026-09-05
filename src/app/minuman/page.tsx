@@ -1,8 +1,11 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Badge } from "@/components/ui/badge";
 import { MenuSwitcher } from "@/components/shop/menu-switcher";
 import { DrinksCatalog } from "@/components/shop/drinks-catalog";
-import { COFFEES } from "@/data/coffees";
+import { getLiveMenu } from "@/lib/menu";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Menu Minuman Siap Seduh — Biosphere Roast Works",
@@ -10,7 +13,9 @@ export const metadata: Metadata = {
     "Pilihan minuman siap minum segar: Botol Kale 250ml, Pet Can 250ml, Botol 1 Liter, Simplicity Pouch, dan Espresso Pouch. Diseduh segar langsung ke depan pintu Anda.",
 };
 
-export default function MinumanPage() {
+export default async function MinumanPage() {
+  const coffees = await getLiveMenu({ includeInactive: false });
+
   return (
     <div>
       <section className="metal-green-strong relative overflow-hidden">
@@ -34,7 +39,7 @@ export default function MinumanPage() {
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 space-y-8">
         <MenuSwitcher current="drinks" />
-        <DrinksCatalog coffees={COFFEES} />
+        <DrinksCatalog coffees={coffees} />
       </section>
     </div>
   );
