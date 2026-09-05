@@ -1,4 +1,5 @@
 import { db, schema } from "@/db";
+import { eq } from "drizzle-orm";
 import { COFFEES } from "@/data/coffees";
 import { getBackendState } from "@/lib/backend-serverless";
 import type { CatalogCoffee, ProductCategory } from "@/lib/types";
@@ -109,18 +110,16 @@ export interface GetLiveMenuOptions {
 }
 
 // In-Memory SWR Cache for sub-millisecond storefront response times
-let cachedActiveMenu: CatalogCoffee[] | null = null;
-let cachedAllMenu: CatalogCoffee[] | null = null;
-let lastCacheTime = 0;
 const CACHE_TTL_MS = 15_000; // 15s cache TTL
 
 /**
  * Instantly purges the menu cache when admin updates or deletes menu items.
+ * Clears the actual state.cachedCatalogMenu used by getLiveMenu().
  */
 export function invalidateLiveMenuCache() {
-  cachedActiveMenu = null;
-  cachedAllMenu = null;
-  lastCacheTime = 0;
+  const state = getBackendState();
+  state.cachedCatalogMenu = null;
+  state.cachedCatalogMenuTime = 0;
 }
 
 /**
@@ -261,8 +260,22 @@ export async function getLiveCoffee(slug: string): Promise<CatalogCoffee | null>
 
 /**
  * Retrieves the current live frontend configuration.
+ * Queries Supabase site_config first so SSR gets persisted configuration immediately.
  */
-export function getLiveFrontendConfig() {
+export async function getLiveFrontendConfig() {
   const state = getBackendState();
+  if (db) {
+    try {
+      const rows = await Promise.race([
+        db.select().from(schema.siteConfig).where(eq(schema.siteConfig.key, "frontend_config")),
+        new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error("Timeout loading site_config")), 3500)),
+      ]);
+      if (rows && rows.length > 0 && rows[0].value) {
+        state.frontendConfig = { ...state.frontendConfig, ...(rows[0].value as any) };
+      }
+    } catch (err) {
+      console.warn("[Menu] Failed to load site_config for SSR:", err);
+    }
+  }
   return state.frontendConfig;
 }

@@ -1,6 +1,7 @@
-﻿package handlers
+package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -65,7 +66,7 @@ func (h *ConfigHandler) UpdateFrontendConfig(w http.ResponseWriter, r *http.Requ
 
 	// Purge CDN cache asynchronously so frontend gets updated values immediately
 	go func() {
-		_ = h.cf.PurgeCDNCache(r.Context(), []string{"/api/config/frontend"})
+		_ = h.cf.PurgeCDNCache(context.Background(), []string{"/", "/kopi", "/minuman", "/wholesale", "/api/backend/config/frontend", "/api/config/frontend"})
 	}()
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{

@@ -192,6 +192,18 @@ export async function handleServerlessBackend(
   // 5. CONFIG: Frontend
   if (subPath === "config/frontend") {
     if (method === "GET") {
+      // Try to load from Supabase first for persistence across cold-starts
+      if (db) {
+        try {
+          const rows = await db.select().from(schema.siteConfig).where(eq(schema.siteConfig.key, "frontend_config"));
+          if (rows.length > 0 && rows[0].value) {
+            const dbConfig = rows[0].value as typeof state.frontendConfig;
+            state.frontendConfig = { ...state.frontendConfig, ...dbConfig };
+          }
+        } catch (err) {
+          console.warn("[Supabase] Failed to read site_config:", err);
+        }
+      }
       return NextResponse.json(state.frontendConfig);
     }
     if (method === "PUT") {
@@ -203,10 +215,31 @@ export async function handleServerlessBackend(
           b2b_max_discount_percent: 10, // Enforced 10%
           updated_at: new Date().toISOString(),
         };
+
+        // Persist to Supabase site_config table
+        if (db) {
+          try {
+            const existing = await db.select().from(schema.siteConfig).where(eq(schema.siteConfig.key, "frontend_config"));
+            if (existing.length > 0) {
+              await db.update(schema.siteConfig)
+                .set({ value: state.frontendConfig as any, updatedAt: new Date().toISOString() })
+                .where(eq(schema.siteConfig.key, "frontend_config"));
+            } else {
+              await db.insert(schema.siteConfig).values({
+                key: "frontend_config",
+                value: state.frontendConfig as any,
+                updatedAt: new Date().toISOString(),
+              });
+            }
+          } catch (err) {
+            console.warn("[Supabase] Failed to persist frontend config:", err);
+          }
+        }
+
         // Purge Cloudflare edge cache for storefront
         purgeCloudflareCache(["/", "/kopi", "/minuman", "/wholesale", "/api/backend/config/frontend"]).catch(() => {});
         return NextResponse.json({
-          message: "Konfigurasi frontend berhasil diperbarui",
+          message: "Konfigurasi frontend berhasil diperbarui & disimpan ke database",
           config: state.frontendConfig,
         });
       } catch {
@@ -314,12 +347,35 @@ export async function handleServerlessBackend(
       low_stock_items: lowStockItems,
     });
   }
-
   // 7. INVENTORY
   if (subPath === "inventory") {
     if (method === "GET") {
       const search = (url.searchParams.get("search") || "").toLowerCase();
       const cat = url.searchParams.get("category");
+
+      // Try loading from Supabase DB first
+      if (db) {
+        try {
+          const dbItems = await db.select().from(schema.inventoryItems);
+          if (dbItems.length > 0) {
+            state.inventory = dbItems.map(item => ({
+              id: item.id,
+              code: item.code,
+              name: item.name,
+              category: item.category,
+              current_stock: item.currentStock,
+              unit: item.unit,
+              min_threshold: item.minThreshold,
+              cost_per_unit_idr: item.costPerUnitIdr,
+              location: item.location,
+              batch_number: item.batchNumber,
+              updated_at: item.updatedAt,
+            }));
+          }
+        } catch (err) {
+          console.warn("[Supabase] Failed to load inventory:", err);
+        }
+      }
 
       let filtered = state.inventory;
       if (cat && cat !== "all") {
@@ -341,6 +397,28 @@ export async function handleServerlessBackend(
           updated_at: new Date().toISOString(),
         };
         state.inventory.unshift(item);
+
+        // Sync to Supabase
+        if (db) {
+          try {
+            await db.insert(schema.inventoryItems).values({
+              id: item.id,
+              code: item.code || "",
+              name: item.name || "",
+              category: item.category || "other",
+              currentStock: Number(item.current_stock) || 0,
+              unit: item.unit || "pcs",
+              minThreshold: Number(item.min_threshold) || 0,
+              costPerUnitIdr: Number(item.cost_per_unit_idr) || 0,
+              location: item.location || null,
+              batchNumber: item.batch_number || null,
+              updatedAt: new Date().toISOString(),
+            });
+          } catch (err) {
+            console.warn("[Supabase] Failed to insert inventory item:", err);
+          }
+        }
+
         return NextResponse.json(item, { status: 201 });
       } catch {
         return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -377,6 +455,28 @@ export async function handleServerlessBackend(
       };
       state.inventoryLogs.unshift(logEntry);
 
+      // Sync to Supabase
+      if (db) {
+        try {
+          await db.update(schema.inventoryItems)
+            .set({ currentStock: item.current_stock, updatedAt: item.updated_at })
+            .where(eq(schema.inventoryItems.id, id));
+          await db.insert(schema.inventoryLogs).values({
+            id: logEntry.id,
+            inventoryItemId: id,
+            itemName: item.name,
+            changeAmount: change,
+            balanceAfter: item.current_stock,
+            actionType: logEntry.action_type,
+            reason: logEntry.reason,
+            createdBy: logEntry.created_by,
+            createdAt: logEntry.created_at,
+          });
+        } catch (err) {
+          console.warn("[Supabase] Failed to sync inventory adjustment:", err);
+        }
+      }
+
       return NextResponse.json({ message: "Stok berhasil disesuaikan", item });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -385,6 +485,31 @@ export async function handleServerlessBackend(
 
   if (subPath.startsWith("inventory/") && subPath.endsWith("/logs") && method === "GET") {
     const id = pathParts[1];
+
+    // Try loading from Supabase
+    if (db) {
+      try {
+        const dbLogs = await db.select().from(schema.inventoryLogs)
+          .where(eq(schema.inventoryLogs.inventoryItemId, id));
+        if (dbLogs.length > 0) {
+          const mapped = dbLogs.map(l => ({
+            id: l.id,
+            inventory_item_id: l.inventoryItemId,
+            item_name: l.itemName,
+            change_amount: l.changeAmount,
+            balance_after: l.balanceAfter,
+            action_type: l.actionType,
+            reason: l.reason,
+            created_by: l.createdBy,
+            created_at: l.createdAt,
+          }));
+          return NextResponse.json({ logs: mapped, total: mapped.length });
+        }
+      } catch (err) {
+        console.warn("[Supabase] Failed to load inventory logs:", err);
+      }
+    }
+
     const logs = state.inventoryLogs.filter((l) => l.inventory_item_id === id);
     return NextResponse.json({ logs, total: logs.length });
   }
@@ -394,15 +519,36 @@ export async function handleServerlessBackend(
     try {
       const body = await parseJson();
       let updated = 0;
+      const updatedIds: string[] = [];
       for (const item of state.inventory) {
         if (body.select_all || (body.item_ids && body.item_ids.includes(item.id))) {
           if (body.category) item.category = body.category;
           if (body.location) item.location = body.location;
           if (body.min_threshold !== undefined) item.min_threshold = Number(body.min_threshold);
           item.updated_at = new Date().toISOString();
+          updatedIds.push(item.id);
           updated++;
         }
       }
+
+      // Sync to Supabase
+      if (db && updatedIds.length > 0) {
+        try {
+          for (const id of updatedIds) {
+            const item = state.inventory.find(i => i.id === id);
+            if (item) {
+              const updateData: any = { updatedAt: new Date().toISOString() };
+              if (body.category) updateData.category = body.category;
+              if (body.location) updateData.location = body.location;
+              if (body.min_threshold !== undefined) updateData.minThreshold = Number(body.min_threshold);
+              await db.update(schema.inventoryItems).set(updateData).where(eq(schema.inventoryItems.id, id));
+            }
+          }
+        } catch (err) {
+          console.warn("[Supabase] Failed bulk update inventory:", err);
+        }
+      }
+
       return NextResponse.json({ message: `Berhasil memperbarui ${updated} item inventaris`, updated_count: updated });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -414,12 +560,29 @@ export async function handleServerlessBackend(
     try {
       const body = await parseJson();
       const initialCount = state.inventory.length;
+      let deletedIds: string[] = [];
       if (body.select_all) {
+        deletedIds = state.inventory.map(i => i.id);
         state.inventory = [];
       } else if (Array.isArray(body.item_ids)) {
+        deletedIds = body.item_ids;
         state.inventory = state.inventory.filter((it) => !body.item_ids.includes(it.id));
       }
       const deleted = initialCount - state.inventory.length;
+
+      // Sync to Supabase
+      if (db && deletedIds.length > 0) {
+        try {
+          if (body.select_all) {
+            await db.delete(schema.inventoryItems);
+          } else {
+            await db.delete(schema.inventoryItems).where(inArray(schema.inventoryItems.id, deletedIds));
+          }
+        } catch (err) {
+          console.warn("[Supabase] Failed bulk delete inventory:", err);
+        }
+      }
+
       return NextResponse.json({ message: `Berhasil menghapus ${deleted} item inventaris`, deleted_count: deleted });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -434,6 +597,26 @@ export async function handleServerlessBackend(
       const idx = state.inventory.findIndex((it) => it.id === id);
       if (idx === -1) return NextResponse.json({ error: "Item inventaris tidak ditemukan" }, { status: 404 });
       state.inventory[idx] = { ...state.inventory[idx], ...body, updated_at: new Date().toISOString() };
+
+      // Sync to Supabase
+      if (db) {
+        try {
+          const updateData: any = { updatedAt: new Date().toISOString() };
+          if (body.name !== undefined) updateData.name = body.name;
+          if (body.code !== undefined) updateData.code = body.code;
+          if (body.category !== undefined) updateData.category = body.category;
+          if (body.current_stock !== undefined) updateData.currentStock = Number(body.current_stock);
+          if (body.unit !== undefined) updateData.unit = body.unit;
+          if (body.min_threshold !== undefined) updateData.minThreshold = Number(body.min_threshold);
+          if (body.cost_per_unit_idr !== undefined) updateData.costPerUnitIdr = Number(body.cost_per_unit_idr);
+          if (body.location !== undefined) updateData.location = body.location;
+          if (body.batch_number !== undefined) updateData.batchNumber = body.batch_number;
+          await db.update(schema.inventoryItems).set(updateData).where(eq(schema.inventoryItems.id, id));
+        } catch (err) {
+          console.warn("[Supabase] Failed to update inventory item:", err);
+        }
+      }
+
       return NextResponse.json({ message: "Item inventaris berhasil diperbarui", item: state.inventory[idx] });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -448,13 +631,56 @@ export async function handleServerlessBackend(
     if (state.inventory.length === initialCount) {
       return NextResponse.json({ error: "Item inventaris tidak ditemukan" }, { status: 404 });
     }
+
+    // Sync to Supabase
+    if (db) {
+      try {
+        await db.delete(schema.inventoryItems).where(eq(schema.inventoryItems.id, id));
+      } catch (err) {
+        console.warn("[Supabase] Failed to delete inventory item:", err);
+      }
+    }
+
     return NextResponse.json({ message: "Item inventaris berhasil dihapus" });
   }
+
+  // Helper to persist customers to DB
+  const persistCustomers = async (customersList: any[]) => {
+    if (!db) return;
+    try {
+      const existing = await db.select().from(schema.siteConfig).where(eq(schema.siteConfig.key, "admin_customers"));
+      if (existing.length > 0) {
+        await db.update(schema.siteConfig)
+          .set({ value: customersList, updatedAt: new Date().toISOString() })
+          .where(eq(schema.siteConfig.key, "admin_customers"));
+      } else {
+        await db.insert(schema.siteConfig).values({
+          key: "admin_customers",
+          value: customersList,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    } catch (err) {
+      console.warn("[Supabase] Failed to persist customers:", err);
+    }
+  };
 
   // 8. CUSTOMERS
   if (subPath === "customers" && method === "GET") {
     const search = (url.searchParams.get("search") || "").toLowerCase();
     const tier = url.searchParams.get("tier");
+
+    // Try loading from Supabase DB first
+    if (db) {
+      try {
+        const rows = await db.select().from(schema.siteConfig).where(eq(schema.siteConfig.key, "admin_customers"));
+        if (rows.length > 0 && Array.isArray(rows[0].value)) {
+          state.customers = rows[0].value as typeof state.customers;
+        }
+      } catch (err) {
+        console.warn("[Supabase] Failed to load customers:", err);
+      }
+    }
 
     let list = state.customers;
     if (tier && tier !== "all") {
@@ -481,6 +707,7 @@ export async function handleServerlessBackend(
           }
         }
       }
+      await persistCustomers(state.customers);
       return NextResponse.json({ message: `Berhasil memperbarui ${count} pelanggan`, updated_count: count });
     } catch {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
@@ -549,6 +776,7 @@ export async function handleServerlessBackend(
         created_at: new Date().toISOString(),
       };
       state.customers.unshift(customer);
+      await persistCustomers(state.customers);
       return NextResponse.json(customer, { status: 201 });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -571,6 +799,7 @@ export async function handleServerlessBackend(
       }
 
       const deleted = initialCount - state.customers.length;
+      await persistCustomers(state.customers);
 
       // Sync bulk delete to Supabase PostgreSQL (profiles table)
       if (db && deletedIds.length > 0) {
@@ -599,6 +828,7 @@ export async function handleServerlessBackend(
       const idx = state.customers.findIndex((c) => c.id === id);
       if (idx === -1) return NextResponse.json({ error: "Pelanggan tidak ditemukan" }, { status: 404 });
       state.customers[idx] = { ...state.customers[idx], ...body };
+      await persistCustomers(state.customers);
       return NextResponse.json({ message: "Pelanggan berhasil diperbarui", customer: state.customers[idx] });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -614,6 +844,7 @@ export async function handleServerlessBackend(
     if (state.customers.length === initialCount) {
       return NextResponse.json({ error: "Pelanggan tidak ditemukan" }, { status: 404 });
     }
+    await persistCustomers(state.customers);
 
     // Sync deletion to Supabase PostgreSQL (profiles table)
     if (db) {
@@ -633,30 +864,71 @@ export async function handleServerlessBackend(
       const search = (url.searchParams.get("search") || "").toLowerCase();
       const type = url.searchParams.get("type");
 
-      let items = COFFEES
-        .filter((c) => !state.deletedMenuSlugs.has(c.slug))
-        .map((c) => {
-          const override = state.menuOverrides.get(c.slug) || {};
-          return {
-            id: c.slug,
-            slug: c.slug,
-            name: c.name,
-            category: c.category,
-            type: c.type,
-            packaging: c.packageType || (c.category === "beans" ? "250g Valve Bag" : "Botol/Can"),
-            process: c.process,
-            price_idr: override.price_idr || c.priceIdr,
-            stock_quantity: override.stock_quantity ?? 45,
-            image_url: override.image_url || c.imageUrl || "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800&q=80",
-            is_active: override.is_active ?? true,
-            description: c.description,
-            ...override,
-          };
-        });
+      let items: any[] = [];
 
-      // Append custom added menu items
+      // Try reading from Supabase DB first (same source as storefront getLiveMenu)
+      if (db) {
+        try {
+          const dbRows = await Promise.race([
+            db.select().from(schema.coffees),
+            new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error("timeout")), 2000)),
+          ]);
+          if (dbRows.length > 0) {
+            items = dbRows
+              .filter((row: any) => !state.deletedMenuSlugs.has(row.slug))
+              .map((row: any) => {
+                const override = state.menuOverrides.get(row.slug) || {};
+                return {
+                  id: row.slug,
+                  slug: row.slug,
+                  name: override.name || row.name,
+                  category: row.type === "blend" ? "beans" : (row.origin?.toLowerCase().includes("blend") ? "beans" : COFFEES.find(c => c.slug === row.slug)?.category || "beans"),
+                  type: row.type,
+                  packaging: COFFEES.find(c => c.slug === row.slug)?.packageType || (row.type === "blend" ? "Blend Bag" : "250g Valve Bag"),
+                  process: override.process || row.process,
+                  price_idr: override.price_idr || row.priceIdr,
+                  stock_quantity: override.stock_quantity ?? 45,
+                  image_url: override.image_url || row.imageUrl || "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800&q=80",
+                  is_active: override.is_active ?? row.isActive ?? true,
+                  description: override.description || row.description,
+                  origin: override.origin || row.origin,
+                  region: override.region || row.region,
+                  ...override,
+                };
+              });
+          }
+        } catch (err) {
+          console.warn("[Admin Menu] Supabase query failed, falling back to static:", err);
+        }
+      }
+
+      // Fallback: Static COFFEES + in-memory overrides
+      if (items.length === 0) {
+        items = COFFEES
+          .filter((c) => !state.deletedMenuSlugs.has(c.slug))
+          .map((c) => {
+            const override = state.menuOverrides.get(c.slug) || {};
+            return {
+              id: c.slug,
+              slug: c.slug,
+              name: c.name,
+              category: c.category,
+              type: c.type,
+              packaging: c.packageType || (c.category === "beans" ? "250g Valve Bag" : "Botol/Can"),
+              process: c.process,
+              price_idr: override.price_idr || c.priceIdr,
+              stock_quantity: override.stock_quantity ?? 45,
+              image_url: override.image_url || c.imageUrl || "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800&q=80",
+              is_active: override.is_active ?? true,
+              description: c.description,
+              ...override,
+            };
+          });
+      }
+
+      // Append custom added menu items (not yet in DB)
       for (const [id, custom] of state.customMenuItems.entries()) {
-        if (!state.deletedMenuSlugs.has(id)) {
+        if (!state.deletedMenuSlugs.has(id) && !items.some(i => i.slug === id)) {
           items.push(custom);
         }
       }
@@ -698,6 +970,9 @@ export async function handleServerlessBackend(
             console.warn("[Supabase] Failed to insert coffee row:", err);
           }
         }
+
+        // Purge Cloudflare edge cache for storefront pages
+        purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu", "/api/menu", `/pesan/${id}`, "/"]).catch(() => {});
 
         return NextResponse.json(newItem, { status: 201 });
       } catch {
@@ -854,7 +1129,7 @@ export async function handleServerlessBackend(
     }
 
     // Invalidate Cloudflare CDN Edge Cache
-    purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu", `/pesan/${id}`, "/"]).catch(() => {});
+    purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu", "/api/menu", `/pesan/${id}`, "/"]).catch(() => {});
 
     return NextResponse.json({ message: "Item menu berhasil dihapus dari sistem, Supabase, dan Cloudflare R2", id });
   }
@@ -899,7 +1174,7 @@ export async function handleServerlessBackend(
         }
       }
 
-      purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu"]).catch(() => {});
+      purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu", "/api/menu", "/"]).catch(() => {});
 
       return NextResponse.json({
         message: `Berhasil menghapus ${idsToDelete.length} item menu dari sistem, Supabase, & Cloudflare R2`,

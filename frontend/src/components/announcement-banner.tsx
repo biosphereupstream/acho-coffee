@@ -29,10 +29,8 @@ export function AnnouncementBanner({ initialConfig }: { initialConfig?: Frontend
   }
 
   useEffect(() => {
-    // If not provided server-side, fetch immediately
-    if (!initialConfig) {
-      fetchConfig();
-    }
+    // Always fetch latest config on mount to catch any recent admin updates
+    fetchConfig();
 
     // Refresh when user returns to tab (real-time sync without background CPU waste)
     const onFocus = () => fetchConfig();
@@ -43,15 +41,15 @@ export function AnnouncementBanner({ initialConfig }: { initialConfig?: Frontend
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
-    // Conservative 45s heartbeat interval
-    const interval = setInterval(fetchConfig, 45000);
+    // 30s heartbeat interval
+    const interval = setInterval(fetchConfig, 30000);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [initialConfig]);
+  }, []);
 
   if (!config || !config.banner_enabled || !config.banner_text?.trim()) {
     return null;

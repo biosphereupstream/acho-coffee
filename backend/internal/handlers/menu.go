@@ -74,7 +74,7 @@ func (h *MenuHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Invalidate CDN cache
 	go func() {
-		_ = h.cf.PurgeCDNCache(r.Context(), []string{"/kopi", "/minuman", "/api/menu"})
+		_ = h.cf.PurgeCDNCache(context.Background(), []string{"/", "/kopi", "/minuman", "/api/menu", "/api/backend/menu"})
 	}()
 
 	respondJSON(w, http.StatusCreated, created)
@@ -97,7 +97,7 @@ func (h *MenuHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Invalidate CDN cache
 	go func() {
-		_ = h.cf.PurgeCDNCache(r.Context(), []string{"/kopi", "/minuman", "/api/menu", "/pesan/" + updated.Slug})
+		_ = h.cf.PurgeCDNCache(context.Background(), []string{"/", "/kopi", "/minuman", "/api/menu", "/api/backend/menu", "/pesan/" + updated.Slug})
 	}()
 
 	respondJSON(w, http.StatusOK, updated)
@@ -118,7 +118,7 @@ func (h *MenuHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		if img != "" {
 			_ = h.cf.DeleteR2(ctxBg, img)
 		}
-		_ = h.cf.PurgeCDNCache(ctxBg, []string{"/kopi", "/minuman", "/api/menu"})
+		_ = h.cf.PurgeCDNCache(ctxBg, []string{"/", "/kopi", "/minuman", "/api/menu", "/api/backend/menu"})
 	}(imageURL)
 
 	respondJSON(w, http.StatusOK, map[string]string{
@@ -146,7 +146,7 @@ func (h *MenuHandler) BulkEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		_ = h.cf.PurgeCDNCache(r.Context(), []string{"/kopi", "/minuman", "/api/menu"})
+		_ = h.cf.PurgeCDNCache(context.Background(), []string{"/", "/kopi", "/minuman", "/api/menu", "/api/backend/menu"})
 	}()
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
@@ -181,7 +181,7 @@ func (h *MenuHandler) BulkDelete(w http.ResponseWriter, r *http.Request) {
 				_ = h.cf.DeleteR2(ctxBg, img)
 			}
 		}
-		_ = h.cf.PurgeCDNCache(ctxBg, []string{"/kopi", "/minuman", "/api/menu"})
+		_ = h.cf.PurgeCDNCache(ctxBg, []string{"/", "/kopi", "/minuman", "/api/menu", "/api/backend/menu"})
 	}(imageURLs)
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{

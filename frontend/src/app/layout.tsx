@@ -38,12 +38,12 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const initialConfig = getLiveFrontendConfig();
+  const initialConfig = await getLiveFrontendConfig();
 
   return (
     <html lang="id" className="scroll-smooth">

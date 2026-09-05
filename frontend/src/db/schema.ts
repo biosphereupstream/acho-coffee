@@ -237,6 +237,40 @@ export const userAddresses = pgTable(
   ]
 );
 
+/* ============ SITE CONFIG (key-value store for frontend settings) ============ */
+export const siteConfig = pgTable("site_config", {
+  key: varchar("key", { length: 100 }).primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at", { mode: "string" }).notNull().defaultNow(),
+});
+
+/* ============ INVENTORY ============ */
+export const inventoryItems = pgTable("inventory_items", {
+  id: varchar("id", { length: 40 }).primaryKey(),
+  code: varchar("code", { length: 40 }).notNull(),
+  name: varchar("name", { length: 200 }).notNull(),
+  category: varchar("category", { length: 60 }).notNull(),
+  currentStock: integer("current_stock").notNull().default(0),
+  unit: varchar("unit", { length: 30 }).notNull().default("pcs"),
+  minThreshold: integer("min_threshold").notNull().default(0),
+  costPerUnitIdr: integer("cost_per_unit_idr").notNull().default(0),
+  location: text("location"),
+  batchNumber: varchar("batch_number", { length: 60 }),
+  updatedAt: timestamp("updated_at", { mode: "string" }).notNull().defaultNow(),
+});
+
+export const inventoryLogs = pgTable("inventory_logs", {
+  id: varchar("id", { length: 40 }).primaryKey(),
+  inventoryItemId: varchar("inventory_item_id", { length: 40 }).notNull(),
+  itemName: varchar("item_name", { length: 200 }),
+  changeAmount: integer("change_amount").notNull(),
+  balanceAfter: integer("balance_after").notNull(),
+  actionType: varchar("action_type", { length: 40 }).notNull(),
+  reason: text("reason"),
+  createdBy: varchar("created_by", { length: 120 }),
+  createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
+});
+
 /* ============ INFERRED TYPES ============ */
 export type Coffee = typeof coffees.$inferSelect;
 export type NewCoffee = typeof coffees.$inferInsert;
@@ -255,3 +289,7 @@ export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];
 export type RoastLevel = (typeof roastLevelEnum.enumValues)[number];
 export type GrindSize = (typeof grindSizeEnum.enumValues)[number];
 export type FulfillmentType = (typeof fulfillmentEnum.enumValues)[number];
+export type SiteConfig = typeof siteConfig.$inferSelect;
+export type InventoryItem = typeof inventoryItems.$inferSelect;
+export type InventoryLog = typeof inventoryLogs.$inferSelect;
+
