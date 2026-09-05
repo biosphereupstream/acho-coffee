@@ -219,7 +219,7 @@ export function CartDrawer() {
                 <div className="rounded-2xl border border-border bg-secondary/40 p-3 text-xs text-muted-foreground flex items-center justify-between">
                   <div>
                     <p className="font-semibold text-foreground">Program Grosir Kafe</p>
-                    <p className="text-[11px]">Beli min. 3 kg untuk diskon otomatis 15%</p>
+                    <p className="text-[11px]">Beli min. 3 kg untuk diskon otomatis 5%</p>
                   </div>
                   <span className="font-mono font-bold text-green-deep">
                     {wholesaleDiscount.totalBeanKg} / 3 kg

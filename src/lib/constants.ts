@@ -100,9 +100,9 @@ export const GRIND_LABELS: Record<string, string> = {
 };
 
 export const WHOLESALE_TIERS = [
-  { minKg: 3, maxKg: 5, discountPercent: 15, label: "Starter Cafe (3–5 kg)", badge: "Diskon 15%" },
-  { minKg: 6, maxKg: 10, discountPercent: 25, label: "Busy Coffee Shop (6–10 kg)", badge: "Diskon 25%" },
-  { minKg: 11, maxKg: Infinity, discountPercent: 35, label: "Roastery Partner (>10 kg)", badge: "Diskon 35%" },
+  { minKg: 3, maxKg: 5, discountPercent: 5, label: "Starter Cafe (3–5 kg)", badge: "Diskon 5%" },
+  { minKg: 6, maxKg: 10, discountPercent: 7.5, label: "Busy Coffee Shop (6–10 kg)", badge: "Diskon 7.5%" },
+  { minKg: 11, maxKg: Infinity, discountPercent: 10, label: "Roastery Partner (>10 kg)", badge: "Diskon 10%" },
 ] as const;
 
 export function calculateWholesaleDiscount(items: Array<{ weightGrams?: number; quantity: number; unitPriceIdr: number }>) {

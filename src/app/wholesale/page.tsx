@@ -17,7 +17,7 @@ import { SampleRequestForm } from "@/components/wholesale/sample-request-form";
 export const metadata: Metadata = {
   title: "Kemitraan Kafe & Wholesale Supply B2B",
   description:
-    "Pasokan biji kopi specialty 1kg bulk untuk coffee shop & kedai kopi. Diskon volume otomatis hingga 35%, sangrai on-demand segar, dan konsistensi sains rasa dari Biosphere Roast Works Bandung.",
+    "Pasokan biji kopi specialty 1kg bulk untuk coffee shop & kedai kopi. Diskon volume otomatis hingga 10%, sangrai on-demand segar, dan konsistensi sains rasa dari Biosphere Roast Works Bandung.",
 };
 
 const B2B_PERKS = [
@@ -33,8 +33,8 @@ const B2B_PERKS = [
   },
   {
     icon: TrendingUp,
-    title: "Tier Diskon Otomatis s/d 35%",
-    desc: "Mulai dari 3kg (diskon 15%), 6kg (diskon 25%), hingga >10kg (diskon 35%). Tanpa kontrak kaku, langsung teraplikasi di keranjang.",
+    title: "Tier Diskon Otomatis s/d 10%",
+    desc: "Mulai dari 3kg (diskon 5%), 6kg (diskon 7.5%), hingga >10kg (diskon 10%). Tanpa kontrak kaku, langsung teraplikasi di keranjang.",
   },
   {
     icon: Truck,
@@ -46,7 +46,7 @@ const B2B_PERKS = [
 const B2B_FAQS = [
   {
     q: "Berapa Minimum Order Quantity (MOQ) untuk mendapatkan harga grosir?",
-    a: "MOQ untuk mengaktifkan harga grosir adalah 3 kg akumulasi (boleh campur varian biji 1kg). Diskon 15% akan langsung memotong subtotal secara otomatis.",
+    a: "MOQ untuk mengaktifkan harga grosir adalah 3 kg akumulasi (boleh campur varian biji 1kg). Diskon 5% akan langsung memotong subtotal secara otomatis.",
   },
   {
     q: "Apakah bisa request profil roasting khusus (custom roast) untuk mesin espresso kami?",
@@ -80,7 +80,7 @@ export default function WholesalePage() {
             </h1>
 
             <p className="mx-auto max-w-2xl text-sm sm:text-base lg:text-lg leading-relaxed text-muted-foreground">
-              Solusi biji kopi sangrai 1kg bulk segar langsung dari roastery kami di Bandung. Diskon volume otomatis hingga 35%, konsistensi sains rasa, dan fleksibilitas tanpa kontrak yang mengikat.
+              Solusi biji kopi sangrai 1kg bulk segar langsung dari roastery kami di Bandung. Diskon volume otomatis hingga 10%, konsistensi sains rasa, dan fleksibilitas tanpa kontrak yang mengikat.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 w-full">
@@ -99,7 +99,7 @@ export default function WholesalePage() {
             {/* Quick stats */}
             <div className="grid grid-cols-3 gap-2 sm:gap-4 border-t border-border/80 pt-6 mt-6 text-center">
               <div className="min-w-0">
-                <p className="text-xl sm:text-3xl font-black text-green-deep">35%</p>
+                <p className="text-xl sm:text-3xl font-black text-green-deep">10%</p>
                 <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground truncate">Maks. Diskon</p>
               </div>
               <div className="min-w-0">
@@ -163,7 +163,7 @@ export default function WholesalePage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-border bg-background p-6 text-center space-y-2">
               <Badge variant="outline" className="text-xs font-bold">Tier 1 • Starter Cafe</Badge>
-              <p className="font-mono text-3xl font-black text-green-deep">Diskon 15%</p>
+              <p className="font-mono text-3xl font-black text-green-deep">Diskon 5%</p>
               <p className="text-xs text-muted-foreground font-semibold">Akumulasi 3 – 5 kg</p>
               <p className="text-[11px] text-muted-foreground leading-relaxed pt-2 border-t border-border">
                 Cocok untuk kedai kopi permulaan atau kafe dengan volume 150-250 cup/minggu.
@@ -175,7 +175,7 @@ export default function WholesalePage() {
                 Paling Populer
               </span>
               <Badge variant="gold" className="text-xs font-bold">Tier 2 • Busy Coffee Shop</Badge>
-              <p className="font-mono text-3xl font-black text-gold-deep">Diskon 25%</p>
+              <p className="font-mono text-3xl font-black text-gold-deep">Diskon 7.5%</p>
               <p className="text-xs text-muted-foreground font-semibold">Akumulasi 6 – 10 kg</p>
               <p className="text-[11px] text-muted-foreground leading-relaxed pt-2 border-t border-border">
                 Ideal untuk kedai kopi yang ramai dengan traffic harian konsisten.
@@ -184,7 +184,7 @@ export default function WholesalePage() {
 
             <div className="rounded-2xl border border-border bg-background p-6 text-center space-y-2">
               <Badge variant="outline" className="text-xs font-bold">Tier 3 • Roastery Partner</Badge>
-              <p className="font-mono text-3xl font-black text-green-deep">Diskon 35%</p>
+              <p className="font-mono text-3xl font-black text-green-deep">Diskon 10%</p>
               <p className="text-xs text-muted-foreground font-semibold">Akumulasi &gt; 10 kg</p>
               <p className="text-[11px] text-muted-foreground leading-relaxed pt-2 border-t border-border">
                 Penghematan maksimal untuk kafe multi-outlet atau roastery distributor.

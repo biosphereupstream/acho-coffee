@@ -96,16 +96,16 @@ export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
   let tierBadgeText = "Belum Ada Diskon";
 
   if (totalKg >= 11) {
-    discountPercent = 35;
-    tierBadgeText = "Tier 3: Diskon 35% Roastery Partner";
+    discountPercent = 10;
+    tierBadgeText = "Tier 3: Diskon 10% Roastery Partner";
     nextGoalKg = 0;
   } else if (totalKg >= 6) {
-    discountPercent = 25;
-    tierBadgeText = "Tier 2: Diskon 25% Busy Coffee Shop";
+    discountPercent = 7.5;
+    tierBadgeText = "Tier 2: Diskon 7.5% Busy Coffee Shop";
     nextGoalKg = 11;
   } else if (totalKg >= 3) {
-    discountPercent = 15;
-    tierBadgeText = "Tier 1: Diskon 15% Starter Cafe";
+    discountPercent = 5;
+    tierBadgeText = "Tier 1: Diskon 5% Starter Cafe";
     nextGoalKg = 6;
   }
 
@@ -170,7 +170,7 @@ export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
               Total Dipilih: <b className="text-green-deep font-mono">{totalKg} kg</b>
               {nextGoalKg > 0 && (
                 <span className="text-muted-foreground ml-1.5 font-medium">
-                  (Butuh {nextGoalKg - totalKg} kg lagi untuk diskon {nextGoalKg === 3 ? "15%" : nextGoalKg === 6 ? "25%" : "35%"})
+                  (Butuh {nextGoalKg - totalKg} kg lagi untuk diskon {nextGoalKg === 3 ? "5%" : nextGoalKg === 6 ? "7.5%" : "10%"})
                 </span>
               )}
             </p>
@@ -336,7 +336,7 @@ export function BulkOrderMatrix({ beans }: { beans: CatalogCoffee[] }) {
 
             {totalKg < 3 && (
               <p className="text-xs text-amber-600 font-medium">
-                Tip: Tambah {3 - totalKg} kg lagi untuk membuka diskon grosir 15%!
+                Tip: Tambah {3 - totalKg} kg lagi untuk membuka diskon grosir 5%!
               </p>
             )}
           </div>

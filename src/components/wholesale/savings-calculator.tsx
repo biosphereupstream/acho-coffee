@@ -16,14 +16,14 @@ export function SavingsCalculator() {
   let discountPercent = 0;
   let tierLabel = "Retail (Tanpa Diskon Grosir)";
   if (kgPerMonth >= 11) {
-    discountPercent = 35;
-    tierLabel = "Roastery Partner (Diskon 35%)";
+    discountPercent = 10;
+    tierLabel = "Roastery Partner (Diskon 10%)";
   } else if (kgPerMonth >= 6) {
-    discountPercent = 25;
-    tierLabel = "Busy Coffee Shop (Diskon 25%)";
+    discountPercent = 7.5;
+    tierLabel = "Busy Coffee Shop (Diskon 7.5%)";
   } else if (kgPerMonth >= 3) {
-    discountPercent = 15;
-    tierLabel = "Starter Cafe (Diskon 15%)";
+    discountPercent = 5;
+    tierLabel = "Starter Cafe (Diskon 5%)";
   }
 
   const estimatedCups = kgPerMonth * CUPS_PER_KG;
@@ -73,9 +73,9 @@ export function SavingsCalculator() {
 
           <div className="flex justify-between text-[10px] sm:text-[11px] text-muted-foreground font-mono mt-1.5">
             <span>1 kg</span>
-            <span className="text-gold-deep font-bold">Tier 1 (15%)</span>
-            <span className="text-gold-deep font-bold hidden sm:inline">Tier 2 (25%)</span>
-            <span className="text-gold-deep font-bold">Tier 3 (35%)</span>
+            <span className="text-gold-deep font-bold">Tier 1 (5%)</span>
+            <span className="text-gold-deep font-bold hidden sm:inline">Tier 2 (7.5%)</span>
+            <span className="text-gold-deep font-bold">Tier 3 (10%)</span>
             <span>60 kg</span>
           </div>
         </div>
@@ -104,7 +104,7 @@ export function SavingsCalculator() {
             <p className="mt-1 text-[11px] text-muted-foreground">
               {discountPercent > 0
                 ? "Diterapkan otomatis pada harga wholesale"
-                : "Minimal 3 kg untuk mengaktifkan diskon 15%"}
+                : "Minimal 3 kg untuk mengaktifkan diskon 5%"}
             </p>
           </div>
 
