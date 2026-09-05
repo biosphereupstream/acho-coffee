@@ -10,9 +10,23 @@ import {
   Tag,
   Loader2,
   CheckCircle2,
+  CheckSquare,
+  Square,
+  Edit,
+  Trash2,
+  Check,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { GRIND_LABELS } from "@/lib/constants";
 import { STATUS_LABELS, type OrderRecord, type OrderStatus } from "@/lib/types";
 import { toast } from "sonner";
@@ -41,6 +55,18 @@ export function BatchPlanner({
   onBatchUpdated?: () => void;
 }) {
   const [busyBatchKey, setBusyBatchKey] = useState<string | null>(null);
+
+  // Multi-select batches
+  const [selectedBatchKeys, setSelectedBatchKeys] = useState<string[]>([]);
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
+  // Bulk Status Modal
+  const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
+  const [bulkTargetStatus, setBulkTargetStatus] = useState<OrderStatus>("roasting");
+
+  // Single batch edit modal
+  const [editingBatch, setEditingBatch] = useState<RoastingBatch | null>(null);
+  const [editingBatchStatus, setEditingBatchStatus] = useState<OrderStatus>("roasting");
 
   // Group active orders by Coffee Name + Roast Profile
   const batches: RoastingBatch[] = useMemo(() => {
@@ -129,6 +155,134 @@ export function BatchPlanner({
     }
   }
 
+  const isAllBatchesSelected = batches.length > 0 && selectedBatchKeys.length === batches.length;
+
+  function handleSelectAllToggle() {
+    if (isAllBatchesSelected) {
+      setSelectedBatchKeys([]);
+    } else {
+      setSelectedBatchKeys(batches.map((b) => b.key));
+    }
+  }
+
+  function handleToggleBatchSelect(key: string) {
+    if (selectedBatchKeys.includes(key)) {
+      setSelectedBatchKeys((prev) => prev.filter((k) => k !== key));
+    } else {
+      setSelectedBatchKeys((prev) => [...prev, key]);
+    }
+  }
+
+  const selectedBatches = useMemo(() => {
+    return batches.filter((b) => selectedBatchKeys.includes(b.key));
+  }, [batches, selectedBatchKeys]);
+
+  const selectedTotalBags = useMemo(() => {
+    return selectedBatches.reduce((acc, b) => acc + b.totalBags, 0);
+  }, [selectedBatches]);
+
+  async function handleBulkStatusChange(targetStatus: OrderStatus) {
+    if (selectedBatches.length === 0) return;
+    const allOrderNumbers = Array.from(
+      new Set(selectedBatches.flatMap((b) => b.orders.map((o) => o.orderNumber)))
+    );
+
+    setIsBulkProcessing(true);
+    try {
+      const res = await fetch("/api/admin/batch-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderNumbers: allOrderNumbers,
+          status: targetStatus,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal mengubah status batch massal");
+      toast.success(
+        `Berhasil mengubah status ${selectedBatches.length} batch (${data.updatedCount || allOrderNumbers.length} pesanan) ke ${STATUS_LABELS[targetStatus]}`
+      );
+      setSelectedBatchKeys([]);
+      setShowBulkStatusModal(false);
+      if (onBatchUpdated) onBatchUpdated();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Terjadi kesalahan");
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  }
+
+  async function handleBulkCancelBatches() {
+    if (selectedBatches.length === 0) return;
+    const allOrderNumbers = Array.from(
+      new Set(selectedBatches.flatMap((b) => b.orders.map((o) => o.orderNumber)))
+    );
+
+    if (
+      !confirm(
+        `Apakah Anda yakin ingin membatalkan/menghapus pesanan dalam ${selectedBatches.length} batch terpilih (${allOrderNumbers.length} pesanan)?`
+      )
+    )
+      return;
+
+    setIsBulkProcessing(true);
+    try {
+      const res = await fetch("/api/admin/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderNumbers: allOrderNumbers,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal membatalkan/menghapus batch pesanan");
+      toast.success(data.message || `Berhasil menghapus ${data.deletedCount} pesanan`);
+      setSelectedBatchKeys([]);
+      if (onBatchUpdated) onBatchUpdated();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Terjadi kesalahan");
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  }
+
+  async function handleCancelSingleBatch(batch: RoastingBatch) {
+    const orderNumbers = Array.from(new Set(batch.orders.map((o) => o.orderNumber)));
+    if (
+      !confirm(
+        `Apakah Anda yakin ingin menghapus/membatalkan batch "${batch.coffeeName}" (${orderNumbers.length} pesanan)?`
+      )
+    )
+      return;
+
+    setBusyBatchKey(batch.key);
+    try {
+      const res = await fetch("/api/admin/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderNumbers,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus batch");
+      toast.success(data.message || `Batch ${batch.coffeeName} berhasil dihapus`);
+      setSelectedBatchKeys((prev) => prev.filter((k) => k !== batch.key));
+      if (onBatchUpdated) onBatchUpdated();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Terjadi kesalahan");
+    } finally {
+      setBusyBatchKey(null);
+    }
+  }
+
+  async function handleSaveSingleBatchEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingBatch) return;
+    await updateBatchStatus(editingBatch, editingBatchStatus);
+    setEditingBatch(null);
+  }
+
   const totalBagsInRoastery = batches.reduce((s, b) => s + b.totalBags, 0);
   const totalKgInRoastery = batches.reduce((s, b) => s + b.totalWeightKg, 0);
 
@@ -173,6 +327,63 @@ export function BatchPlanner({
         </div>
       </div>
 
+      {/* Select All Batches & Bulk Actions Toolbar */}
+      {batches.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-card/60 backdrop-blur border border-border/80 rounded-xl p-3 text-xs">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSelectAllToggle}
+              className="flex items-center gap-2 font-medium hover:text-primary transition"
+            >
+              {isAllBatchesSelected ? (
+                <CheckSquare className="h-4 w-4 text-primary" />
+              ) : (
+                <Square className="h-4 w-4 text-muted-foreground" />
+              )}
+              <span>Pilih Semua Batch ({batches.length} batch)</span>
+            </button>
+          </div>
+
+          {selectedBatchKeys.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-semibold text-primary">
+                {selectedBatchKeys.length} batch dipilih ({selectedTotalBags} kantong)
+              </span>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowBulkStatusModal(true)}
+                disabled={isBulkProcessing}
+                className="gap-1 text-xs h-8 font-semibold"
+              >
+                <Edit className="h-3.5 w-3.5 text-primary" /> Ubah Status Massal
+              </Button>
+
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleBulkCancelBatches}
+                disabled={isBulkProcessing}
+                className="gap-1 text-xs h-8 font-semibold bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Batalkan / Hapus Terpilih
+              </Button>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setSelectedBatchKeys([])}
+                className="text-xs h-8"
+              >
+                Batal
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Batch Cards Grid */}
       {batches.length === 0 ? (
         <div className="glossy-card rounded-2xl border border-border p-12 text-center text-muted-foreground">
@@ -184,26 +395,43 @@ export function BatchPlanner({
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {batches.map((batch) => {
             const isBusy = busyBatchKey === batch.key;
+            const isSelected = selectedBatchKeys.includes(batch.key);
             const batchOrderQuery = batch.orders.map((o) => o.orderNumber).join(",");
 
             return (
               <div
                 key={batch.key}
-                className="glossy-card rounded-2xl border border-border p-6 flex flex-col justify-between"
+                className={`glossy-card rounded-2xl border transition-all p-6 flex flex-col justify-between ${
+                  isSelected ? "border-primary/60 ring-1 ring-primary/40 bg-primary/[0.02]" : "border-border"
+                }`}
               >
                 <div>
                   {/* Card Header: Coffee & Profile */}
                   <div className="flex items-start justify-between gap-3 border-b border-border/80 pb-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Coffee className="h-4 w-4 text-gold-deep shrink-0" />
-                        <h4 className="font-[var(--font-display)] text-lg font-extrabold text-green-deep">
-                          {batch.coffeeName}
-                        </h4>
+                    <div className="flex items-start gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleBatchSelect(batch.key)}
+                        className="mt-1 text-foreground hover:text-primary transition"
+                        title={isSelected ? "Batal pilih batch" : "Pilih batch"}
+                      >
+                        {isSelected ? (
+                          <CheckSquare className="h-4 w-4 text-primary" />
+                        ) : (
+                          <Square className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Coffee className="h-4 w-4 text-gold-deep shrink-0" />
+                          <h4 className="font-[var(--font-display)] text-lg font-extrabold text-green-deep">
+                            {batch.coffeeName}
+                          </h4>
+                        </div>
+                        <p className="text-xs font-bold text-muted-foreground mt-0.5">
+                          Profil: <span className="text-foreground">{batch.roastProfileName}</span>
+                        </p>
                       </div>
-                      <p className="text-xs font-bold text-muted-foreground mt-0.5">
-                        Profil: <span className="text-foreground">{batch.roastProfileName}</span>
-                      </p>
                     </div>
 
                     <div className="text-right">
@@ -224,6 +452,29 @@ export function BatchPlanner({
                       <p className="font-mono text-xs font-extrabold text-foreground mt-1">
                         {batch.totalBags} bags ({batch.totalWeightKg.toFixed(2)} kg)
                       </p>
+                      <div className="flex items-center gap-1 mt-1 justify-end">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingBatch(batch);
+                            setEditingBatchStatus(batch.dominantStatus);
+                          }}
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                          title="Ubah Status Batch"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleCancelSingleBatch(batch)}
+                          className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                          title="Batalkan / Hapus Batch"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
@@ -319,6 +570,111 @@ export function BatchPlanner({
           })}
         </div>
       )}
+
+      {/* Bulk Batch Status Dialog */}
+      <Dialog open={showBulkStatusModal} onOpenChange={setShowBulkStatusModal}>
+        <DialogContent className="w-[95vw] sm:w-full sm:max-w-md p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-deep">
+              <Edit className="h-5 w-5 text-primary" /> Ubah Status {selectedBatchKeys.length} Batch
+            </DialogTitle>
+            <DialogDescription>
+              Terapkan status produksi baru secara massal ke semua pesanan dalam batch yang dipilih ({selectedTotalBags} kantong).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3 text-xs">
+            <div>
+              <label className="font-semibold text-foreground">Status Produksi:</label>
+              <select
+                value={bulkTargetStatus}
+                onChange={(e) => setBulkTargetStatus(e.target.value as OrderStatus)}
+                className="w-full mt-1.5 bg-background border border-input rounded-xl p-2.5 text-xs font-semibold"
+              >
+                <option value="queued">⏳ Antrean Roasting (Queued)</option>
+                <option value="roasting">🔥 Sedang Roasting (Roasting)</option>
+                <option value="resting">❄️ Fase Resting Degassing</option>
+                <option value="ready_pickup">📦 Selesai Resting & Siap Kemas / Ambil</option>
+                <option value="shipped">🚚 Dalam Pengiriman (Shipped)</option>
+                <option value="completed">✅ Selesai (Completed)</option>
+                <option value="cancelled">❌ Batalkan (Cancelled)</option>
+              </select>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBulkStatusModal(false)}
+              disabled={isBulkProcessing}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => handleBulkStatusChange(bulkTargetStatus)}
+              disabled={isBulkProcessing}
+              className="gap-1.5 font-bold"
+            >
+              {isBulkProcessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              Terapkan Status Massal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Single Batch Dialog */}
+      <Dialog open={Boolean(editingBatch)} onOpenChange={(open) => !open && setEditingBatch(null)}>
+        <DialogContent className="w-[95vw] sm:w-full sm:max-w-md p-6">
+          <form onSubmit={handleSaveSingleBatchEdit}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-green-deep">
+                <Edit className="h-5 w-5 text-primary" /> Ubah Status Batch {editingBatch?.coffeeName}
+              </DialogTitle>
+              <DialogDescription>
+                Profil: {editingBatch?.roastProfileName} • Total {editingBatch?.totalBags} bags (
+                {editingBatch?.totalWeightKg.toFixed(2)} kg)
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4 text-xs">
+              <div>
+                <label className="font-semibold text-foreground">Status Batch:</label>
+                <select
+                  value={editingBatchStatus}
+                  onChange={(e) => setEditingBatchStatus(e.target.value as OrderStatus)}
+                  className="w-full mt-1.5 bg-background border border-input rounded-xl p-2.5 text-xs font-semibold"
+                >
+                  <option value="queued">⏳ Antrean Roasting (Queued)</option>
+                  <option value="roasting">🔥 Sedang Roasting (Roasting)</option>
+                  <option value="resting">❄️ Fase Resting Degassing</option>
+                  <option value="ready_pickup">📦 Selesai Resting & Siap Kemas / Ambil</option>
+                  <option value="shipped">🚚 Dalam Pengiriman (Shipped)</option>
+                  <option value="completed">✅ Selesai (Completed)</option>
+                  <option value="cancelled">❌ Batalkan (Cancelled)</option>
+                </select>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingBatch(null)}
+              >
+                Batal
+              </Button>
+              <Button type="submit" size="sm" className="gap-1.5 font-bold">
+                <Check className="h-3.5 w-3.5" /> Simpan Status
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

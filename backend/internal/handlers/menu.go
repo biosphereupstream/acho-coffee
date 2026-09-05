@@ -1,4 +1,4 @@
-﻿package handlers
+package handlers
 
 import (
 	"encoding/json"
@@ -144,6 +144,33 @@ func (h *MenuHandler) BulkEdit(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"message":       fmt.Sprintf("Berhasil memperbarui %d item menu", updatedCount),
 		"updated_count": updatedCount,
+	})
+}
+
+// BulkDelete handles deleting multiple menu items
+func (h *MenuHandler) BulkDelete(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SelectAll bool     `json:"select_all"`
+		ItemIDs   []string `json:"item_ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
+		return
+	}
+
+	count, err := h.db.BulkDeleteMenu(r.Context(), req.ItemIDs, req.SelectAll)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	go func() {
+		_ = h.cf.PurgeCDNCache(r.Context(), []string{"/kopi", "/minuman", "/api/menu"})
+	}()
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"message":       fmt.Sprintf("Berhasil menghapus %d item menu", count),
+		"deleted_count": count,
 	})
 }
 

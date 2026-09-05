@@ -1,4 +1,4 @@
-﻿package handlers
+package handlers
 
 import (
 	"encoding/json"
@@ -59,6 +59,53 @@ func (h *CustomerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondJSON(w, http.StatusOK, updated)
+}
+
+func (h *CustomerHandler) Create(w http.ResponseWriter, r *http.Request) {
+	var customer models.Customer
+	if err := json.NewDecoder(r.Body).Decode(&customer); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
+		return
+	}
+
+	created, err := h.db.CreateCustomer(r.Context(), customer)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusCreated, created)
+}
+
+func (h *CustomerHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := h.db.DeleteCustomer(r.Context(), id); err != nil {
+		respondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]string{
+		"message": "Pelanggan berhasil dihapus",
+	})
+}
+
+func (h *CustomerHandler) BulkDelete(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SelectAll   bool     `json:"select_all"`
+		CustomerIDs []string `json:"customer_ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
+		return
+	}
+
+	count, err := h.db.BulkDeleteCustomers(r.Context(), req.CustomerIDs, req.SelectAll)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"message":       fmt.Sprintf("Berhasil menghapus %d pelanggan", count),
+		"deleted_count": count,
+	})
 }
 
 // BulkEdit handles Select All and multiple customer edits

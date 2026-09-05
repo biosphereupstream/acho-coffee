@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { 
@@ -18,7 +18,9 @@ import {
   Award,
   Sparkles,
   MessageCircle,
-  Copy
+  Copy,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -79,6 +81,18 @@ export function CustomerManagement() {
   // Broadcasts History Modal
   const [showBroadcasts, setShowBroadcasts] = useState(false);
   const [broadcasts, setBroadcasts] = useState<PromotionBroadcast[]>([]);
+
+  // Add Single Customer Modal
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    full_name: "",
+    email: "",
+    phone: "",
+    preferred_brew: "V60 / Pour Over",
+    loyalty_tier: "retail",
+    notes: "",
+    tags: ["retail"],
+  });
 
   // Edit Single Customer
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -229,6 +243,64 @@ export function CustomerManagement() {
     }
   }
 
+  async function handleDeleteCustomer(id: string) {
+    if (!confirm("Apakah Anda yakin ingin menghapus pelanggan ini?")) return;
+    try {
+      const res = await fetch(`/api/backend/customers/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Gagal menghapus pelanggan");
+      setSelectedIds((prev) => prev.filter((x) => x !== id));
+      await fetchCustomers();
+    } catch (err) {
+      alert("Error: " + String(err));
+    }
+  }
+
+  async function handleBulkDeleteCustomers() {
+    const count = selectAll ? customers.length : selectedIds.length;
+    if (!confirm(`Apakah Anda yakin ingin menghapus ${count} pelanggan terpilih?`)) return;
+    try {
+      const res = await fetch("/api/backend/customers/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          select_all: selectAll,
+          customer_ids: selectedIds,
+        }),
+      });
+      if (!res.ok) throw new Error("Gagal menghapus pelanggan massal");
+      setSelectedIds([]);
+      setSelectAll(false);
+      await fetchCustomers();
+    } catch (err) {
+      alert("Error: " + String(err));
+    }
+  }
+
+  async function handleAddCustomerSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/backend/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCustomer),
+      });
+      if (!res.ok) throw new Error("Gagal menambahkan pelanggan");
+      setShowAddCustomer(false);
+      setNewCustomer({
+        full_name: "",
+        email: "",
+        phone: "",
+        preferred_brew: "V60 / Pour Over",
+        loyalty_tier: "retail",
+        notes: "",
+        tags: ["retail"],
+      });
+      await fetchCustomers();
+    } catch (err) {
+      alert("Error: " + String(err));
+    }
+  }
+
   function formatIDR(val: number) {
     return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(val);
   }
@@ -296,6 +368,10 @@ export function CustomerManagement() {
           <Button size="sm" variant="outline" onClick={fetchBroadcasts} className="gap-1.5 text-xs shrink-0">
             <Sparkles className="h-3.5 w-3.5 text-gold-deep" /> Riwayat Promo
           </Button>
+
+          <Button size="sm" onClick={() => setShowAddCustomer(true)} className="gap-1.5 text-xs shrink-0 bg-primary text-primary-foreground">
+            <Plus className="h-3.5 w-3.5" /> Tambah Pelanggan
+          </Button>
         </div>
       </div>
 
@@ -318,7 +394,7 @@ export function CustomerManagement() {
               }}
               className="text-xs font-bold gap-1 bg-gold text-amber-950 hover:bg-gold-light"
             >
-              <Send className="h-3.5 w-3.5" /> Kirim Promosi (Send Promotion)
+              <Send className="h-3.5 w-3.5" /> Kirim Promosi
             </Button>
 
             <Button
@@ -328,6 +404,15 @@ export function CustomerManagement() {
               className="text-xs font-bold gap-1"
             >
               <Edit className="h-3 w-3" /> Ubah Tier / Tag
+            </Button>
+
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBulkDeleteCustomers}
+              className="text-xs font-bold gap-1 bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Hapus Terpilih ({selectedIds.length})
             </Button>
 
             <Button
@@ -438,14 +523,26 @@ export function CustomerManagement() {
                         </div>
                       </td>
                       <td className="p-3 text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setEditingCustomer(cust)}
-                          className="h-7 w-7 p-0"
-                        >
-                          <Edit className="h-3.5 w-3.5 text-muted-foreground" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingCustomer(cust)}
+                            className="h-7 w-7 p-0"
+                            title="Edit Pelanggan"
+                          >
+                            <Edit className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteCustomer(cust.id)}
+                            className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            title="Hapus Pelanggan"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -765,6 +862,113 @@ export function CustomerManagement() {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Add Single Customer Modal */}
+      {showAddCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <form
+            onSubmit={handleAddCustomerSubmit}
+            className="bg-card w-full max-w-md rounded-2xl border border-border p-6 shadow-2xl space-y-4"
+          >
+            <div className="flex items-center justify-between border-b border-border/50 pb-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                <h3 className="font-bold text-base text-foreground">Tambah Pelanggan Baru</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddCustomer(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-semibold text-foreground">Nama Lengkap:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Andi Pratama"
+                  value={newCustomer.full_name}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, full_name: e.target.value })}
+                  className="w-full mt-1 bg-background border border-input rounded-xl p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-foreground">Email:</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="andi@example.com"
+                  value={newCustomer.email}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                  className="w-full mt-1 bg-background border border-input rounded-xl p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-foreground">No. WhatsApp / Telepon:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="08123456789"
+                  value={newCustomer.phone}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                  className="w-full mt-1 bg-background border border-input rounded-xl p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-foreground">Metode Seduh Favorit:</label>
+                <input
+                  type="text"
+                  placeholder="V60, Espresso, French Press..."
+                  value={newCustomer.preferred_brew}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, preferred_brew: e.target.value })}
+                  className="w-full mt-1 bg-background border border-input rounded-xl p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-foreground">Tier Loyalitas:</label>
+                <select
+                  value={newCustomer.loyalty_tier}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, loyalty_tier: e.target.value })}
+                  className="w-full mt-1 bg-background border border-input rounded-xl p-2 text-xs"
+                >
+                  <option value="retail">Retail (Regular)</option>
+                  <option value="b2b_bronze">B2B Bronze</option>
+                  <option value="b2b_silver">B2B Silver</option>
+                  <option value="b2b_gold">B2B Gold (Max Diskon 10%)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-semibold text-foreground">Catatan Khusus:</label>
+                <textarea
+                  rows={2}
+                  placeholder="Catatan profil pelanggan..."
+                  value={newCustomer.notes}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, notes: e.target.value })}
+                  className="w-full mt-1 bg-background border border-input rounded-xl p-2 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border/50">
+              <Button type="button" size="sm" variant="outline" onClick={() => setShowAddCustomer(false)}>
+                Batal
+              </Button>
+              <Button type="submit" size="sm" className="gap-1.5 font-bold">
+                <Check className="h-3.5 w-3.5" /> Tambah Pelanggan
+              </Button>
+            </div>
+          </form>
         </div>
       )}
     </div>

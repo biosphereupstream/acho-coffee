@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { 
@@ -171,6 +171,28 @@ export function MenuManagement() {
     }
   }
 
+  async function handleBulkDelete() {
+    const count = selectAll ? items.length : selectedIds.length;
+    if (!confirm(`Apakah Anda yakin ingin menghapus ${count} item menu terpilih?`)) return;
+
+    try {
+      const res = await fetch("/api/backend/menu/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          select_all: selectAll,
+          item_ids: selectedIds,
+        }),
+      });
+      if (!res.ok) throw new Error("Gagal menghapus item menu secara massal");
+      setSelectedIds([]);
+      setSelectAll(false);
+      await fetchMenu();
+    } catch (err) {
+      alert("Error: " + String(err));
+    }
+  }
+
   function formatIDR(val: number) {
     return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(val);
   }
@@ -228,14 +250,14 @@ export function MenuManagement() {
                 slug: "",
                 name: "",
                 category: "beans",
-                type: "single_origin",
+                type: "roasted_bean",
                 packaging: "250g Valve Bag",
-                process: "Natural",
+                process: "Full Washed",
                 price_idr: 95000,
-                stock_quantity: 30,
-                image_url: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800&q=80",
+                stock_quantity: 50,
+                image_url: "",
                 is_active: true,
-                description: "Deskripsi racikan kopi spesialti ACHO Coffee.",
+                description: "",
               });
             }}
             className="gap-1.5 text-xs shrink-0"
@@ -247,7 +269,7 @@ export function MenuManagement() {
 
       {/* Floating Bulk Action Bar */}
       {selectedIds.length > 0 && (
-        <div className="sticky top-4 z-20 flex items-center justify-between gap-3 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl shadow-lg animate-in fade-in slide-in-from-top-2">
+        <div className="sticky top-4 z-20 flex flex-wrap items-center justify-between gap-3 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl shadow-lg animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-2 text-xs font-semibold">
             <CheckSquare className="h-4 w-4" />
             <span>{selectedIds.length} item menu dipilih</span>
@@ -260,7 +282,15 @@ export function MenuManagement() {
               onClick={() => setShowBulkEdit(true)}
               className="text-xs font-bold gap-1"
             >
-              <Edit className="h-3 w-3" /> Edit Massal (Select All)
+              <Edit className="h-3 w-3" /> Edit Massal
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBulkDelete}
+              className="text-xs font-bold gap-1 bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="h-3 w-3" /> Hapus Terpilih ({selectedIds.length})
             </Button>
             <Button
               size="sm"

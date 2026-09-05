@@ -1,4 +1,4 @@
-﻿package database
+package database
 
 import (
 	"context"
@@ -715,4 +715,153 @@ func (db *Database) ListPromotionBroadcasts(ctx context.Context) []*models.Promo
 		return result[i].SentAt.After(result[j].SentAt)
 	})
 	return result
+}
+
+func (db *Database) BulkDeleteMenu(ctx context.Context, itemIDs []string, selectAll bool) (int, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	count := 0
+	if selectAll {
+		count = len(db.menuItems)
+		for id := range db.menuItems {
+			delete(db.menuItems, id)
+		}
+	} else {
+		for _, id := range itemIDs {
+			if _, exists := db.menuItems[id]; exists {
+				delete(db.menuItems, id)
+				count++
+			}
+		}
+	}
+	db.saveToFile()
+	return count, nil
+}
+
+func (db *Database) DeleteInventoryItem(ctx context.Context, id string) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	if _, exists := db.inventoryItems[id]; !exists {
+		return fmt.Errorf("item inventaris tidak ditemukan: %s", id)
+	}
+	delete(db.inventoryItems, id)
+	db.saveToFile()
+	return nil
+}
+
+func (db *Database) BulkDeleteInventory(ctx context.Context, itemIDs []string, selectAll bool) (int, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	count := 0
+	if selectAll {
+		count = len(db.inventoryItems)
+		for id := range db.inventoryItems {
+			delete(db.inventoryItems, id)
+		}
+	} else {
+		for _, id := range itemIDs {
+			if _, exists := db.inventoryItems[id]; exists {
+				delete(db.inventoryItems, id)
+				count++
+			}
+		}
+	}
+	db.saveToFile()
+	return count, nil
+}
+
+func (db *Database) BulkEditInventory(ctx context.Context, itemIDs []string, selectAll bool, category, location string, minThreshold *int) (int, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	count := 0
+	targetIDs := make(map[string]bool)
+	if selectAll {
+		for id := range db.inventoryItems {
+			targetIDs[id] = true
+		}
+	} else {
+		for _, id := range itemIDs {
+			targetIDs[id] = true
+		}
+	}
+
+	for id := range targetIDs {
+		item, exists := db.inventoryItems[id]
+		if !exists {
+			continue
+		}
+		if category != "" {
+			item.Category = category
+		}
+		if location != "" {
+			item.Location = location
+		}
+		if minThreshold != nil {
+			item.MinThreshold = *minThreshold
+		}
+		item.UpdatedAt = time.Now()
+		count++
+	}
+
+	db.saveToFile()
+	return count, nil
+}
+
+func (db *Database) CreateCustomer(ctx context.Context, c models.Customer) (*models.Customer, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	if c.ID == "" {
+		c.ID = "cust-" + uuid.New().String()[:8]
+	}
+	if c.LoyaltyTier == "" {
+		c.LoyaltyTier = "retail"
+	}
+	if len(c.Tags) == 0 {
+		c.Tags = []string{"new-customer"}
+	}
+	c.IsActive = true
+	c.CreatedAt = time.Now()
+
+	db.customers[c.ID] = &c
+	db.saveToFile()
+	return &c, nil
+}
+
+func (db *Database) DeleteCustomer(ctx context.Context, id string) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	if _, exists := db.customers[id]; !exists {
+		return fmt.Errorf("pelanggan tidak ditemukan: %s", id)
+	}
+	delete(db.customers, id)
+	db.saveToFile()
+	return nil
+}
+
+func (db *Database) BulkDeleteCustomers(ctx context.Context, customerIDs []string, selectAll bool) (int, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	count := 0
+	if selectAll {
+		count = len(db.customers)
+		for id := range db.customers {
+			delete(db.customers, id)
+		}
+	} else {
+		for _, id := range customerIDs {
+			if _, exists := db.customers[id]; exists {
+				delete(db.customers, id)
+				count++
+			}
+		}
+	}
+	db.saveToFile()
+	return count, nil
 }

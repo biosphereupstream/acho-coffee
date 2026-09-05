@@ -89,22 +89,29 @@ func main() {
 		admin.Post("/api/inventory", invHandler.Create)
 		admin.Get("/api/inventory/{id}", invHandler.Get)
 		admin.Put("/api/inventory/{id}", invHandler.Update)
+		admin.Delete("/api/inventory/{id}", invHandler.Delete)
+		admin.Post("/api/inventory/bulk-edit", invHandler.BulkEdit)
+		admin.Post("/api/inventory/bulk-delete", invHandler.BulkDelete)
 		admin.Post("/api/inventory/{id}/adjust", invHandler.AdjustStock)
 		admin.Get("/api/inventory/{id}/logs", invHandler.GetLogs)
 
 		// Customer List & Bulk Actions
 		admin.Get("/api/customers", custHandler.List)
+		admin.Post("/api/customers", custHandler.Create)
 		admin.Get("/api/customers/promotions", custHandler.ListPromotions)
 		admin.Post("/api/customers/bulk-edit", custHandler.BulkEdit)
+		admin.Post("/api/customers/bulk-delete", custHandler.BulkDelete)
 		admin.Post("/api/customers/send-promotion", custHandler.SendPromotion)
 		admin.Get("/api/customers/{id}", custHandler.Get)
 		admin.Put("/api/customers/{id}", custHandler.Update)
+		admin.Delete("/api/customers/{id}", custHandler.Delete)
 
 		// Menu Management & Bulk Actions
 		admin.Post("/api/menu", menuHandler.Create)
 		admin.Put("/api/menu/{id}", menuHandler.Update)
 		admin.Delete("/api/menu/{id}", menuHandler.Delete)
 		admin.Post("/api/menu/bulk-edit", menuHandler.BulkEdit)
+		admin.Post("/api/menu/bulk-delete", menuHandler.BulkDelete)
 		admin.Post("/api/menu/upload", menuHandler.UploadImage)
 	})
 

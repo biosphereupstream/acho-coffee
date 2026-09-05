@@ -369,6 +369,68 @@ export async function handleServerlessBackend(
     return NextResponse.json({ logs, total: logs.length });
   }
 
+  // Inventory: Bulk Edit
+  if (subPath === "inventory/bulk-edit" && method === "POST") {
+    try {
+      const body = await parseJson();
+      let updated = 0;
+      for (const item of state.inventory) {
+        if (body.select_all || (body.item_ids && body.item_ids.includes(item.id))) {
+          if (body.category) item.category = body.category;
+          if (body.location) item.location = body.location;
+          if (body.min_threshold !== undefined) item.min_threshold = Number(body.min_threshold);
+          item.updated_at = new Date().toISOString();
+          updated++;
+        }
+      }
+      return NextResponse.json({ message: `Berhasil memperbarui ${updated} item inventaris`, updated_count: updated });
+    } catch {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+  }
+
+  // Inventory: Bulk Delete
+  if (subPath === "inventory/bulk-delete" && method === "POST") {
+    try {
+      const body = await parseJson();
+      const initialCount = state.inventory.length;
+      if (body.select_all) {
+        state.inventory = [];
+      } else if (Array.isArray(body.item_ids)) {
+        state.inventory = state.inventory.filter((it) => !body.item_ids.includes(it.id));
+      }
+      const deleted = initialCount - state.inventory.length;
+      return NextResponse.json({ message: `Berhasil menghapus ${deleted} item inventaris`, deleted_count: deleted });
+    } catch {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+  }
+
+  // Inventory: Single Item Update (PUT)
+  if (subPath.startsWith("inventory/") && method === "PUT") {
+    const id = pathParts[1];
+    try {
+      const body = await parseJson();
+      const idx = state.inventory.findIndex((it) => it.id === id);
+      if (idx === -1) return NextResponse.json({ error: "Item inventaris tidak ditemukan" }, { status: 404 });
+      state.inventory[idx] = { ...state.inventory[idx], ...body, updated_at: new Date().toISOString() };
+      return NextResponse.json({ message: "Item inventaris berhasil diperbarui", item: state.inventory[idx] });
+    } catch {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+  }
+
+  // Inventory: Single Item Delete (DELETE)
+  if (subPath.startsWith("inventory/") && method === "DELETE") {
+    const id = pathParts[1];
+    const initialCount = state.inventory.length;
+    state.inventory = state.inventory.filter((it) => it.id !== id);
+    if (state.inventory.length === initialCount) {
+      return NextResponse.json({ error: "Item inventaris tidak ditemukan" }, { status: 404 });
+    }
+    return NextResponse.json({ message: "Item inventaris berhasil dihapus" });
+  }
+
   // 8. CUSTOMERS
   if (subPath === "customers" && method === "GET") {
     const search = (url.searchParams.get("search") || "").toLowerCase();
@@ -450,6 +512,69 @@ export async function handleServerlessBackend(
 
   if (subPath === "customers/promotions" && method === "GET") {
     return NextResponse.json({ promotions: state.broadcasts, total: state.broadcasts.length });
+  }
+
+  // Customer: Create (POST /customers)
+  if (subPath === "customers" && method === "POST") {
+    try {
+      const body = await parseJson();
+      const customer = {
+        ...body,
+        id: "cust-" + Math.random().toString(36).slice(2, 8),
+        loyalty_tier: body.loyalty_tier || "retail",
+        total_orders: 0,
+        total_spent_idr: 0,
+        tags: Array.isArray(body.tags) ? body.tags : ["new-customer"],
+        is_active: true,
+        created_at: new Date().toISOString(),
+      };
+      state.customers.unshift(customer);
+      return NextResponse.json(customer, { status: 201 });
+    } catch {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+  }
+
+  // Customer: Bulk Delete (POST /customers/bulk-delete)
+  if (subPath === "customers/bulk-delete" && method === "POST") {
+    try {
+      const body = await parseJson();
+      const initialCount = state.customers.length;
+      if (body.select_all) {
+        state.customers = [];
+      } else if (Array.isArray(body.customer_ids)) {
+        state.customers = state.customers.filter((c) => !body.customer_ids.includes(c.id));
+      }
+      const deleted = initialCount - state.customers.length;
+      return NextResponse.json({ message: `Berhasil menghapus ${deleted} pelanggan`, deleted_count: deleted });
+    } catch {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+  }
+
+  // Customer: Single Item Update (PUT /customers/:id)
+  if (subPath.startsWith("customers/") && method === "PUT") {
+    const id = pathParts[1];
+    try {
+      const body = await parseJson();
+      const idx = state.customers.findIndex((c) => c.id === id);
+      if (idx === -1) return NextResponse.json({ error: "Pelanggan tidak ditemukan" }, { status: 404 });
+      state.customers[idx] = { ...state.customers[idx], ...body };
+      return NextResponse.json({ message: "Pelanggan berhasil diperbarui", customer: state.customers[idx] });
+    } catch {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+  }
+
+  // Customer: Single Item Delete (DELETE /customers/:id)
+  if (subPath.startsWith("customers/") && method === "DELETE") {
+    const id = pathParts[1];
+    const initialCount = state.customers.length;
+    state.customers = state.customers.filter((c) => c.id !== id);
+    if (state.customers.length === initialCount) {
+      return NextResponse.json({ error: "Pelanggan tidak ditemukan" }, { status: 404 });
+    }
+    return NextResponse.json({ message: "Pelanggan berhasil dihapus" });
   }
 
   // 9. MENU
@@ -539,6 +664,28 @@ export async function handleServerlessBackend(
     const id = pathParts[1];
     state.menuOverrides.set(id, { is_active: false });
     return NextResponse.json({ message: "Item menu dinonaktifkan" });
+  }
+
+  // Menu: Bulk Delete
+  if (subPath === "menu/bulk-delete" && method === "POST") {
+    try {
+      const body = await parseJson();
+      let count = 0;
+      if (body.select_all) {
+        for (const c of COFFEES) {
+          state.menuOverrides.set(c.slug, { is_active: false });
+          count++;
+        }
+      } else if (Array.isArray(body.item_ids)) {
+        for (const id of body.item_ids) {
+          state.menuOverrides.set(id, { is_active: false });
+          count++;
+        }
+      }
+      return NextResponse.json({ message: `Berhasil menonaktifkan/menghapus ${count} item menu`, deleted_count: count });
+    } catch {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
   }
 
   // Default Fallback

@@ -1,7 +1,8 @@
-﻿package handlers
+package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"acho-backend/internal/database"
@@ -68,6 +69,62 @@ func (h *InventoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondJSON(w, http.StatusOK, updated)
+}
+
+func (h *InventoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := h.db.DeleteInventoryItem(r.Context(), id); err != nil {
+		respondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]string{
+		"message": "Item inventaris berhasil dihapus",
+	})
+}
+
+func (h *InventoryHandler) BulkDelete(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SelectAll bool     `json:"select_all"`
+		ItemIDs   []string `json:"item_ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
+		return
+	}
+
+	count, err := h.db.BulkDeleteInventory(r.Context(), req.ItemIDs, req.SelectAll)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"message":       fmt.Sprintf("Berhasil menghapus %d item inventaris", count),
+		"deleted_count": count,
+	})
+}
+
+func (h *InventoryHandler) BulkEdit(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SelectAll    bool     `json:"select_all"`
+		ItemIDs      []string `json:"item_ids"`
+		Category     string   `json:"category"`
+		Location     string   `json:"location"`
+		MinThreshold *int     `json:"min_threshold"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
+		return
+	}
+
+	count, err := h.db.BulkEditInventory(r.Context(), req.ItemIDs, req.SelectAll, req.Category, req.Location, req.MinThreshold)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"message":       fmt.Sprintf("Berhasil memperbarui %d item inventaris", count),
+		"updated_count": count,
+	})
 }
 
 func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {

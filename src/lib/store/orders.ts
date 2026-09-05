@@ -5,7 +5,7 @@ import path from "path";
 import { db, schema } from "@/db";
 import { desc, eq } from "drizzle-orm";
 import { DAILY_CAPACITY_BAGS, ROAST_LEAD_DAYS } from "@/lib/constants";
-import type { OrderInput, OrderRecord, OrderStatus } from "@/lib/types";
+import type { OrderInput, OrderRecord, OrderStatus, ShippingAddress } from "@/lib/types";
 
 /* =========================================================
    Store pesanan: Drizzle (Postgres/Supabase) bila DATABASE_URL
@@ -425,4 +425,114 @@ export async function listOrdersForAdmin(): Promise<OrderRecord[]> {
   }
   const store = await readStore();
   return [...store.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export interface UpdateOrderDetailsInput {
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  shippingAddress?: ShippingAddress | string | null;
+  note?: string;
+  status?: OrderStatus;
+}
+
+export async function updateOrderDetails(
+  orderNumber: string,
+  patch: UpdateOrderDetailsInput
+): Promise<OrderRecord | null> {
+  const key = orderNumber.trim().toUpperCase();
+  const now = new Date().toISOString();
+
+  if (db) {
+    const rows = await db.select().from(schema.orders).where(eq(schema.orders.orderNumber, key)).limit(1);
+    if (rows.length === 0) return null;
+    const o = rows[0];
+
+    const dbPatch: Record<string, unknown> = { updatedAt: now };
+    if (patch.customerName !== undefined) dbPatch.customerName = patch.customerName;
+    if (patch.customerPhone !== undefined) dbPatch.customerPhone = patch.customerPhone;
+    if (patch.customerEmail !== undefined) dbPatch.customerEmail = patch.customerEmail;
+    if (patch.shippingAddress !== undefined) {
+      if (typeof patch.shippingAddress === "string") {
+        const prev = (o.shippingAddress as ShippingAddress | null) || {
+          name: o.customerName,
+          phone: o.customerPhone,
+          city: "Bandung",
+          address: patch.shippingAddress,
+        };
+        dbPatch.shippingAddress = { ...prev, address: patch.shippingAddress };
+      } else {
+        dbPatch.shippingAddress = patch.shippingAddress;
+      }
+    }
+    if (patch.note !== undefined) dbPatch.note = patch.note;
+    if (patch.status !== undefined) dbPatch.status = patch.status;
+
+    await db.update(schema.orders).set(dbPatch as never).where(eq(schema.orders.id, o.id));
+    if (patch.status && patch.status !== o.status) {
+      await db.insert(schema.orderStatusHistory).values({
+        orderId: o.id,
+        status: patch.status,
+        note: patch.note || "Detail pesanan diperbarui oleh admin",
+      });
+    }
+    return getOrderByNumber(key);
+  }
+
+  const store = await readStore();
+  const rec = store.get(key);
+  if (!rec) return null;
+
+  if (patch.customerName !== undefined) rec.customerName = patch.customerName;
+  if (patch.customerPhone !== undefined) rec.customerPhone = patch.customerPhone;
+  if (patch.customerEmail !== undefined) rec.customerEmail = patch.customerEmail;
+  if (patch.shippingAddress !== undefined) {
+    if (typeof patch.shippingAddress === "string") {
+      const prev = rec.shippingAddress || {
+        name: rec.customerName,
+        phone: rec.customerPhone,
+        city: "Bandung",
+        address: patch.shippingAddress,
+      };
+      rec.shippingAddress = { ...prev, address: patch.shippingAddress };
+    } else {
+      rec.shippingAddress = patch.shippingAddress;
+    }
+  }
+  if (patch.note !== undefined) rec.note = patch.note;
+  if (patch.status !== undefined) rec.status = patch.status;
+  rec.updatedAt = now;
+
+  store.set(key, rec);
+  await writeStore(store);
+  return rec;
+}
+
+export async function deleteOrder(orderNumber: string): Promise<boolean> {
+  const key = orderNumber.trim().toUpperCase();
+  if (db) {
+    const rows = await db.select().from(schema.orders).where(eq(schema.orders.orderNumber, key)).limit(1);
+    if (rows.length === 0) return false;
+    const o = rows[0];
+    await db.delete(schema.orderItems).where(eq(schema.orderItems.orderId, o.id));
+    await db.delete(schema.orderStatusHistory).where(eq(schema.orderStatusHistory.orderId, o.id));
+    await db.delete(schema.orders).where(eq(schema.orders.id, o.id));
+    return true;
+  }
+
+  const store = await readStore();
+  const existed = store.delete(key);
+  if (existed) {
+    await writeStore(store);
+  }
+  return existed;
+}
+
+export async function bulkDeleteOrders(orderNumbers: string[]): Promise<{ deletedCount: number }> {
+  let count = 0;
+  for (const num of orderNumbers) {
+    const ok = await deleteOrder(num);
+    if (ok) count++;
+  }
+  return { deletedCount: count };
 }
