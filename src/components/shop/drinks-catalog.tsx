@@ -36,10 +36,11 @@ export function DrinksCatalog({ coffees: initialCoffees }: { coffees: CatalogCof
     setCoffees(initialCoffees);
   }, [initialCoffees]);
 
-  // Real-time synchronization with /api/menu on window focus and interval
+  // Real-time synchronization with /api/menu on window focus and visibility
   useEffect(() => {
     let mounted = true;
     async function refresh() {
+      if (typeof document !== "undefined" && document.hidden) return;
       try {
         const res = await fetch("/api/menu", { cache: "no-store" });
         if (!res.ok) return;
@@ -51,11 +52,17 @@ export function DrinksCatalog({ coffees: initialCoffees }: { coffees: CatalogCof
     }
 
     const onFocus = () => refresh();
+    const onVisibility = () => {
+      if (!document.hidden) refresh();
+    };
+
     window.addEventListener("focus", onFocus);
-    const timer = setInterval(refresh, 12000);
+    document.addEventListener("visibilitychange", onVisibility);
+    const timer = setInterval(refresh, 30000);
     return () => {
       mounted = false;
       window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
       clearInterval(timer);
     };
   }, []);

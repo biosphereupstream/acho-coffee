@@ -11,12 +11,13 @@ interface FrontendConfig {
   announcement_text?: string;
 }
 
-export function AnnouncementBanner() {
-  const [config, setConfig] = useState<FrontendConfig | null>(null);
+export function AnnouncementBanner({ initialConfig }: { initialConfig?: FrontendConfig | null }) {
+  const [config, setConfig] = useState<FrontendConfig | null>(initialConfig ?? null);
   const [dismissed, setDismissed] = useState(false);
   const [lastDismissedText, setLastDismissedText] = useState("");
 
   async function fetchConfig() {
+    if (typeof document !== "undefined" && document.hidden) return;
     try {
       const res = await fetch("/api/backend/config/frontend", { cache: "no-store" });
       if (!res.ok) return;
@@ -28,16 +29,29 @@ export function AnnouncementBanner() {
   }
 
   useEffect(() => {
-    fetchConfig();
-    // Poll every 12 seconds or when tab gains focus to keep in real-time sync with backend
-    const interval = setInterval(fetchConfig, 12000);
+    // If not provided server-side, fetch immediately
+    if (!initialConfig) {
+      fetchConfig();
+    }
+
+    // Refresh when user returns to tab (real-time sync without background CPU waste)
     const onFocus = () => fetchConfig();
+    const onVisibilityChange = () => {
+      if (!document.hidden) fetchConfig();
+    };
+
     window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    // Conservative 45s heartbeat interval
+    const interval = setInterval(fetchConfig, 45000);
+
     return () => {
       clearInterval(interval);
       window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, []);
+  }, [initialConfig]);
 
   if (!config || !config.banner_enabled || !config.banner_text?.trim()) {
     return null;

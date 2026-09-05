@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { createClient as getSupabaseServer } from "@/lib/server";
+import { getAuthenticatedUser } from "@/lib/server";
 import { AuthButtons } from "@/components/auth-buttons";
 import { MobileNav } from "@/components/mobile-nav";
 import { CartTrigger } from "@/components/cart/cart-trigger";
@@ -15,18 +15,15 @@ const NAV = [
 ];
 
 export async function SiteHeader() {
-  const supabase = await getSupabaseServer();
+  const authUser = await getAuthenticatedUser();
   let user: { email?: string; name?: string; avatarUrl?: string } | null = null;
-  if (supabase) {
-    const { data } = await supabase.auth.getUser();
-    if (data.user) {
-      const meta = data.user.user_metadata ?? {};
-      user = {
-        email: data.user.email ?? "",
-        name: (meta.full_name as string) ?? (meta.name as string) ?? data.user.email ?? "",
-        avatarUrl: (meta.avatar_url as string) ?? (meta.picture as string) ?? undefined,
-      };
-    }
+  if (authUser) {
+    const meta = authUser.user_metadata ?? {};
+    user = {
+      email: authUser.email ?? "",
+      name: (meta.full_name as string) ?? (meta.name as string) ?? authUser.email ?? "",
+      avatarUrl: (meta.avatar_url as string) ?? (meta.picture as string) ?? undefined,
+    };
   }
 
   return (

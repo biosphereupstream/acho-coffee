@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import { AnnouncementBanner } from "@/components/announcement-banner";
 import { SiteFooter } from "@/components/site-footer";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
+import { getLiveFrontendConfig } from "@/lib/menu";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://biosphereroastery.vercel.app"),
@@ -42,11 +43,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialConfig = getLiveFrontendConfig();
+
   return (
     <html lang="id" className="scroll-smooth">
       <body className="flex min-h-screen flex-col bg-background overflow-x-hidden w-full max-w-full">
         <Providers>
-          <AnnouncementBanner />
+          <AnnouncementBanner initialConfig={initialConfig} />
           <SiteHeader />
           <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
           <SiteFooter />

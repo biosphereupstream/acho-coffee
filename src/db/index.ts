@@ -10,7 +10,16 @@ const connectionString = process.env.DATABASE_URL;
  * memakai fallback in-memory (demo mode) supaya aplikasi tetap jalan.
  */
 export const db = connectionString
-  ? drizzle(postgres(connectionString, { max: 5, onnotice: () => {} }), { schema })
+  ? drizzle(
+      postgres(connectionString, {
+        max: 5,
+        connect_timeout: 4,
+        idle_timeout: 20,
+        max_lifetime: 60 * 30,
+        onnotice: () => {},
+      }),
+      { schema }
+    )
   : null;
 
 export type DB = NonNullable<typeof db>;

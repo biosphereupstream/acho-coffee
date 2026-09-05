@@ -25,3 +25,25 @@ export async function createClient() {
     },
   });
 }
+
+/**
+ * Fast helper to get the authenticated user without making network requests
+ * when the visitor is a guest (no auth cookies present).
+ */
+export async function getAuthenticatedUser() {
+  if (!env.supabaseConfigured()) return null;
+  const cookieStore = await cookies();
+  const hasAuthCookie = cookieStore.getAll().some(
+    (c) => c.name.startsWith("sb-") || c.name.includes("auth-token")
+  );
+  if (!hasAuthCookie) return null;
+
+  const supabase = await createClient();
+  if (!supabase) return null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    return data.user;
+  } catch {
+    return null;
+  }
+}

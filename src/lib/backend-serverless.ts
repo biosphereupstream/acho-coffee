@@ -26,6 +26,8 @@ interface BackendState {
   menuOverrides: Map<string, any>;
   deletedMenuSlugs: Set<string>;
   customMenuItems: Map<string, any>;
+  cachedCatalogMenu?: any;
+  cachedCatalogMenuTime?: number;
   inventory: Array<any>;
   inventoryLogs: Array<any>;
   customers: Array<any>;
@@ -673,6 +675,8 @@ export async function handleServerlessBackend(
         const newItem = { ...body, id, is_active: true };
         state.customMenuItems.set(id, newItem);
         state.deletedMenuSlugs.delete(id);
+        state.cachedCatalogMenu = null;
+        state.cachedCatalogMenuTime = 0;
 
         // Sync insert to Supabase PostgreSQL (coffees table)
         if (db) {
@@ -767,6 +771,10 @@ export async function handleServerlessBackend(
         }
       }
 
+      // Invalidate in-memory storefront cache
+      state.cachedCatalogMenu = null;
+      state.cachedCatalogMenuTime = 0;
+
       purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu", "/api/menu", "/"]).catch(() => {});
 
       return NextResponse.json({ message: `Berhasil memperbarui ${updated} item menu`, updated_count: updated });
@@ -784,6 +792,10 @@ export async function handleServerlessBackend(
       if (state.customMenuItems.has(id)) {
         state.customMenuItems.set(id, { ...state.customMenuItems.get(id), ...body });
       }
+
+      // Invalidate in-memory storefront cache
+      state.cachedCatalogMenu = null;
+      state.cachedCatalogMenuTime = 0;
 
       // Sync update to Supabase PostgreSQL (coffees table)
       if (db) {
@@ -818,6 +830,8 @@ export async function handleServerlessBackend(
   if (subPath.startsWith("menu/") && method === "DELETE") {
     const id = pathParts[1];
     state.deletedMenuSlugs.add(id);
+    state.cachedCatalogMenu = null;
+    state.cachedCatalogMenuTime = 0;
 
     // Find if item had an image in Cloudflare R2
     const override = state.menuOverrides.get(id);
@@ -840,7 +854,7 @@ export async function handleServerlessBackend(
     }
 
     // Invalidate Cloudflare CDN Edge Cache
-    purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu", `/pesan/${id}`]).catch(() => {});
+    purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu", `/pesan/${id}`, "/"]).catch(() => {});
 
     return NextResponse.json({ message: "Item menu berhasil dihapus dari sistem, Supabase, dan Cloudflare R2", id });
   }
@@ -850,6 +864,8 @@ export async function handleServerlessBackend(
     try {
       const body = await parseJson();
       const idsToDelete: string[] = [];
+      state.cachedCatalogMenu = null;
+      state.cachedCatalogMenuTime = 0;
 
       if (body.select_all) {
         for (const c of COFFEES) idsToDelete.push(c.slug);

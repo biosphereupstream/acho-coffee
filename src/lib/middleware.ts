@@ -14,6 +14,16 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return supabaseResponse; // Supabase belum dikonfigurasi
 
+  // Fast-path: jika pengunjung adalah tamu (tidak punya cookie auth Supabase),
+  // jangan lakukan remote getClaims() yang membebani latensi
+  const allCookies = request.cookies.getAll();
+  const hasAuthCookie = allCookies.some(
+    (c) => c.name.startsWith("sb-") || c.name.includes("auth-token")
+  );
+  if (!hasAuthCookie) {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll() {
