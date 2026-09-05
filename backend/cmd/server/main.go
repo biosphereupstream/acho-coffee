@@ -113,6 +113,9 @@ func main() {
 		admin.Post("/api/menu/bulk-edit", menuHandler.BulkEdit)
 		admin.Post("/api/menu/bulk-delete", menuHandler.BulkDelete)
 		admin.Post("/api/menu/upload", menuHandler.UploadImage)
+		admin.Delete("/api/menu/upload", menuHandler.DeleteMedia)
+		admin.Delete("/api/upload", menuHandler.DeleteMedia)
+		admin.Delete("/api/media", menuHandler.DeleteMedia)
 	})
 
 	// Server start

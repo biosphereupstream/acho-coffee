@@ -1,4 +1,4 @@
-﻿package services
+package services
 
 import (
 	"bytes"
@@ -69,6 +69,70 @@ func (s *CloudflareService) UploadR2(ctx context.Context, key string, data []byt
 
 	publicURL := fmt.Sprintf("%s/%s", strings.TrimRight(s.cfg.R2PublicURL, "/"), key)
 	return publicURL, nil
+}
+
+// DeleteR2 removes an object from Cloudflare R2 bucket using S3-compatible SigV4 DELETE
+func (s *CloudflareService) DeleteR2(ctx context.Context, keyOrURL string) error {
+	key := s.ExtractR2Key(keyOrURL)
+	if key == "" {
+		return nil
+	}
+
+	if s.cfg.R2AccountID == "" || s.cfg.R2AccessKeyID == "" || s.cfg.R2SecretAccessKey == "" {
+		return nil
+	}
+
+	endpoint := fmt.Sprintf("https://%s.r2.cloudflarestorage.com", s.cfg.R2AccountID)
+	reqURL := fmt.Sprintf("%s/%s/%s", endpoint, s.cfg.R2Bucket, key)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, reqURL, nil)
+	if err != nil {
+		return err
+	}
+
+	signAWSv4(req, "auto", "s3", s.cfg.R2AccessKeyID, s.cfg.R2SecretAccessKey, []byte{})
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		log.Printf("[Cloudflare R2] Delete error: %v", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 && resp.StatusCode != http.StatusNotFound {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("[Cloudflare R2] Delete returned HTTP %d: %s", resp.StatusCode, string(body))
+	}
+	return nil
+}
+
+// ExtractR2Key extracts the R2 object key from a full URL, proxy path, or raw key
+func (s *CloudflareService) ExtractR2Key(urlOrKey string) string {
+	clean := strings.TrimSpace(strings.Split(urlOrKey, "?")[0])
+	if clean == "" {
+		return ""
+	}
+
+	if !strings.Contains(clean, "://") && !strings.HasPrefix(clean, "/") {
+		return clean
+	}
+
+	if idx := strings.Index(clean, "/api/media/"); idx != -1 {
+		return clean[idx+len("/api/media/"):]
+	}
+
+	if idx := strings.Index(clean, "products/"); idx != -1 {
+		return clean[idx:]
+	}
+
+	if s.cfg.R2Bucket != "" {
+		bucketPrefix := s.cfg.R2Bucket + "/"
+		if idx := strings.Index(clean, bucketPrefix); idx != -1 {
+			return clean[idx+len(bucketPrefix):]
+		}
+	}
+
+	return ""
 }
 
 // PurgeCDNCache triggers Cloudflare zone purge for updated paths

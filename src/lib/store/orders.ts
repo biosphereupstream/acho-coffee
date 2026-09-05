@@ -514,6 +514,8 @@ export async function deleteOrder(orderNumber: string): Promise<boolean> {
     const rows = await db.select().from(schema.orders).where(eq(schema.orders.orderNumber, key)).limit(1);
     if (rows.length === 0) return false;
     const o = rows[0];
+    await db.delete(schema.payments).where(eq(schema.payments.orderId, o.id));
+    await db.delete(schema.shipments).where(eq(schema.shipments.orderId, o.id));
     await db.delete(schema.orderItems).where(eq(schema.orderItems.orderId, o.id));
     await db.delete(schema.orderStatusHistory).where(eq(schema.orderStatusHistory.orderId, o.id));
     await db.delete(schema.orders).where(eq(schema.orders.id, o.id));

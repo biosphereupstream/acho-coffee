@@ -1,11 +1,22 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { uploadToR2 } from "@/lib/r2";
+import { uploadToR2, deleteFromR2, purgeCloudflareCache } from "@/lib/r2";
 import { createClient as getSupabaseServer } from "@/lib/server";
 import { env } from "@/lib/env";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
+
+async function checkAdminAuth(req: Request): Promise<boolean> {
+  const supabase = await getSupabaseServer();
+  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
+  const isAdmin = user?.email ? env.adminEmails().includes(user.email.toLowerCase()) : false;
+  const isDevBypass =
+    process.env.NODE_ENV === "development" &&
+    (req.headers.get("x-admin") === "true" || !env.supabaseConfigured());
+
+  return isAdmin || isDevBypass || !env.supabaseConfigured();
+}
 
 /** Upload gambar produk (admin) ke Cloudflare R2. */
 export async function POST(req: Request) {
@@ -13,10 +24,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "R2 belum dikonfigurasi" }, { status: 503 });
   }
 
-  const supabase = await getSupabaseServer();
-  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  const isAdmin = user?.email ? env.adminEmails().includes(user.email.toLowerCase()) : false;
-  if (!isAdmin && env.supabaseConfigured()) {
+  if (!(await checkAdminAuth(req))) {
     return NextResponse.json({ error: "Tidak diizinkan" }, { status: 403 });
   }
 
@@ -42,3 +50,49 @@ export async function POST(req: Request) {
   }
   return NextResponse.json({ url, key });
 }
+
+/** Hapus gambar produk/media (admin) dari Cloudflare R2. */
+export async function DELETE(req: Request) {
+  if (!env.r2.configured()) {
+    return NextResponse.json({ error: "R2 belum dikonfigurasi" }, { status: 503 });
+  }
+
+  if (!(await checkAdminAuth(req))) {
+    return NextResponse.json({ error: "Tidak diizinkan" }, { status: 403 });
+  }
+
+  try {
+    let keyOrUrl = "";
+    try {
+      const body = await req.json();
+      keyOrUrl = body.key || body.url || "";
+    } catch {
+      const url = new URL(req.url);
+      keyOrUrl = url.searchParams.get("key") || url.searchParams.get("url") || "";
+    }
+
+    if (!keyOrUrl) {
+      return NextResponse.json({ error: "key atau url wajib diisi" }, { status: 400 });
+    }
+
+    const ok = await deleteFromR2(keyOrUrl);
+    if (!ok) {
+      return NextResponse.json({ error: "Gagal menghapus file dari Cloudflare R2 atau key tidak valid" }, { status: 500 });
+    }
+
+    // Purge Cloudflare CDN
+    await purgeCloudflareCache();
+
+    return NextResponse.json({
+      success: true,
+      message: "Media berhasil dihapus dari Cloudflare R2",
+      target: keyOrUrl,
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Gagal menghapus file" },
+      { status: 500 }
+    );
+  }
+}
+

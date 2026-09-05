@@ -69,8 +69,79 @@ export async function uploadToR2(
   return r2PublicUrl(key);
 }
 
-export async function deleteFromR2(key: string): Promise<void> {
-  const c = getClient();
-  if (!c) return;
-  await c.send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET, Key: key }));
+export function extractR2Key(urlOrKey: string): string | null {
+  if (!urlOrKey) return null;
+  const clean = urlOrKey.trim().split("?")[0];
+
+  // If already a key like "products/abc.jpg"
+  if (!clean.includes("://") && !clean.startsWith("/")) {
+    return clean;
+  }
+
+  // Matches /api/media/key...
+  if (clean.includes("/api/media/")) {
+    const parts = clean.split("/api/media/");
+    return parts[1] || null;
+  }
+
+  // Matches any domain containing products/...
+  const match = clean.match(/(products\/[^/?#]+)/i);
+  if (match) {
+    return match[1];
+  }
+
+  // Fallback: last segment if in bucket URL
+  const bucket = process.env.R2_BUCKET || "acho-coffee";
+  if (clean.includes(bucket + "/")) {
+    const parts = clean.split(bucket + "/");
+    return parts[1] || null;
+  }
+
+  return null;
 }
+
+export async function deleteFromR2(keyOrUrl: string): Promise<boolean> {
+  const key = extractR2Key(keyOrUrl);
+  if (!key) return false;
+
+  const c = getClient();
+  if (!c) return false;
+
+  try {
+    await c.send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET, Key: key }));
+    return true;
+  } catch (err) {
+    console.error(`[Cloudflare R2] Failed to delete object key '${key}':`, err);
+    return false;
+  }
+}
+
+/**
+ * Purge Cloudflare Edge CDN cache for given file URLs or entire cache if empty.
+ */
+export async function purgeCloudflareCache(files?: string[]): Promise<boolean> {
+  const zoneId = process.env.CLOUDFLARE_ZONE_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+  if (!zoneId || !apiToken) return false;
+
+  try {
+    const body = files && files.length > 0
+      ? { files }
+      : { purge_everything: true };
+
+    const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.warn("[Cloudflare] Purge cache failed:", err);
+    return false;
+  }
+}
+

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { COFFEES } from "@/data/coffees";
 import { listOrdersForAdmin } from "@/lib/store/orders";
 import { env } from "@/lib/env";
+import { db, schema } from "@/db";
+import { eq, or, inArray } from "drizzle-orm";
+import { deleteFromR2, purgeCloudflareCache } from "@/lib/r2";
 
 // In-memory state for serverless execution
 interface BackendState {
@@ -21,6 +24,8 @@ interface BackendState {
     updated_at: string;
   };
   menuOverrides: Map<string, any>;
+  deletedMenuSlugs: Set<string>;
+  customMenuItems: Map<string, any>;
   inventory: Array<any>;
   inventoryLogs: Array<any>;
   customers: Array<any>;
@@ -50,6 +55,8 @@ function getBackendState(): BackendState {
         updated_at: new Date().toISOString(),
       },
       menuOverrides: new Map(),
+      deletedMenuSlugs: new Set(),
+      customMenuItems: new Map(),
       inventory: [
         { id: "inv-gb-frinsa", code: "GB-FRN-01", name: "Green Bean Java Frinsa Anaerobic", category: "green_beans", current_stock: 85000, unit: "grams", min_threshold: 20000, cost_per_unit_idr: 120, location: "Gudang Utama - Rak A1", batch_number: "LOT-2026-08A" },
         { id: "inv-gb-gayo", code: "GB-GYO-02", name: "Green Bean Aceh Gayo Wine Lot", category: "green_beans", current_stock: 17000, unit: "grams", min_threshold: 15000, cost_per_unit_idr: 150, location: "Gudang Utama - Rak A2", batch_number: "LOT-2026-07W" },
@@ -540,13 +547,32 @@ export async function handleServerlessBackend(
     try {
       const body = await parseJson();
       const initialCount = state.customers.length;
+      let deletedIds: string[] = [];
+
       if (body.select_all) {
+        deletedIds = state.customers.map((c) => c.id);
         state.customers = [];
       } else if (Array.isArray(body.customer_ids)) {
+        deletedIds = body.customer_ids;
         state.customers = state.customers.filter((c) => !body.customer_ids.includes(c.id));
       }
+
       const deleted = initialCount - state.customers.length;
-      return NextResponse.json({ message: `Berhasil menghapus ${deleted} pelanggan`, deleted_count: deleted });
+
+      // Sync bulk delete to Supabase PostgreSQL (profiles table)
+      if (db && deletedIds.length > 0) {
+        try {
+          if (body.select_all) {
+            await db.delete(schema.profiles);
+          } else {
+            await db.delete(schema.profiles).where(inArray(schema.profiles.id, deletedIds));
+          }
+        } catch (err) {
+          console.warn("[Supabase] Failed bulk delete profiles:", err);
+        }
+      }
+
+      return NextResponse.json({ message: `Berhasil menghapus ${deleted} pelanggan dari sistem & Supabase`, deleted_count: deleted });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
@@ -569,12 +595,23 @@ export async function handleServerlessBackend(
   // Customer: Single Item Delete (DELETE /customers/:id)
   if (subPath.startsWith("customers/") && method === "DELETE") {
     const id = pathParts[1];
+    const target = state.customers.find((c) => c.id === id);
     const initialCount = state.customers.length;
     state.customers = state.customers.filter((c) => c.id !== id);
     if (state.customers.length === initialCount) {
       return NextResponse.json({ error: "Pelanggan tidak ditemukan" }, { status: 404 });
     }
-    return NextResponse.json({ message: "Pelanggan berhasil dihapus" });
+
+    // Sync deletion to Supabase PostgreSQL (profiles table)
+    if (db) {
+      try {
+        await db.delete(schema.profiles).where(or(eq(schema.profiles.id, id), eq(schema.profiles.phone, target?.phone || id)));
+      } catch (err) {
+        console.warn("[Supabase] Failed to delete customer profile:", err);
+      }
+    }
+
+    return NextResponse.json({ message: "Pelanggan berhasil dihapus dari sistem & Supabase" });
   }
 
   // 9. MENU
@@ -583,24 +620,33 @@ export async function handleServerlessBackend(
       const search = (url.searchParams.get("search") || "").toLowerCase();
       const type = url.searchParams.get("type");
 
-      let items = COFFEES.map((c) => {
-        const override = state.menuOverrides.get(c.slug) || {};
-        return {
-          id: c.slug,
-          slug: c.slug,
-          name: c.name,
-          category: c.category,
-          type: c.type,
-          packaging: c.packageType || (c.category === "beans" ? "250g Valve Bag" : "Botol/Can"),
-          process: c.process,
-          price_idr: override.price_idr || c.priceIdr,
-          stock_quantity: override.stock_quantity ?? 45,
-          image_url: override.image_url || c.imageUrl || "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800&q=80",
-          is_active: override.is_active ?? true,
-          description: c.description,
-          ...override,
-        };
-      });
+      let items = COFFEES
+        .filter((c) => !state.deletedMenuSlugs.has(c.slug))
+        .map((c) => {
+          const override = state.menuOverrides.get(c.slug) || {};
+          return {
+            id: c.slug,
+            slug: c.slug,
+            name: c.name,
+            category: c.category,
+            type: c.type,
+            packaging: c.packageType || (c.category === "beans" ? "250g Valve Bag" : "Botol/Can"),
+            process: c.process,
+            price_idr: override.price_idr || c.priceIdr,
+            stock_quantity: override.stock_quantity ?? 45,
+            image_url: override.image_url || c.imageUrl || "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800&q=80",
+            is_active: override.is_active ?? true,
+            description: c.description,
+            ...override,
+          };
+        });
+
+      // Append custom added menu items
+      for (const [id, custom] of state.customMenuItems.entries()) {
+        if (!state.deletedMenuSlugs.has(id)) {
+          items.push(custom);
+        }
+      }
 
       if (type === "beans") items = items.filter((i) => i.category === "beans");
       if (type === "drinks") items = items.filter((i) => i.category !== "beans");
@@ -613,8 +659,32 @@ export async function handleServerlessBackend(
       try {
         const body = await parseJson();
         const id = body.slug || "custom-" + Math.random().toString(36).slice(2, 7);
-        state.menuOverrides.set(id, { ...body, id, is_active: true });
-        return NextResponse.json({ ...body, id }, { status: 201 });
+        const newItem = { ...body, id, is_active: true };
+        state.customMenuItems.set(id, newItem);
+        state.deletedMenuSlugs.delete(id);
+
+        // Sync insert to Supabase PostgreSQL (coffees table)
+        if (db) {
+          try {
+            await db.insert(schema.coffees).values({
+              slug: id,
+              name: body.name || id,
+              type: body.type === "blend" ? "blend" : "single_origin",
+              origin: body.origin || "Indonesia",
+              region: body.region || "Jawa Barat",
+              process: body.process || "Washed",
+              description: body.description || body.name || "",
+              priceIdr: Number(body.price_idr) || 85000,
+              weightGrams: Number(body.weight_grams) || 250,
+              imageUrl: body.image_url || null,
+              isActive: true,
+            });
+          } catch (err) {
+            console.warn("[Supabase] Failed to insert coffee row:", err);
+          }
+        }
+
+        return NextResponse.json(newItem, { status: 201 });
       } catch {
         return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
       }
@@ -654,6 +724,9 @@ export async function handleServerlessBackend(
       const body = await parseJson();
       const current = state.menuOverrides.get(id) || {};
       state.menuOverrides.set(id, { ...current, ...body });
+      if (state.customMenuItems.has(id)) {
+        state.customMenuItems.set(id, { ...state.customMenuItems.get(id), ...body });
+      }
       return NextResponse.json({ ...body, id });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -662,27 +735,78 @@ export async function handleServerlessBackend(
 
   if (subPath.startsWith("menu/") && method === "DELETE") {
     const id = pathParts[1];
-    state.menuOverrides.set(id, { is_active: false });
-    return NextResponse.json({ message: "Item menu dinonaktifkan" });
+    state.deletedMenuSlugs.add(id);
+
+    // Find if item had an image in Cloudflare R2
+    const override = state.menuOverrides.get(id);
+    const custom = state.customMenuItems.get(id);
+    const staticItem = COFFEES.find((c) => c.slug === id);
+    const imgUrl = override?.image_url || custom?.image_url || staticItem?.imageUrl;
+    if (imgUrl) {
+      deleteFromR2(imgUrl).catch(() => {});
+    }
+
+    state.customMenuItems.delete(id);
+
+    // Sync deletion to Supabase PostgreSQL (coffees table)
+    if (db) {
+      try {
+        await db.delete(schema.coffees).where(or(eq(schema.coffees.slug, id), eq(schema.coffees.id, id)));
+      } catch (err) {
+        console.warn("[Supabase] Failed to delete coffee row:", err);
+      }
+    }
+
+    // Invalidate Cloudflare CDN Edge Cache
+    purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu", `/pesan/${id}`]).catch(() => {});
+
+    return NextResponse.json({ message: "Item menu berhasil dihapus dari sistem, Supabase, dan Cloudflare R2", id });
   }
 
   // Menu: Bulk Delete
   if (subPath === "menu/bulk-delete" && method === "POST") {
     try {
       const body = await parseJson();
-      let count = 0;
+      const idsToDelete: string[] = [];
+
       if (body.select_all) {
-        for (const c of COFFEES) {
-          state.menuOverrides.set(c.slug, { is_active: false });
-          count++;
-        }
+        for (const c of COFFEES) idsToDelete.push(c.slug);
+        for (const id of state.customMenuItems.keys()) idsToDelete.push(id);
       } else if (Array.isArray(body.item_ids)) {
-        for (const id of body.item_ids) {
-          state.menuOverrides.set(id, { is_active: false });
-          count++;
+        idsToDelete.push(...body.item_ids);
+      }
+
+      for (const id of idsToDelete) {
+        state.deletedMenuSlugs.add(id);
+        const override = state.menuOverrides.get(id);
+        const custom = state.customMenuItems.get(id);
+        const staticItem = COFFEES.find((c) => c.slug === id);
+        const imgUrl = override?.image_url || custom?.image_url || staticItem?.imageUrl;
+        if (imgUrl) {
+          deleteFromR2(imgUrl).catch(() => {});
+        }
+        state.customMenuItems.delete(id);
+      }
+
+      // Sync bulk delete to Supabase PostgreSQL (coffees table)
+      if (db && idsToDelete.length > 0) {
+        try {
+          if (body.select_all) {
+            await db.delete(schema.coffees);
+          } else {
+            await db.delete(schema.coffees).where(inArray(schema.coffees.slug, idsToDelete));
+          }
+        } catch (err) {
+          console.warn("[Supabase] Failed bulk delete coffees:", err);
         }
       }
-      return NextResponse.json({ message: `Berhasil menonaktifkan/menghapus ${count} item menu`, deleted_count: count });
+
+      purgeCloudflareCache(["/kopi", "/minuman", "/api/backend/menu"]).catch(() => {});
+
+      return NextResponse.json({
+        message: `Berhasil menghapus ${idsToDelete.length} item menu dari sistem, Supabase, & Cloudflare R2`,
+        deleted_count: idsToDelete.length,
+      });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }

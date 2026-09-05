@@ -345,16 +345,40 @@ func (db *Database) UpdateMenuItem(ctx context.Context, item models.MenuItem) (*
 	return &item, nil
 }
 
-func (db *Database) DeleteMenuItem(ctx context.Context, id string) error {
+func (db *Database) DeleteMenuItem(ctx context.Context, id string) (string, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	if _, exists := db.menuItems[id]; !exists {
-		return fmt.Errorf("item menu tidak ditemukan: %s", id)
+	item, exists := db.menuItems[id]
+	if !exists {
+		for k, m := range db.menuItems {
+			if m.Slug == id {
+				item = m
+				id = k
+				exists = true
+				break
+			}
+		}
 	}
+	if !exists {
+		return "", fmt.Errorf("item menu tidak ditemukan: %s", id)
+	}
+
+	imageURL := item.ImageURL
+	slug := item.Slug
 	delete(db.menuItems, id)
 	db.saveToFile()
-	return nil
+
+	// Sync deletion with Supabase PostgreSQL if connected
+	if db.isPG && db.pgPool != nil {
+		go func(targetID, targetSlug string) {
+			ctxBg, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM coffees WHERE id::text = $1 OR slug = $2`, targetID, targetSlug)
+		}(id, slug)
+	}
+
+	return imageURL, nil
 }
 
 // BulkEditMenu handles "Select All" and batch menu edits
@@ -717,26 +741,54 @@ func (db *Database) ListPromotionBroadcasts(ctx context.Context) []*models.Promo
 	return result
 }
 
-func (db *Database) BulkDeleteMenu(ctx context.Context, itemIDs []string, selectAll bool) (int, error) {
+func (db *Database) BulkDeleteMenu(ctx context.Context, itemIDs []string, selectAll bool) (int, []string, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
 	count := 0
+	var imageURLs []string
+	var deletedIDs []string
+	var deletedSlugs []string
+
 	if selectAll {
 		count = len(db.menuItems)
-		for id := range db.menuItems {
+		for id, item := range db.menuItems {
+			if item.ImageURL != "" {
+				imageURLs = append(imageURLs, item.ImageURL)
+			}
+			deletedIDs = append(deletedIDs, id)
+			deletedSlugs = append(deletedSlugs, item.Slug)
 			delete(db.menuItems, id)
 		}
 	} else {
 		for _, id := range itemIDs {
-			if _, exists := db.menuItems[id]; exists {
+			if item, exists := db.menuItems[id]; exists {
+				if item.ImageURL != "" {
+					imageURLs = append(imageURLs, item.ImageURL)
+				}
+				deletedIDs = append(deletedIDs, id)
+				deletedSlugs = append(deletedSlugs, item.Slug)
 				delete(db.menuItems, id)
 				count++
 			}
 		}
 	}
 	db.saveToFile()
-	return count, nil
+
+	// Sync bulk delete with Supabase PostgreSQL if connected
+	if db.isPG && db.pgPool != nil && len(deletedIDs) > 0 {
+		go func(ids, slugs []string) {
+			ctxBg, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if selectAll {
+				_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM coffees`)
+			} else {
+				_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM coffees WHERE id::text = ANY($1) OR slug = ANY($2)`, ids, slugs)
+			}
+		}(deletedIDs, deletedSlugs)
+	}
+
+	return count, imageURLs, nil
 }
 
 func (db *Database) DeleteInventoryItem(ctx context.Context, id string) error {
@@ -836,11 +888,24 @@ func (db *Database) DeleteCustomer(ctx context.Context, id string) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	if _, exists := db.customers[id]; !exists {
+	c, exists := db.customers[id]
+	if !exists {
 		return fmt.Errorf("pelanggan tidak ditemukan: %s", id)
 	}
+	custID := c.ID
+	custPhone := c.Phone
 	delete(db.customers, id)
 	db.saveToFile()
+
+	// Sync deletion with Supabase PostgreSQL if connected
+	if db.isPG && db.pgPool != nil {
+		go func(cid, phone string) {
+			ctxBg, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM profiles WHERE id::text = $1 OR (phone IS NOT NULL AND phone != '' AND phone = $2)`, cid, phone)
+		}(custID, custPhone)
+	}
+
 	return nil
 }
 
@@ -849,19 +914,139 @@ func (db *Database) BulkDeleteCustomers(ctx context.Context, customerIDs []strin
 	defer db.mu.Unlock()
 
 	count := 0
+	var deletedIDs []string
+	var deletedPhones []string
+
 	if selectAll {
 		count = len(db.customers)
-		for id := range db.customers {
+		for id, c := range db.customers {
+			deletedIDs = append(deletedIDs, id)
+			if c.Phone != "" {
+				deletedPhones = append(deletedPhones, c.Phone)
+			}
 			delete(db.customers, id)
 		}
 	} else {
 		for _, id := range customerIDs {
-			if _, exists := db.customers[id]; exists {
+			if c, exists := db.customers[id]; exists {
+				deletedIDs = append(deletedIDs, id)
+				if c.Phone != "" {
+					deletedPhones = append(deletedPhones, c.Phone)
+				}
 				delete(db.customers, id)
 				count++
 			}
 		}
 	}
 	db.saveToFile()
+
+	// Sync with Supabase PostgreSQL
+	if db.isPG && db.pgPool != nil && len(deletedIDs) > 0 {
+		go func(ids, phones []string) {
+			ctxBg, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if selectAll {
+				_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM profiles`)
+			} else {
+				_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM profiles WHERE id::text = ANY($1) OR (phone IS NOT NULL AND phone = ANY($2))`, ids, phones)
+			}
+		}(deletedIDs, deletedPhones)
+	}
+
+	return count, nil
+}
+
+// ======================== ORDERS ========================
+
+func (db *Database) DeleteOrder(ctx context.Context, idOrNumber string) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	idx := -1
+	var targetOrder *models.OrderSummary
+	for i, o := range db.orders {
+		if o.ID == idOrNumber || o.OrderNumber == idOrNumber {
+			idx = i
+			targetOrder = o
+			break
+		}
+	}
+
+	if idx == -1 {
+		return fmt.Errorf("pesanan tidak ditemukan: %s", idOrNumber)
+	}
+
+	db.orders = append(db.orders[:idx], db.orders[idx+1:]...)
+	db.saveToFile()
+
+	// Cascade delete from Supabase PostgreSQL if connected
+	if db.isPG && db.pgPool != nil && targetOrder != nil {
+		go func(orderID, orderNumber string) {
+			ctxBg, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			var pgOrderID string
+			_ = db.pgPool.QueryRow(ctxBg, `SELECT id::text FROM orders WHERE id::text = $1 OR order_number = $2`, orderID, orderNumber).Scan(&pgOrderID)
+			if pgOrderID != "" {
+				_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM payments WHERE order_id::text = $1`, pgOrderID)
+				_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM shipments WHERE order_id::text = $1`, pgOrderID)
+				_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM order_items WHERE order_id::text = $1`, pgOrderID)
+				_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM order_status_history WHERE order_id::text = $1`, pgOrderID)
+				_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM orders WHERE id::text = $1`, pgOrderID)
+			}
+		}(targetOrder.ID, targetOrder.OrderNumber)
+	}
+
+	return nil
+}
+
+func (db *Database) BulkDeleteOrders(ctx context.Context, orderIDs []string, selectAll bool) (int, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	count := 0
+	var remaining []*models.OrderSummary
+	var deletedOrders []*models.OrderSummary
+
+	targetMap := make(map[string]bool)
+	for _, id := range orderIDs {
+		targetMap[id] = true
+	}
+
+	if selectAll {
+		count = len(db.orders)
+		deletedOrders = db.orders
+		db.orders = make([]*models.OrderSummary, 0)
+	} else {
+		for _, o := range db.orders {
+			if targetMap[o.ID] || targetMap[o.OrderNumber] {
+				count++
+				deletedOrders = append(deletedOrders, o)
+			} else {
+				remaining = append(remaining, o)
+			}
+		}
+		db.orders = remaining
+	}
+	db.saveToFile()
+
+	// Sync cascade delete with Supabase PostgreSQL
+	if db.isPG && db.pgPool != nil && len(deletedOrders) > 0 {
+		go func(orders []*models.OrderSummary) {
+			ctxBg, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			for _, o := range orders {
+				var pgOrderID string
+				_ = db.pgPool.QueryRow(ctxBg, `SELECT id::text FROM orders WHERE id::text = $1 OR order_number = $2`, o.ID, o.OrderNumber).Scan(&pgOrderID)
+				if pgOrderID != "" {
+					_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM payments WHERE order_id::text = $1`, pgOrderID)
+					_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM shipments WHERE order_id::text = $1`, pgOrderID)
+					_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM order_items WHERE order_id::text = $1`, pgOrderID)
+					_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM order_status_history WHERE order_id::text = $1`, pgOrderID)
+					_, _ = db.pgPool.Exec(ctxBg, `DELETE FROM orders WHERE id::text = $1`, pgOrderID)
+				}
+			}
+		}(deletedOrders)
+	}
+
 	return count, nil
 }

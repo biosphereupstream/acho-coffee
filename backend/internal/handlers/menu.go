@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -104,14 +105,21 @@ func (h *MenuHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *MenuHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := h.db.DeleteMenuItem(r.Context(), id); err != nil {
+	imageURL, err := h.db.DeleteMenuItem(r.Context(), id)
+	if err != nil {
 		respondError(w, http.StatusNotFound, err.Error())
 		return
 	}
 
-	go func() {
-		_ = h.cf.PurgeCDNCache(r.Context(), []string{"/kopi", "/minuman", "/api/menu"})
-	}()
+	// Delete from Cloudflare R2 and purge Edge CDN cache
+	go func(img string) {
+		ctxBg, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if img != "" {
+			_ = h.cf.DeleteR2(ctxBg, img)
+		}
+		_ = h.cf.PurgeCDNCache(ctxBg, []string{"/kopi", "/minuman", "/api/menu"})
+	}(imageURL)
 
 	respondJSON(w, http.StatusOK, map[string]string{
 		"message": "Item menu berhasil dihapus",
@@ -158,15 +166,23 @@ func (h *MenuHandler) BulkDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := h.db.BulkDeleteMenu(r.Context(), req.ItemIDs, req.SelectAll)
+	count, imageURLs, err := h.db.BulkDeleteMenu(r.Context(), req.ItemIDs, req.SelectAll)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	go func() {
-		_ = h.cf.PurgeCDNCache(r.Context(), []string{"/kopi", "/minuman", "/api/menu"})
-	}()
+	// Delete images from Cloudflare R2 and purge Edge CDN cache
+	go func(imgs []string) {
+		ctxBg, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		for _, img := range imgs {
+			if img != "" {
+				_ = h.cf.DeleteR2(ctxBg, img)
+			}
+		}
+		_ = h.cf.PurgeCDNCache(ctxBg, []string{"/kopi", "/minuman", "/api/menu"})
+	}(imageURLs)
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"message":       fmt.Sprintf("Berhasil menghapus %d item menu", count),
@@ -219,3 +235,45 @@ func (h *MenuHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 		"file_name": header.Filename,
 	})
 }
+
+// DeleteMedia handles deleting media directly from Cloudflare R2
+func (h *MenuHandler) DeleteMedia(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Key string `json:"key"`
+		URL string `json:"url"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req)
+	target := req.Key
+	if target == "" {
+		target = req.URL
+	}
+	if target == "" {
+		target = r.URL.Query().Get("key")
+	}
+	if target == "" {
+		target = r.URL.Query().Get("url")
+	}
+
+	if target == "" {
+		respondError(w, http.StatusBadRequest, "Parameter 'key' atau 'url' dibutuhkan")
+		return
+	}
+
+	err := h.cf.DeleteR2(r.Context(), target)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Gagal menghapus media dari Cloudflare R2: "+err.Error())
+		return
+	}
+
+	go func() {
+		ctxBg, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = h.cf.PurgeCDNCache(ctxBg, []string{"/kopi", "/minuman", "/api/menu"})
+	}()
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Media berhasil dihapus dari Cloudflare R2",
+	})
+}
+
