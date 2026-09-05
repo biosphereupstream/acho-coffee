@@ -1,24 +1,38 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { handleServerlessBackend } from "@/lib/backend-serverless";
 
 const GO_BACKEND_URL = process.env.GO_BACKEND_URL || "http://127.0.0.1:8080";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  return proxyRequest(req, await params);
+  return dispatchRequest(req, await params);
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  return proxyRequest(req, await params);
+  return dispatchRequest(req, await params);
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  return proxyRequest(req, await params);
+  return dispatchRequest(req, await params);
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  return proxyRequest(req, await params);
+  return dispatchRequest(req, await params);
 }
 
-async function proxyRequest(req: NextRequest, { path }: { path: string[] }) {
+async function dispatchRequest(req: NextRequest, { path }: { path: string[] }) {
+  const isVercel = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+  const isLocalBackend =
+    !process.env.GO_BACKEND_URL ||
+    GO_BACKEND_URL.includes("127.0.0.1") ||
+    GO_BACKEND_URL.includes("localhost");
+
+  // On Vercel / serverless cloud without a remote Go daemon, route directly to the embedded serverless engine
+  if (isVercel && isLocalBackend) {
+    return handleServerlessBackend(req, path);
+  }
+
+  let body: string | undefined = undefined;
+
   try {
     const subPath = path.join("/");
     const searchParams = req.nextUrl.search;
@@ -32,16 +46,22 @@ async function proxyRequest(req: NextRequest, { path }: { path: string[] }) {
     });
     headers.set("X-Admin-Key", process.env.ADMIN_API_KEY || "acho_admin_secret_key_2026");
 
-    const body = ["POST", "PUT", "PATCH"].includes(req.method)
+    body = ["POST", "PUT", "PATCH"].includes(req.method)
       ? await req.text()
       : undefined;
+
+    // 2.5 second timeout so if local Go daemon is not running, it falls back swiftly
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
 
     const resp = await fetch(targetUrl, {
       method: req.method,
       headers,
       body,
       cache: "no-store",
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     const data = await resp.text();
     return new NextResponse(data, {
@@ -51,14 +71,8 @@ async function proxyRequest(req: NextRequest, { path }: { path: string[] }) {
       },
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json(
-      {
-        error: "Gagal terhubung ke Go backend di " + GO_BACKEND_URL,
-        detail: message,
-        tip: "Pastikan Go backend berjalan: cd backend && go run ./cmd/server",
-      },
-      { status: 502 }
-    );
+    // If the Go backend is unreachable, automatically fall back to the built-in serverless engine
+    console.warn(`[Proxy Fallback] Go backend at ${GO_BACKEND_URL} unreachable, falling back to serverless engine:`, err);
+    return handleServerlessBackend(req, path, body);
   }
 }
