@@ -1,4 +1,4 @@
-﻿package config
+package config
 
 import (
 	"log"
@@ -27,6 +27,8 @@ type Config struct {
 	TurnstileSecret     string
 	AdminEmails         []string
 	AdminAPIKey         string
+	AdminUsername       string
+	AdminPassword       string
 	SiteURL             string
 	ResendAPIKey        string
 }
@@ -86,6 +88,8 @@ func Load() *Config {
 		TurnstileSecret:    getEnv("CLOUDFLARE_TURNSTILE_SECRET", ""),
 		AdminEmails:        adminEmails,
 		AdminAPIKey:        adminKey,
+		AdminUsername:      getEnv("ADMIN_USERNAME", "admin"),
+		AdminPassword:      getEnv("ADMIN_PASSWORD", "acho_admin_2026"),
 		SiteURL:            getEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000"),
 		ResendAPIKey:       getEnv("RESEND_API_KEY", ""),
 	}

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,7 +13,9 @@ import {
   Boxes, 
   Users, 
   Settings, 
-  Activity 
+  Activity,
+  LogOut,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,7 +29,17 @@ import { CustomerManagement } from "@/components/admin/customer-management";
 import { ConfigView } from "@/components/admin/config-view";
 import type { OrderRecord } from "@/lib/types";
 
-export function AdminPanel({ orders, demo }: { orders: OrderRecord[]; demo: boolean }) {
+export function AdminPanel({ 
+  orders, 
+  demo,
+  adminUser = "admin",
+  onLogout
+}: { 
+  orders: OrderRecord[]; 
+  demo: boolean;
+  adminUser?: string;
+  onLogout?: () => void;
+}) {
   const router = useRouter();
 
   function handleRefresh() {
@@ -54,6 +66,13 @@ export function AdminPanel({ orders, demo }: { orders: OrderRecord[]; demo: bool
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {adminUser && (
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/80 border border-border text-xs font-semibold text-foreground">
+              <User className="h-3.5 w-3.5 text-gold-deep" />
+              <span>{adminUser}</span>
+            </div>
+          )}
+
           <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs font-semibold">
             <Link href="/admin/print/bag-labels">
               <Tag className="h-3.5 w-3.5 text-gold-deep" /> Cetak Label Bag
@@ -63,6 +82,19 @@ export function AdminPanel({ orders, demo }: { orders: OrderRecord[]; demo: bool
           <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-1.5 text-xs font-semibold">
             <RotateCw className="h-3.5 w-3.5" /> Refresh
           </Button>
+
+          {onLogout && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onLogout}
+              className="gap-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+              title="Keluar dari sesi admin"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Keluar</span>
+            </Button>
+          )}
         </div>
       </div>
 

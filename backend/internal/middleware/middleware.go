@@ -1,4 +1,4 @@
-﻿package middleware
+package middleware
 
 import (
 	"log"
@@ -37,17 +37,17 @@ func Logger(next http.Handler) http.Handler {
 	})
 }
 
-func AdminAuth(cfg *config.Config, sb *services.SupabaseService) func(http.Handler) http.Handler {
+func AdminAuth(cfg *config.Config, sb *services.SupabaseService, auth *services.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Check X-Admin-Key header
+			// 1. Check X-Admin-Key header
 			adminKey := r.Header.Get("X-Admin-Key")
 			if adminKey != "" && adminKey == cfg.AdminAPIKey {
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			// Check Bearer token (Supabase Auth)
+			// 2. Check Bearer token (Admin session or Supabase Auth)
 			authHeader := r.Header.Get("Authorization")
 			if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
 				token := strings.TrimPrefix(authHeader, "Bearer ")
@@ -55,6 +55,14 @@ func AdminAuth(cfg *config.Config, sb *services.SupabaseService) func(http.Handl
 					next.ServeHTTP(w, r)
 					return
 				}
+
+				// Check custom admin session token
+				if _, valid := auth.ValidateSession(token); valid {
+					next.ServeHTTP(w, r)
+					return
+				}
+
+				// Check Supabase Auth token
 				user, err := sb.VerifyToken(r.Context(), token)
 				if err == nil && user != nil {
 					if sb.IsAdmin(user.Email) || user.Role == "admin" {

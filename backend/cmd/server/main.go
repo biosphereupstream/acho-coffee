@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"context"
@@ -38,6 +38,7 @@ func main() {
 	cfService := services.NewCloudflareService(cfg)
 	sbService := services.NewSupabaseService(cfg)
 	promoService := services.NewPromotionService()
+	authService := services.NewAuthService(cfg)
 
 	// 4. Handlers
 	configHandler := handlers.NewConfigHandler(db, cfService, sbService)
@@ -45,6 +46,7 @@ func main() {
 	invHandler := handlers.NewInventoryHandler(db)
 	custHandler := handlers.NewCustomerHandler(db, promoService, cfg)
 	menuHandler := handlers.NewMenuHandler(db, cfService)
+	authHandler := handlers.NewAuthHandler(authService)
 
 	// 5. Router
 	r := chi.NewRouter()
@@ -59,6 +61,11 @@ func main() {
 	// Health Check
 	r.Get("/api/health", configHandler.Health)
 
+	// Auth Endpoints (Public)
+	r.Post("/api/auth/login", authHandler.Login)
+	r.Post("/api/auth/logout", authHandler.Logout)
+	r.Get("/api/auth/me", authHandler.Me)
+
 	// Public / Hybrid endpoints
 	r.Get("/api/config/frontend", configHandler.GetFrontendConfig)
 	r.Get("/api/menu", menuHandler.List)
@@ -66,7 +73,7 @@ func main() {
 
 	// Admin Protected endpoints
 	r.Group(func(admin chi.Router) {
-		admin.Use(middleware.AdminAuth(cfg, sbService))
+		admin.Use(middleware.AdminAuth(cfg, sbService, authService))
 
 		// Database & Config
 		admin.Get("/api/config/database", configHandler.GetDatabaseConfig)
