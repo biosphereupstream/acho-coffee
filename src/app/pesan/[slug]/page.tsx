@@ -20,13 +20,17 @@ export default async function PesanPage({ params }: { params: Promise<{ slug: st
   const coffee = getCoffee(slug);
   if (!coffee) notFound();
 
+  const isBeans = coffee.category === "beans";
+  const backHref = isBeans ? "/kopi" : "/minuman";
+  const backLabel = isBeans ? "Kembali ke katalog biji kopi" : "Kembali ke menu minuman";
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <Link
-        href="/kopi"
+        href={backHref}
         className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
       >
-        <ArrowLeft className="h-4 w-4" /> Kembali ke katalog
+        <ArrowLeft className="h-4 w-4" /> {backLabel}
       </Link>
 
       <div className="mt-5 grid gap-8 lg:grid-cols-[420px_1fr]">

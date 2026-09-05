@@ -242,25 +242,61 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ================= PRODUK UNGGULAN ================= */}
-      <section className="border-y border-border/60 bg-white/60">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+      {/* ================= PRODUK UNGGULAN: BIJI KOPI & MINUMAN ================= */}
+      <section className="border-y border-border/60 bg-white/60 space-y-16 py-20">
+        {/* Section 1: Roasted Beans */}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <Badge variant="secondary" className="text-primary">Menu Kopi</Badge>
-              <h2 className="mt-3 font-[var(--font-display)] text-3xl font-bold text-green-deep sm:text-4xl">
-                Pilihan Favorit Minggu Ini
+              <div className="flex items-center gap-2">
+                <Badge variant="gold" className="text-primary font-bold">Classic Origin</Badge>
+                <span className="text-xs font-semibold text-gold-deep uppercase tracking-wider">Fresh Roast On-Demand</span>
+              </div>
+              <h2 className="mt-2 font-[var(--font-display)] text-2xl sm:text-4xl font-bold text-green-deep">
+                Biji Kopi Sangrai <span className="text-gold-gradient">(Roasted Beans)</span>
               </h2>
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground max-w-xl">
+                Single origin andalan Ciwidey & Garut dengan 4 profil sangrai presisi. Tersedia kemasan 100g, 200g, 500g, hingga 1kg.
+              </p>
             </div>
-            <Button variant="ghost" asChild>
-              <Link href="/kopi" className="text-primary">
-                Lihat Semua <ArrowRight className="h-4 w-4" />
+            <Button variant="outline" className="border-gold/40 text-gold-deep hover:bg-gold/10 font-bold" asChild>
+              <Link href="/kopi">
+                Semua Biji Kopi <ArrowRight className="h-4 w-4 ml-1.5" />
               </Link>
             </Button>
           </div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {COFFEES.slice(0, 6).map((coffee) => (
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {COFFEES.filter((c) => c.category === "beans").map((coffee) => (
+              <CoffeeCard key={coffee.slug} coffee={coffee} />
+            ))}
+          </div>
+        </div>
+
+        {/* Section 2: Ready To Drink */}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 border-t border-border/60 pt-16">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-primary font-bold">Ready to Drink</Badge>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Freshly Brewed Daily</span>
+              </div>
+              <h2 className="mt-2 font-[var(--font-display)] text-2xl sm:text-4xl font-bold text-green-deep">
+                Minuman Segar <span className="text-gold-gradient">Siap Seduh</span>
+              </h2>
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground max-w-xl">
+                Sajian kopi dan racikan segar dalam kemasan Botol Kale 250ml, Pet Can, Botol 1 Liter, dan Pouch praktis.
+              </p>
+            </div>
+            <Button variant="ghost" asChild className="font-bold text-primary">
+              <Link href="/minuman">
+                Lihat Semua 45 Minuman <ArrowRight className="h-4 w-4 ml-1.5" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {COFFEES.filter((c) => c.category !== "beans").slice(0, 4).map((coffee) => (
               <CoffeeCard key={coffee.slug} coffee={coffee} />
             ))}
           </div>
