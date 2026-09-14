@@ -19,6 +19,9 @@ interface BackendState {
     operating_hours: string;
     contact_whatsapp: string;
     contact_email: string;
+    contact_address?: string;
+    social_instagram?: string;
+    social_tiktok?: string;
     free_shipping_threshold: number;
     pickup_slots: string[];
     updated_at: string;
@@ -50,8 +53,11 @@ export function getBackendState(): BackendState {
         shop_notice: "Buka setiap hari 08.00 - 20.00 WIB",
         b2b_max_discount_percent: 10,
         operating_hours: "08:00 - 20:00 WIB",
-        contact_whatsapp: "6281234567890",
-        contact_email: "hello@acho.coffee",
+        contact_whatsapp: "6281291731358",
+        contact_email: "biosphere.upstream@gmail.com",
+        contact_address: "Jl. Srikaya Perum Bumi Tajur Raya Blok A4 No 7, Desa Tajur, Kec. Citeureup, Kabupaten Bogor, Jawa Barat 16811",
+        social_instagram: "biosphere.roastworks",
+        social_tiktok: "biosphere.roastworks",
         free_shipping_threshold: 150000,
         pickup_slots: ["10:00 - 12:00", "13:00 - 15:00", "16:00 - 18:00"],
         updated_at: new Date().toISOString(),

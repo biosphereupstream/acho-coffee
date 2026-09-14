@@ -1,4 +1,4 @@
-﻿package models
+package models
 
 import "time"
 
@@ -11,10 +11,13 @@ type FrontendConfig struct {
 	ShopNotice            string   `json:"shop_notice"`
 	B2BMaxDiscountPercent int      `json:"b2b_max_discount_percent"`
 	OperatingHours        string   `json:"operating_hours"`
-	ContactWhatsApp       string   `json:"contact_whatsapp"`
-	ContactEmail          string   `json:"contact_email"`
-	FreeShippingThreshold int      `json:"free_shipping_threshold"`
-	PickupSlots           []string `json:"pickup_slots"`
+	ContactWhatsApp       string    `json:"contact_whatsapp"`
+	ContactEmail          string    `json:"contact_email"`
+	ContactAddress        string    `json:"contact_address,omitempty"`
+	SocialInstagram       string    `json:"social_instagram,omitempty"`
+	SocialTikTok          string    `json:"social_tiktok,omitempty"`
+	FreeShippingThreshold int       `json:"free_shipping_threshold"`
+	PickupSlots           []string  `json:"pickup_slots"`
 	UpdatedAt             time.Time `json:"updated_at"`
 }
 

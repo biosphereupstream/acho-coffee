@@ -1,4 +1,4 @@
-﻿package database
+package database
 
 import (
 	"context"
@@ -85,8 +85,11 @@ func (db *Database) initDefaults() {
 		ShopNotice:            "Buka setiap hari 08.00 - 20.00 WIB",
 		B2BMaxDiscountPercent: 10, // Maksimal 10%
 		OperatingHours:        "08:00 - 20:00 WIB",
-		ContactWhatsApp:       "6281234567890",
-		ContactEmail:          "hello@acho.coffee",
+		ContactWhatsApp:       "6281291731358",
+		ContactEmail:          "biosphere.upstream@gmail.com",
+		ContactAddress:        "Jl. Srikaya Perum Bumi Tajur Raya Blok A4 No 7, Desa Tajur, Kec. Citeureup, Kabupaten Bogor, Jawa Barat 16811",
+		SocialInstagram:       "biosphere.roastworks",
+		SocialTikTok:          "biosphere.roastworks",
 		FreeShippingThreshold: 150000,
 		PickupSlots:           []string{"10:00 - 12:00", "13:00 - 15:00", "16:00 - 18:00"},
 		UpdatedAt:             time.Now(),

@@ -7,18 +7,63 @@ interface SiteFooterProps {
     operating_hours?: string;
     contact_whatsapp?: string;
     contact_email?: string;
+    contact_address?: string;
+    social_instagram?: string;
+    social_tiktok?: string;
     shop_open?: boolean;
     shop_notice?: string;
   } | null;
 }
 
+function formatSocialUrl(value: string | undefined, platform: "instagram" | "tiktok"): string | null {
+  if (!value || !value.trim()) return null;
+  const clean = value.trim();
+  if (clean.startsWith("http://") || clean.startsWith("https://")) {
+    return clean;
+  }
+  const username = clean.replace(/^@/, "");
+  if (!username) return null;
+  if (platform === "instagram") {
+    return `https://instagram.com/${username}`;
+  }
+  if (platform === "tiktok") {
+    return `https://tiktok.com/@${username}`;
+  }
+  return clean;
+}
+
+function InstagramIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
+
+function TikTokIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.49 6.34 6.34 0 0 0 1.86-4.49V8.52a8.27 8.27 0 0 0 4.84 1.56v-3.4a4.84 4.84 0 0 1-.93.01z" />
+    </svg>
+  );
+}
+
 export function SiteFooter({ config }: SiteFooterProps = {}) {
-  const whatsapp = (config?.contact_whatsapp || "6281234567890").replace(/\D/g, "");
+  const whatsapp = (config?.contact_whatsapp || "6281291731358").replace(/\D/g, "");
   const formattedPhone = whatsapp.startsWith("62")
     ? `+62 ${whatsapp.slice(2, 5)}-${whatsapp.slice(5, 9)}-${whatsapp.slice(9)}`
     : `+${whatsapp}`;
-  const email = config?.contact_email || "hello@acho.coffee";
+  const email = config?.contact_email || "biosphere.upstream@gmail.com";
   const hours = config?.operating_hours || "08:00 - 20:00 WIB";
+  const address =
+    config?.contact_address ||
+    "Jl. Srikaya Perum Bumi Tajur Raya Blok A4 No 7, Desa Tajur, Kec. Citeureup, Kabupaten Bogor, Jawa Barat 16811";
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+
+  const instagramUrl = formatSocialUrl(config?.social_instagram || "biosphere.roastworks", "instagram");
+  const tiktokUrl = formatSocialUrl(config?.social_tiktok || "biosphere.roastworks", "tiktok");
 
   return (
     <footer className="metal-green-strong mt-auto text-primary-foreground/90">
@@ -72,7 +117,15 @@ export function SiteFooter({ config }: SiteFooterProps = {}) {
           <ul className="mt-4 space-y-3 text-sm">
             <li className="flex items-start gap-2">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold-light" />
-              Sumur Bandung, Kota Bandung, Jawa Barat
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Buka lokasi di Google Maps"
+                className="hover:text-gold-light transition-colors underline-offset-2 hover:underline leading-relaxed"
+              >
+                {address}
+              </a>
             </li>
             <li className="flex items-center gap-2">
               <Clock className="h-4 w-4 shrink-0 text-gold-light" />
@@ -98,6 +151,40 @@ export function SiteFooter({ config }: SiteFooterProps = {}) {
                 {email}
               </a>
             </li>
+
+            {(instagramUrl || tiktokUrl) && (
+              <li className="pt-2 border-t border-white/10">
+                <span className="block text-[11px] font-semibold uppercase tracking-wider text-gold-light mb-2">
+                  Media Sosial Resmi
+                </span>
+                <div className="flex items-center gap-2.5">
+                  {instagramUrl && (
+                    <a
+                      href={instagramUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Instagram Biosphere Roast Works"
+                      title="Instagram @biosphere.roastworks"
+                      className="group flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white/90 transition-all duration-300 hover:border-gold-light hover:bg-gold-light/20 hover:text-gold-light hover:scale-110 shadow-sm"
+                    >
+                      <InstagramIcon className="h-4 w-4 transition-transform group-hover:scale-110" />
+                    </a>
+                  )}
+                  {tiktokUrl && (
+                    <a
+                      href={tiktokUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="TikTok Biosphere Roast Works"
+                      title="TikTok @biosphere.roastworks"
+                      className="group flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white/90 transition-all duration-300 hover:border-gold-light hover:bg-gold-light/20 hover:text-gold-light hover:scale-110 shadow-sm"
+                    >
+                      <TikTokIcon className="h-4 w-4 transition-transform group-hover:scale-110" />
+                    </a>
+                  )}
+                </div>
+              </li>
+            )}
           </ul>
         </div>
       </div>

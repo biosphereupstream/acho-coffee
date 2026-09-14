@@ -52,6 +52,9 @@ interface FrontendConfig {
   operating_hours: string;
   contact_whatsapp: string;
   contact_email: string;
+  contact_address?: string;
+  social_instagram?: string;
+  social_tiktok?: string;
   free_shipping_threshold: number;
   pickup_slots: string[];
 }
@@ -69,8 +72,11 @@ export function ConfigView() {
     shop_notice: "Buka setiap hari 08.00 - 20.00 WIB",
     b2b_max_discount_percent: 10,
     operating_hours: "08:00 - 20:00 WIB",
-    contact_whatsapp: "6281234567890",
-    contact_email: "hello@acho.coffee",
+    contact_whatsapp: "6281291731358",
+    contact_email: "biosphere.upstream@gmail.com",
+    contact_address: "Jl. Srikaya Perum Bumi Tajur Raya Blok A4 No 7, Desa Tajur, Kec. Citeureup, Kabupaten Bogor, Jawa Barat 16811",
+    social_instagram: "biosphere.roastworks",
+    social_tiktok: "biosphere.roastworks",
     free_shipping_threshold: 150000,
     pickup_slots: ["10:00 - 12:00", "13:00 - 15:00", "16:00 - 18:00"],
   });
@@ -385,6 +391,47 @@ export function ConfigView() {
                 className="w-full bg-background border border-input rounded-xl p-2 text-xs"
               />
             </div>
+          </div>
+
+          {/* Address & Social Media */}
+          <div className="p-4 rounded-xl border border-border/60 bg-secondary/30 space-y-3">
+            <div>
+              <label className="font-semibold text-foreground block mb-1">Alamat Lengkap Roastery / Toko:</label>
+              <textarea
+                rows={2}
+                value={frontendCfg.contact_address || ""}
+                onChange={(e) => setFrontendCfg({ ...frontendCfg, contact_address: e.target.value })}
+                placeholder="misal: Jl. Srikaya Perum Bumi Tajur Raya Blok A4 No 7, Desa Tajur, Kec. Citeureup..."
+                className="w-full bg-background border border-input rounded-xl p-2 text-xs"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold text-foreground block mb-1">Akun / Tautan Instagram:</label>
+                <input
+                  type="text"
+                  value={frontendCfg.social_instagram || ""}
+                  onChange={(e) => setFrontendCfg({ ...frontendCfg, social_instagram: e.target.value })}
+                  placeholder="misal: @biosphere.roastworks atau https://instagram.com/..."
+                  className="w-full bg-background border border-input rounded-xl p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-foreground block mb-1">Akun / Tautan TikTok:</label>
+                <input
+                  type="text"
+                  value={frontendCfg.social_tiktok || ""}
+                  onChange={(e) => setFrontendCfg({ ...frontendCfg, social_tiktok: e.target.value })}
+                  placeholder="misal: @biosphere.roastworks atau https://tiktok.com/@..."
+                  className="w-full bg-background border border-input rounded-xl p-2 text-xs"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Tautan media sosial dapat diisi dengan username (@akun) atau tautan lengkap. Kosongkan kolom jika ingin menyembunyikan ikon di footer storefront.
+            </p>
           </div>
 
           <div className="flex justify-end pt-3 border-t border-border/50">

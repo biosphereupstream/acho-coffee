@@ -71,7 +71,7 @@ export function SampleRequestForm() {
       const waMsg = encodeURIComponent(
         `Halo Biosphere Roast Works!\nSaya ingin request sample biji kopi untuk kedai:\n\n*Nama Kedai:* ${form.businessName}\n*PIC:* ${form.contactPerson}\n*No. WA:* ${form.phone}\n*Kota:* ${form.city}\n*Alamat:* ${form.address}\n*Mesin Espresso:* ${form.espressoMachine || "-"}\n*Estimasi Kebutuhan:* ${form.monthlyEstimateKg}\n*Varian yang diminati:* ${form.samplePreferences.join(", ")}\n\nTerima kasih!`
       );
-      window.open(`https://wa.me/6281234567890?text=${waMsg}`, "_blank");
+      window.open(`https://wa.me/6281291731358?text=${waMsg}`, "_blank");
       setSubmitted(true);
     } finally {
       setLoading(false);
