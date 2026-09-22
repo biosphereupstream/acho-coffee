@@ -10,11 +10,13 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FeaturedSection } from "@/components/shop/featured-section";
+import { RoastScienceStepper } from "@/components/landing/roast-science-stepper";
+import { FlavorMoodNavigator } from "@/components/landing/flavor-mood-navigator";
+import { FreshnessTelemetry } from "@/components/landing/freshness-telemetry";
+import { StickyMobileCTA } from "@/components/landing/sticky-mobile-cta";
 import { LandingFAQ } from "@/components/landing/faq";
 import RoastJourney from "@/components/landing/roast-journey-wrapper";
 import { getLiveFrontendConfig, getLiveMenu } from "@/lib/menu";
-import { ROAST_STAGES, ROAST_IMPORTANT_NOTES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -111,13 +113,16 @@ export default async function HomePage() {
             <div className="animate-fade-up mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 w-full" style={{ animationDelay: "0.2s" }}>
               <Button size="lg" variant="gold" className="w-full sm:w-auto h-12 text-sm font-bold shadow-md justify-center" asChild>
                 <Link href="/menu">
-                  Pesan Sekarang <ArrowRight className="h-4 w-4 ml-1.5" />
+                  Eksplor Menu & Pesan <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 text-sm font-semibold justify-center" asChild>
-                <Link href="/#proses">Lihat Prosesnya</Link>
+                <Link href="/#proses">Sains Roasting 7 Fase</Link>
               </Button>
             </div>
+            <p className="animate-fade-up text-[11px] text-muted-foreground mt-2" style={{ animationDelay: "0.24s" }}>
+              ✦ Disangrai on-demand • Bebas pilih profil gilingan • Garansi kesegaran 72 jam
+            </p>
 
             <div className="animate-fade-up mt-6 sm:mt-8 flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground" style={{ animationDelay: "0.28s" }}>
               <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-primary shrink-0" /> Pembayaran Aman</span>
@@ -156,108 +161,14 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ================= PROSES KIMIAWI ROASTING KOPI ================= */}
-      <section id="proses" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-3xl text-center">
-          <Badge variant="secondary" className="text-primary font-bold">Proses Kimiawi Roasting Kopi</Badge>
-          <h2 className="mt-3 font-[var(--font-display)] text-3xl font-bold text-green-deep sm:text-4xl">
-            Tahapan Reaksi Kimia dari Biji Hijau <span className="text-gold-gradient">Hingga Siap Didinginkan</span>
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Roasting kopi bukan sekadar memanaskan biji, melainkan serangkaian reaksi kimia bertahap yang
-            mengubah biji hijau menjadi biji matang dengan warna, aroma, dan rasa yang khas.
-          </p>
-        </div>
+      {/* ================= 7 FASE SAINS ROASTING INTERAKTIF ================= */}
+      <RoastScienceStepper />
 
-        {/* 7 Tahapan Proses Grid */}
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {ROAST_STAGES.map((stage, i) => (
-            <div
-              key={stage.key}
-              className={cn(
-                "gold-ring-hover glossy-card relative flex flex-col justify-between overflow-hidden rounded-2xl border p-6 transition-all duration-300",
-                stage.isCritical
-                  ? "border-gold/80 bg-gradient-to-br from-accent/50 to-card shadow-md ring-1 ring-gold/40"
-                  : "border-border bg-card shadow-xs"
-              )}
-            >
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-black uppercase tracking-wider text-muted-foreground">
-                    Tahap 0{i + 1}
-                  </span>
-                  <span
-                    className={cn(
-                      "rounded-full px-2.5 py-0.5 text-[11px] font-extrabold",
-                      stage.isCritical
-                        ? "bg-rose-500/15 text-rose-700 border border-rose-400/40"
-                        : "bg-secondary text-foreground/80 border border-border"
-                    )}
-                  >
-                    {stage.suhu}
-                  </span>
-                </div>
+      {/* ================= SENSORY APPETITE & FLAVOR NAVIGATOR ================= */}
+      <FlavorMoodNavigator initialCoffees={coffees} />
 
-                <div className="mt-4 flex items-center gap-2">
-                  <h3 className="font-[var(--font-display)] text-lg font-bold text-green-deep">
-                    {stage.title}
-                  </h3>
-                  {stage.isCritical && (
-                    <Badge variant="gold" className="text-[10px] font-bold px-1.5 py-0">
-                      Disorot
-                    </Badge>
-                  )}
-                </div>
-
-                <p className="mt-2 text-xs leading-relaxed text-foreground/80">
-                  {stage.desc}
-                </p>
-              </div>
-
-              <div className="mt-4 border-t border-border/50 pt-3 text-[11px] font-semibold text-muted-foreground flex items-center justify-between">
-                <span>Biosphere Roast Works</span>
-                <span className="text-gold-deep font-mono">Fase 0{i + 1} / 07</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Catatan Penting Callout Box from PDF */}
-        <div className="mt-12 rounded-2xl border border-gold/40 bg-gradient-to-br from-secondary/50 via-background to-accent/30 p-6 sm:p-8 shadow-xs">
-          <div className="flex items-center gap-2.5 text-green-deep">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg metal-green text-gold-light font-black text-sm">
-              ✦
-            </span>
-            <div>
-              <h3 className="font-[var(--font-display)] text-lg font-bold text-green-deep">
-                Catatan Penting Sains Roasting
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Prinsip kontrol kualitas roasting Biosphere Roast Works — Where Science Meets Soul.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {ROAST_IMPORTANT_NOTES.map((note, idx) => (
-              <div key={idx} className="rounded-xl border border-border/80 bg-background/90 p-4 backdrop-blur-xs">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-black text-gold-deep">
-                    {idx + 1}
-                  </span>
-                  <h4 className="text-xs font-bold text-foreground">{note.title}</h4>
-                </div>
-                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                  {note.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ================= PRODUK UNGGULAN: BIJI KOPI & MINUMAN (REAL-TIME SYNC) ================= */}
-      <FeaturedSection initialCoffees={coffees} />
+      {/* ================= LIVE FRESHNESS & BATCH TELEMETRY ================= */}
+      <FreshnessTelemetry />
 
       {/* ================= KEUNGGULAN ================= */}
       <section id="tentang" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
@@ -341,7 +252,7 @@ export default async function HomePage() {
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button size="lg" variant="gold" asChild>
-                <Link href="/kopi">
+                <Link href="/menu">
                   Pesan Sekarang <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -352,6 +263,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ================= STICKY MOBILE ACTION BAR ================= */}
+      <StickyMobileCTA />
     </div>
   );
 }
