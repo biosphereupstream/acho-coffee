@@ -148,5 +148,4 @@ export function calculateWholesaleDiscount(items: Array<{ weightGrams?: number; 
     kgNeededForNextTier,
   };
 }
-
-
+export const BUILD_TIMESTAMP = "2026-09-23";
