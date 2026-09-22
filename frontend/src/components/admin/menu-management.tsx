@@ -34,11 +34,58 @@ interface MenuItem {
   description: string;
 }
 
+export interface CategoryConfig {
+  label: string;
+  badgeClass: string;
+  defaultPackaging: string;
+  type: "beans" | "drinks";
+}
+
+export const CATEGORY_DEFINITIONS: Record<string, CategoryConfig> = {
+  beans: {
+    label: "Biji Kopi Sangrai",
+    badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    defaultPackaging: "250g Valve Bag",
+    type: "beans",
+  },
+  botol_kale: {
+    label: "Botol Kale 250ml",
+    badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+    defaultPackaging: "Botol Kale 250ml",
+    type: "drinks",
+  },
+  pet_can: {
+    label: "Pet Can 250ml",
+    badgeClass: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+    defaultPackaging: "Pet Can 250ml",
+    type: "drinks",
+  },
+  botol_1000: {
+    label: "Botol 1 Liter",
+    badgeClass: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    defaultPackaging: "Botol 1000ml (1 Liter)",
+    type: "drinks",
+  },
+  simplicity_pouch: {
+    label: "Simplicity Pouch",
+    badgeClass: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+    defaultPackaging: "Pouch 200ml",
+    type: "drinks",
+  },
+  espresso_pouch: {
+    label: "Espresso Pouch",
+    badgeClass: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300 border-orange-200 dark:border-orange-800",
+    defaultPackaging: "Pouch 100ml Concentrate",
+    type: "drinks",
+  },
+};
+
 export function MenuManagement() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "beans" | "drinks">("all");
+  const [subTab, setSubTab] = useState<string>("all");
   
   // Selection
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -59,10 +106,7 @@ export function MenuManagement() {
   async function fetchMenu() {
     setLoading(true);
     try {
-      let url = `/api/backend/menu?search=${encodeURIComponent(search)}`;
-      if (activeTab === "beans") url += "&type=beans";
-      if (activeTab === "drinks") url += "&type=drinks";
-
+      const url = `/api/backend/menu?search=${encodeURIComponent(search)}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to load menu");
       const json = await res.json();
@@ -76,7 +120,45 @@ export function MenuManagement() {
 
   useEffect(() => {
     fetchMenu();
-  }, [activeTab]);
+  }, []);
+
+  function handleTabChange(tab: "all" | "beans" | "drinks") {
+    setActiveTab(tab);
+    setSubTab("all");
+    setSelectedIds([]);
+    setSelectAll(false);
+  }
+
+  function handleSubTabChange(sub: string) {
+    setSubTab(sub);
+    setSelectedIds([]);
+    setSelectAll(false);
+  }
+
+  // Filter items based on activeTab & subTab
+  const displayedItems = items.filter((item) => {
+    if (activeTab === "beans") {
+      if (item.category !== "beans" && item.type !== "roasted_bean") return false;
+    } else if (activeTab === "drinks") {
+      if (item.category === "beans" || item.type === "roasted_bean") return false;
+      if (subTab !== "all" && item.category !== subTab) return false;
+    }
+    return true;
+  });
+
+  // Category counts
+  const beansCount = items.filter((i) => i.category === "beans" || i.type === "roasted_bean").length;
+  const drinksCount = items.filter((i) => i.category !== "beans" && i.type !== "roasted_bean").length;
+
+  const getSubCategoryCount = (catKey: string) => {
+    return items.filter((i) => i.category === catKey).length;
+  };
+
+  // Dynamic summary stats based on current filtered view
+  const totalVariants = displayedItems.length;
+  const totalStock = displayedItems.reduce((acc, curr) => acc + (Number(curr.stock_quantity) || 0), 0);
+  const activeCount = displayedItems.filter((i) => i.is_active).length;
+  const inactiveCount = totalVariants - activeCount;
 
   function handleSelectAllToggle() {
     if (selectAll) {
@@ -84,7 +166,7 @@ export function MenuManagement() {
       setSelectedIds([]);
     } else {
       setSelectAll(true);
-      setSelectedIds(items.map((i) => i.id));
+      setSelectedIds(displayedItems.map((i) => i.id));
     }
   }
 
@@ -92,19 +174,19 @@ export function MenuManagement() {
     if (selectedIds.includes(id)) {
       const next = selectedIds.filter((x) => x !== id);
       setSelectedIds(next);
-      setSelectAll(next.length === items.length);
+      setSelectAll(next.length === displayedItems.length && displayedItems.length > 0);
     } else {
       const next = [...selectedIds, id];
       setSelectedIds(next);
-      setSelectAll(next.length === items.length);
+      setSelectAll(next.length === displayedItems.length && displayedItems.length > 0);
     }
   }
 
   async function handleBulkSubmit() {
-    if (selectedIds.length === 0 && !selectAll) return;
+    if (selectedIds.length === 0) return;
 
     const payload: any = {
-      select_all: selectAll,
+      select_all: false,
       item_ids: selectedIds,
     };
 
@@ -172,7 +254,8 @@ export function MenuManagement() {
   }
 
   async function handleBulkDelete() {
-    const count = selectAll ? items.length : selectedIds.length;
+    if (selectedIds.length === 0) return;
+    const count = selectedIds.length;
     if (!confirm(`Apakah Anda yakin ingin menghapus ${count} item menu terpilih?`)) return;
 
     try {
@@ -180,7 +263,7 @@ export function MenuManagement() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          select_all: selectAll,
+          select_all: false,
           item_ids: selectedIds,
         }),
       });
@@ -199,72 +282,181 @@ export function MenuManagement() {
 
   return (
     <div className="space-y-4">
-      {/* Top Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/60 backdrop-blur p-4 rounded-2xl border border-border/80">
-        <div className="flex items-center gap-1 bg-secondary/80 p-1 rounded-xl">
-          <button
-            onClick={() => setActiveTab("all")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-              activeTab === "all" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Semua ({items.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("beans")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-              activeTab === "beans" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Biji Kopi
-          </button>
-          <button
-            onClick={() => setActiveTab("drinks")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-              activeTab === "drinks" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Minuman Siap Minum
-          </button>
+      {/* 4 Dynamic Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-card/70 backdrop-blur-sm border border-border/80 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div className="space-y-1">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Total Varian</p>
+            <p className="text-2xl font-black text-foreground">{totalVariants} <span className="text-xs font-normal text-muted-foreground">menu</span></p>
+            <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">
+              {activeTab === "all" ? "Semua kategori" : activeTab === "beans" ? "Biji kopi sangrai" : subTab === "all" ? "Semua minuman" : CATEGORY_DEFINITIONS[subTab]?.label || "Kategori aktif"}
+            </p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+            <Package className="h-5 w-5" />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Cari nama, proses..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && fetchMenu()}
-              className="w-full bg-background/80 border border-input rounded-xl pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-            />
+        <div className="bg-card/70 backdrop-blur-sm border border-border/80 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div className="space-y-1">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Stok Total</p>
+            <p className="text-2xl font-black text-foreground">{totalStock} <span className="text-xs font-normal text-muted-foreground">unit</span></p>
+            <p className="text-[10px] text-muted-foreground">Ketersediaan fisik</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+            <Coffee className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-card/70 backdrop-blur-sm border border-border/80 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div className="space-y-1">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Produk Aktif</p>
+            <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{activeCount}</p>
+            <p className="text-[10px] text-muted-foreground">Tayang di storefront</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+            <Eye className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-card/70 backdrop-blur-sm border border-border/80 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div className="space-y-1">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Produk Nonaktif</p>
+            <p className="text-2xl font-black text-rose-600 dark:text-rose-400">{inactiveCount}</p>
+            <p className="text-[10px] text-muted-foreground">Disembunyikan</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+            <EyeOff className="h-5 w-5" />
+          </div>
+        </div>
+      </div>
+
+      {/* Top Filter and Search Bar */}
+      <div className="space-y-3 bg-card/60 backdrop-blur p-4 rounded-2xl border border-border/80 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Tingkat 1: Kategori Utama */}
+          <div className="flex items-center gap-1 bg-secondary/80 p-1 rounded-xl">
+            <button
+              onClick={() => handleTabChange("all")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                activeTab === "all" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span>Semua Menu</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground">
+                {items.length}
+              </span>
+            </button>
+            <button
+              onClick={() => handleTabChange("beans")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                activeTab === "beans" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span>Biji Kopi Sangrai</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground">
+                {beansCount}
+              </span>
+            </button>
+            <button
+              onClick={() => handleTabChange("drinks")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                activeTab === "drinks" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span>Minuman Siap Minum</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground">
+                {drinksCount}
+              </span>
+            </button>
           </div>
 
-          <Button
-            size="sm"
-            onClick={() => {
-              setIsNewItem(true);
-              setEditingItem({
-                id: "",
-                slug: "",
-                name: "",
-                category: "beans",
-                type: "roasted_bean",
-                packaging: "250g Valve Bag",
-                process: "Full Washed",
-                price_idr: 95000,
-                stock_quantity: 50,
-                image_url: "",
-                is_active: true,
-                description: "",
-              });
-            }}
-            className="gap-1.5 text-xs shrink-0"
-          >
-            <Plus className="h-3.5 w-3.5" /> Tambah Menu
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Cari nama, proses..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchMenu()}
+                className="w-full bg-background/80 border border-input rounded-xl pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            <Button
+              size="sm"
+              onClick={() => {
+                setIsNewItem(true);
+                const defaultCat = activeTab === "beans" ? "beans" : (subTab !== "all" ? subTab : "botol_kale");
+                const catDef = CATEGORY_DEFINITIONS[defaultCat] || CATEGORY_DEFINITIONS.beans;
+                setEditingItem({
+                  id: "",
+                  slug: "",
+                  name: "",
+                  category: defaultCat,
+                  type: catDef.type === "beans" ? "roasted_bean" : "drink",
+                  packaging: catDef.defaultPackaging,
+                  process: defaultCat === "beans" ? "Full Washed" : "Cold Brewed / Ready to Drink",
+                  price_idr: defaultCat === "beans" ? 95000 : 25000,
+                  stock_quantity: 50,
+                  image_url: "",
+                  is_active: true,
+                  description: "",
+                });
+              }}
+              className="gap-1.5 text-xs shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" /> Tambah Menu
+            </Button>
+          </div>
         </div>
+
+        {/* Tingkat 2: Sub-kategori Kemasan Minuman (Hanya jika tab Minuman aktif) */}
+        {activeTab === "drinks" && (
+          <div className="flex items-center gap-1.5 pt-2 border-t border-border/40 overflow-x-auto pb-1 text-xs">
+            <span className="text-[11px] font-semibold text-muted-foreground mr-1 shrink-0">Kemasan:</span>
+            <button
+              onClick={() => handleSubTabChange("all")}
+              className={`px-2.5 py-1 rounded-lg text-xs transition shrink-0 flex items-center gap-1.5 ${
+                subTab === "all"
+                  ? "bg-primary text-primary-foreground font-bold shadow-sm"
+                  : "bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span>Semua Kemasan</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                subTab === "all" ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}>
+                {drinksCount}
+              </span>
+            </button>
+            {Object.entries(CATEGORY_DEFINITIONS)
+              .filter(([_, config]) => config.type === "drinks")
+              .map(([key, config]) => {
+                const count = getSubCategoryCount(key);
+                const isActive = subTab === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => handleSubTabChange(key)}
+                    className={`px-2.5 py-1 rounded-lg text-xs transition shrink-0 flex items-center gap-1.5 ${
+                      isActive
+                        ? "bg-primary text-primary-foreground font-bold shadow-sm"
+                        : "bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span>{config.label}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+          </div>
+        )}
       </div>
 
       {/* Floating Bulk Action Bar */}
@@ -315,7 +507,7 @@ export function MenuManagement() {
               <tr>
                 <th className="p-3 w-10 text-center">
                   <button onClick={handleSelectAllToggle} className="text-foreground hover:text-primary">
-                    {selectAll ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
+                    {selectAll && displayedItems.length > 0 ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
                   </button>
                 </th>
                 <th className="p-3">Produk</th>
@@ -334,14 +526,14 @@ export function MenuManagement() {
                     Memuat menu...
                   </td>
                 </tr>
-              ) : items.length === 0 ? (
+              ) : displayedItems.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-10 text-muted-foreground">
-                    Tidak ada item menu yang sesuai
+                    Tidak ada item menu yang sesuai dengan filter ini
                   </td>
                 </tr>
               ) : (
-                items.map((item) => {
+                displayedItems.map((item) => {
                   const isSelected = selectedIds.includes(item.id);
                   return (
                     <tr
@@ -371,16 +563,20 @@ export function MenuManagement() {
                         </div>
                       </td>
                       <td className="p-3">
-                        <div className="space-y-0.5">
-                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                            item.category === "beans" 
-                              ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                              : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                          }`}>
-                            {item.category === "beans" ? "Biji Kopi Sangrai" : "Minuman Siap Minum"}
-                          </span>
-                          <p className="text-[10px] text-muted-foreground">{item.packaging}</p>
-                        </div>
+                        {(() => {
+                          const catDef = CATEGORY_DEFINITIONS[item.category] || {
+                            label: item.category === "beans" ? "Biji Kopi Sangrai" : "Minuman",
+                            badgeClass: "bg-secondary text-secondary-foreground border-border",
+                          };
+                          return (
+                            <div className="space-y-0.5">
+                              <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${catDef.badgeClass}`}>
+                                {catDef.label}
+                              </span>
+                              <p className="text-[10px] text-muted-foreground">{item.packaging}</p>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="p-3 font-bold text-foreground">
                         {formatIDR(item.price_idr)}
@@ -590,15 +786,26 @@ export function MenuManagement() {
                   <label className="font-semibold text-foreground">Kategori:</label>
                   <select
                     value={editingItem.category}
-                    onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })}
+                    onChange={(e) => {
+                      const newCat = e.target.value;
+                      const catDef = CATEGORY_DEFINITIONS[newCat];
+                      setEditingItem({
+                        ...editingItem,
+                        category: newCat,
+                        type: catDef?.type === "beans" ? "roasted_bean" : "drink",
+                        packaging: (!editingItem.packaging || isNewItem) ? (catDef?.defaultPackaging || editingItem.packaging) : editingItem.packaging,
+                      });
+                    }}
                     className="w-full mt-1 bg-background border border-input rounded-xl p-2 text-xs"
                   >
-                    <option value="beans">Biji Kopi (Roasted Beans)</option>
-                    <option value="drinks_botol_kale">Minuman: Botol Kale 250ml</option>
-                    <option value="drinks_pet_can">Minuman: Pet Can 250ml</option>
-                    <option value="drinks_botol_1l">Minuman: Botol 1 Liter</option>
-                    <option value="drinks_pouch">Minuman: Simplicity Pouch</option>
-                    <option value="drinks_espresso_pouch">Minuman: Espresso Pouch</option>
+                    <option value="beans">[Biji Kopi] Biji Kopi Sangrai</option>
+                    <optgroup label="Minuman Siap Minum">
+                      <option value="botol_kale">[Minuman] Botol Kale 250ml</option>
+                      <option value="pet_can">[Minuman] Pet Can 250ml</option>
+                      <option value="botol_1000">[Minuman] Botol 1 Liter</option>
+                      <option value="simplicity_pouch">[Minuman] Simplicity Pouch</option>
+                      <option value="espresso_pouch">[Minuman] Espresso Pouch</option>
+                    </optgroup>
                   </select>
                 </div>
 

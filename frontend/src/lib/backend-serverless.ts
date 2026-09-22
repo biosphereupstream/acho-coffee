@@ -939,8 +939,14 @@ export async function handleServerlessBackend(
         }
       }
 
-      if (type === "beans") items = items.filter((i) => i.category === "beans");
-      if (type === "drinks") items = items.filter((i) => i.category !== "beans");
+      const category = url.searchParams.get("category");
+      if (category) {
+        items = items.filter((i) => i.category === category);
+      } else if (type === "beans") {
+        items = items.filter((i) => i.category === "beans");
+      } else if (type === "drinks") {
+        items = items.filter((i) => i.category !== "beans");
+      }
       if (search) items = items.filter((i) => i.name.toLowerCase().includes(search) || i.process?.toLowerCase().includes(search));
 
       return NextResponse.json({ items, total: items.length });
