@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { db, schema } from "@/db";
 import { eq, or, inArray } from "drizzle-orm";
 import { deleteFromR2, purgeCloudflareCache } from "@/lib/r2";
+import { inferProductCategory } from "@/lib/menu";
 
 // In-memory state for serverless execution
 interface BackendState {
@@ -884,13 +885,16 @@ export async function handleServerlessBackend(
               .filter((row: any) => !state.deletedMenuSlugs.has(row.slug))
               .map((row: any) => {
                 const override = state.menuOverrides.get(row.slug) || {};
+                const staticMatch = COFFEES.find(c => c.slug === row.slug);
+                const category = override.category || row.category || staticMatch?.category || inferProductCategory(row);
+                const packaging = override.packaging || row.packaging || staticMatch?.packageType || (category === "beans" ? "250g Valve Bag" : "Kemasan Minuman");
                 return {
                   id: row.slug,
                   slug: row.slug,
                   name: override.name || row.name,
-                  category: row.type === "blend" ? "beans" : (row.origin?.toLowerCase().includes("blend") ? "beans" : COFFEES.find(c => c.slug === row.slug)?.category || "beans"),
+                  category,
                   type: row.type,
-                  packaging: COFFEES.find(c => c.slug === row.slug)?.packageType || (row.type === "blend" ? "Blend Bag" : "250g Valve Bag"),
+                  packaging,
                   process: override.process || row.process,
                   price_idr: override.price_idr || row.priceIdr,
                   stock_quantity: override.stock_quantity ?? 45,
@@ -902,6 +906,30 @@ export async function handleServerlessBackend(
                   ...override,
                 };
               });
+
+            // Also merge any items from COFFEES that are missing from DB
+            for (const c of COFFEES) {
+              if (!items.some(i => i.slug === c.slug) && !state.deletedMenuSlugs.has(c.slug)) {
+                const override = state.menuOverrides.get(c.slug) || {};
+                items.push({
+                  id: c.slug,
+                  slug: c.slug,
+                  name: override.name || c.name,
+                  category: override.category || c.category,
+                  type: c.type,
+                  packaging: override.packaging || c.packageType || (c.category === "beans" ? "250g Valve Bag" : "Kemasan Minuman"),
+                  process: override.process || c.process,
+                  price_idr: override.price_idr || c.priceIdr,
+                  stock_quantity: override.stock_quantity ?? 45,
+                  image_url: override.image_url || c.imageUrl || "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800&q=80",
+                  is_active: override.is_active ?? true,
+                  description: override.description || c.description,
+                  origin: override.origin || c.origin,
+                  region: override.region || c.region,
+                  ...override,
+                });
+              }
+            }
           }
         } catch (err) {
           console.warn("[Admin Menu] Supabase query failed, falling back to static:", err);
@@ -969,6 +997,8 @@ export async function handleServerlessBackend(
               slug: id,
               name: body.name || id,
               type: body.type === "blend" ? "blend" : "single_origin",
+              category: body.category || inferProductCategory(body),
+              packaging: body.packaging || (body.category === "beans" ? "250g Valve Bag" : "Kemasan Minuman"),
               origin: body.origin || "Indonesia",
               region: body.region || "Jawa Barat",
               process: body.process || "Washed",
@@ -1089,6 +1119,8 @@ export async function handleServerlessBackend(
         try {
           const updateData: any = {};
           if (body.name !== undefined) updateData.name = body.name;
+          if (body.category !== undefined) updateData.category = body.category;
+          if (body.packaging !== undefined) updateData.packaging = body.packaging;
           if (body.price_idr !== undefined) updateData.priceIdr = Number(body.price_idr);
           if (body.weight_grams !== undefined) updateData.weightGrams = Number(body.weight_grams);
           if (body.image_url !== undefined) updateData.imageUrl = body.image_url;

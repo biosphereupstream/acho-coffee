@@ -13,38 +13,39 @@ const DEFAULT_ART = {
 /**
  * Infer the ProductCategory based on slug, category, packaging, and item name.
  */
-function inferProductCategory(item: {
+export function inferProductCategory(item: {
   category?: string;
   slug?: string;
   packaging?: string;
   name?: string;
+  packageType?: string;
 }): ProductCategory {
   const cat = (item.category || "").toLowerCase();
   const slug = (item.slug || "").toLowerCase();
-  const pkg = (item.packaging || "").toLowerCase();
+  const pkg = (item.packaging || item.packageType || "").toLowerCase();
   const name = (item.name || "").toLowerCase();
 
-  if (cat === "beans" || cat === "roasted_bean" || slug.includes("bean") || pkg.includes("valve") || pkg.includes("roast")) {
+  if (cat === "beans" || cat === "roasted_bean" || slug.includes("bean") || pkg.includes("valve") || pkg.includes("roast") || name.includes("roasted bean") || name.includes("biji kopi")) {
     return "beans";
   }
-  if (cat === "botol_kale" || slug.includes("kale") || pkg.includes("kale") || name.includes("kale")) {
-    return "botol_kale";
-  }
-  if (cat === "pet_can" || slug.includes("can") || pkg.includes("can") || name.includes("can")) {
-    return "pet_can";
-  }
-  if (cat === "botol_1000" || slug.includes("liter") || slug.includes("1000") || pkg.includes("1l") || pkg.includes("liter")) {
-    return "botol_1000";
-  }
-  if (cat === "simplicity_pouch" || slug.includes("simplicity") || pkg.includes("simplicity")) {
-    return "simplicity_pouch";
-  }
-  if (cat === "espresso_pouch" || slug.includes("espresso-pouch") || pkg.includes("espresso pouch")) {
+  if (cat === "espresso_pouch" || slug.startsWith("espresso-") || slug.includes("espresso-pouch") || pkg.includes("espresso") || name.includes("espresso pouch") || name.includes("espresso shot")) {
     return "espresso_pouch";
   }
+  if (cat === "simplicity_pouch" || slug.startsWith("pouch-") || slug.includes("simplicity") || pkg.includes("pouch") || name.includes("pouch")) {
+    return "simplicity_pouch";
+  }
+  if (cat === "botol_1000" || slug.startsWith("liter-") || slug.includes("1000") || slug.includes("1-liter") || pkg.includes("1l") || pkg.includes("liter") || pkg.includes("1000") || name.includes("1 liter") || name.includes("1000ml")) {
+    return "botol_1000";
+  }
+  if (cat === "botol_kale" || slug.startsWith("kale-") || slug.includes("kale") || pkg.includes("kale") || name.includes("kale")) {
+    return "botol_kale";
+  }
+  if (cat === "pet_can" || slug.startsWith("can-") || slug.includes("pet-can") || pkg.includes("pet can") || pkg.includes("can 250") || name.includes("pet can")) {
+    return "pet_can";
+  }
 
-  // Default fallback based on whether it looks like a drink or bean
-  if (slug.includes("es-") || slug.includes("kopi-susu") || slug.includes("cold-brew") || slug.includes("matcha") || slug.includes("tea")) {
+  // Fallbacks for drinks
+  if (slug.includes("americano") || slug.includes("latte") || slug.includes("cold-brew") || slug.includes("es-") || slug.includes("kopi-susu") || slug.includes("tea") || slug.includes("matcha")) {
     return "botol_kale";
   }
 
@@ -67,7 +68,7 @@ function buildPackageVariants(price100gOrBase: number) {
  * Normalizes any menu item (from DB or custom serverless state) into a fully typed CatalogCoffee object.
  */
 function toCatalogCoffee(raw: any, staticMatch?: CatalogCoffee): CatalogCoffee {
-  const category = inferProductCategory(raw);
+  const category = (raw.category as ProductCategory) || staticMatch?.category || inferProductCategory(raw);
   const isBean = category === "beans";
 
   const priceIdr = Number(raw.priceIdr ?? raw.price_idr ?? staticMatch?.priceIdr ?? 85000);
@@ -169,6 +170,8 @@ export async function getLiveMenu(options: GetLiveMenuOptions = {}): Promise<Cat
       const catalogItem = toCatalogCoffee(
         {
           ...row,
+          category: row.category,
+          packaging: row.packaging,
           price_idr: row.priceIdr,
           image_url: row.imageUrl,
           is_active: row.isActive,
@@ -176,6 +179,13 @@ export async function getLiveMenu(options: GetLiveMenuOptions = {}): Promise<Cat
         staticMatch
       );
       resultMap.set(row.slug, catalogItem);
+    }
+
+    // Merge any static items that are missing from DB (resilience fallback)
+    for (const [slug, staticCoffee] of staticMap.entries()) {
+      if (!resultMap.has(slug) && !state.deletedMenuSlugs.has(slug)) {
+        resultMap.set(slug, { ...staticCoffee });
+      }
     }
   } else {
     // Fall back to static COFFEES list

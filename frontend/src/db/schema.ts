@@ -53,6 +53,8 @@ export const coffees = pgTable("coffees", {
   slug: varchar("slug", { length: 100 }).notNull().unique(),
   name: varchar("name", { length: 120 }).notNull(),
   type: coffeeTypeEnum("type").notNull(),
+  category: varchar("category", { length: 60 }),
+  packaging: varchar("packaging", { length: 120 }),
   origin: varchar("origin", { length: 120 }).notNull(),
   region: varchar("region", { length: 120 }),
   process: varchar("process", { length: 60 }),
