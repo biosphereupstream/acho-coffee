@@ -10,6 +10,7 @@ import { useCart } from "@/components/cart/cart-context";
 
 const NAV = [
   { href: "/", label: "Beranda" },
+  { href: "/menu", label: "Menu" },
   { href: "/kopi", label: "Biji Kopi" },
   { href: "/minuman", label: "Minuman" },
   { href: "/wholesale", label: "Wholesale (B2B)" },

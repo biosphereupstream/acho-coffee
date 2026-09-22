@@ -85,6 +85,7 @@ export function SiteFooter() {
         <div>
           <h4 className="text-sm font-bold uppercase tracking-wider text-gold-light">Jelajahi</h4>
           <ul className="mt-4 space-y-2 text-sm">
+            <li><Link href="/menu" className="hover:text-gold-light">Semua Menu</Link></li>
             <li><Link href="/kopi" className="hover:text-gold-light">Biji Kopi (Roasted Beans)</Link></li>
             <li><Link href="/minuman" className="hover:text-gold-light">Minuman Siap Seduh</Link></li>
             <li><Link href="/wholesale" className="hover:text-gold-light font-semibold text-gold-light">Kemitraan Kafe (Wholesale)</Link></li>

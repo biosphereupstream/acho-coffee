@@ -110,7 +110,7 @@ export default async function HomePage() {
 
             <div className="animate-fade-up mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 w-full" style={{ animationDelay: "0.2s" }}>
               <Button size="lg" variant="gold" className="w-full sm:w-auto h-12 text-sm font-bold shadow-md justify-center" asChild>
-                <Link href="/kopi">
+                <Link href="/menu">
                   Pesan Sekarang <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Link>
               </Button>
