@@ -1,19 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
-
-interface SiteFooterProps {
-  config?: {
-    operating_hours?: string;
-    contact_whatsapp?: string;
-    contact_email?: string;
-    contact_address?: string;
-    social_instagram?: string;
-    social_tiktok?: string;
-    shop_open?: boolean;
-    shop_notice?: string;
-  } | null;
-}
+import { useFrontendConfig } from "@/components/frontend-config-provider";
 
 function formatSocialUrl(value: string | undefined, platform: "instagram" | "tiktok"): string | null {
   if (!value || !value.trim()) return null;
@@ -50,7 +40,9 @@ function TikTokIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-export function SiteFooter({ config }: SiteFooterProps = {}) {
+export function SiteFooter() {
+  const config = useFrontendConfig();
+
   const whatsapp = (config?.contact_whatsapp || "6281291731358").replace(/\D/g, "");
   const formattedPhone = whatsapp.startsWith("62")
     ? `+62 ${whatsapp.slice(2, 5)}-${whatsapp.slice(5, 9)}-${whatsapp.slice(9)}`

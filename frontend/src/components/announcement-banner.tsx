@@ -1,55 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Sparkles, X, ArrowRight } from "lucide-react";
+import { useFrontendConfig } from "@/components/frontend-config-provider";
 
-interface FrontendConfig {
-  banner_enabled: boolean;
-  banner_text: string;
-  banner_link: string;
-  announcement_text?: string;
-}
+export function AnnouncementBanner({ initialConfig }: { initialConfig?: any }) {
+  // Use live config from context (auto-polled) — initialConfig is only for SSR hydration fallback
+  const liveConfig = useFrontendConfig();
+  const config = liveConfig ?? initialConfig ?? null;
 
-export function AnnouncementBanner({ initialConfig }: { initialConfig?: FrontendConfig | null }) {
-  const [config, setConfig] = useState<FrontendConfig | null>(initialConfig ?? null);
   const [dismissed, setDismissed] = useState(false);
   const [lastDismissedText, setLastDismissedText] = useState("");
-
-  async function fetchConfig() {
-    if (typeof document !== "undefined" && document.hidden) return;
-    try {
-      const res = await fetch("/api/backend/config/frontend", { cache: "no-store" });
-      if (!res.ok) return;
-      const data = await res.json();
-      setConfig(data);
-    } catch {
-      // Graceful ignore
-    }
-  }
-
-  useEffect(() => {
-    // Always fetch latest config on mount to catch any recent admin updates
-    fetchConfig();
-
-    // Refresh when user returns to tab (real-time sync without background CPU waste)
-    const onFocus = () => fetchConfig();
-    const onVisibilityChange = () => {
-      if (!document.hidden) fetchConfig();
-    };
-
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
-    // 30s heartbeat interval
-    const interval = setInterval(fetchConfig, 30000);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  }, []);
 
   if (!config || !config.banner_enabled || !config.banner_text?.trim()) {
     return null;

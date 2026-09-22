@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/site-header";
 import { AnnouncementBanner } from "@/components/announcement-banner";
 import { SiteFooter } from "@/components/site-footer";
+import { FrontendConfigProvider } from "@/components/frontend-config-provider";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
 import { getLiveFrontendConfig } from "@/lib/menu";
 
@@ -52,13 +53,16 @@ export default async function RootLayout({
     <html lang="id" className="scroll-smooth">
       <body className="flex min-h-screen flex-col bg-background overflow-x-hidden w-full max-w-full">
         <Providers>
-          <AnnouncementBanner initialConfig={initialConfig} />
-          <SiteHeader />
-          <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
-          <SiteFooter config={initialConfig} />
-          <Toaster />
+          <FrontendConfigProvider initialConfig={initialConfig}>
+            <AnnouncementBanner initialConfig={initialConfig} />
+            <SiteHeader />
+            <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
+            <SiteFooter />
+            <Toaster />
+          </FrontendConfigProvider>
         </Providers>
       </body>
     </html>
   );
 }
+
