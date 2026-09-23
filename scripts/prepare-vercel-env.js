@@ -32,6 +32,13 @@ for (const line of lines) {
   // Abaikan path direktori lokal mesin
   if (key === "ACHO_DATA_DIR") continue;
 
+  // Pastikan URL situs di Vercel menggunakan domain live resmi
+  if (key === "NEXT_PUBLIC_SITE_URL") {
+    filteredLines.push(`${key}=https://biosphereroastery.vercel.app`);
+    count++;
+    continue;
+  }
+
   filteredLines.push(`${key}=${val}`);
   count++;
 }

@@ -35,14 +35,20 @@ export async function signUpWithEmail(formData: FormData): Promise<AuthActionRes
   if (password.length < 8) return { error: "Kata sandi minimal 8 karakter" };
 
   const headerList = await headers();
-  const origin = headerList.get("origin") || env.siteUrl();
+  const host = headerList.get("x-forwarded-host") || headerList.get("host");
+  const proto = headerList.get("x-forwarded-proto") || "https";
+  const headerOrigin = host && !host.includes("localhost") ? `${proto}://${host}` : undefined;
+  let origin = headerOrigin || headerList.get("origin") || env.siteUrl();
+  if (process.env.NODE_ENV === "production" && (origin.includes("localhost") || origin.includes("127.0.0.1"))) {
+    origin = env.siteUrl();
+  }
 
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: name },
-      emailRedirectTo: `${origin}/auth/callback`,
+      emailRedirectTo: `${origin.replace(/\/+$/, "")}/auth/callback`,
     },
   });
   if (error) return { error: "Gagal mendaftar: " + error.message };
@@ -54,13 +60,20 @@ export async function signInWithGoogle(returnOrigin?: string): Promise<AuthActio
   if (!supabase) return { error: "Supabase belum dikonfigurasi" };
 
   const headerList = await headers();
-  const origin = returnOrigin || headerList.get("origin") || env.siteUrl();
+  const host = headerList.get("x-forwarded-host") || headerList.get("host");
+  const proto = headerList.get("x-forwarded-proto") || "https";
+  const headerOrigin = host && !host.includes("localhost") ? `${proto}://${host}` : undefined;
+
+  let origin = returnOrigin || headerOrigin || headerList.get("origin") || env.siteUrl();
+  if (process.env.NODE_ENV === "production" && (origin.includes("localhost") || origin.includes("127.0.0.1"))) {
+    origin = env.siteUrl();
+  }
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${origin}/auth/callback`,
-      queryParams: { access_type: "offline", prompt: "consent" },
+      redirectTo: `${origin.replace(/\/+$/, "")}/auth/callback`,
+      queryParams: { access_type: "offline", prompt: "select_account" },
     },
   });
   if (error || !data.url) {

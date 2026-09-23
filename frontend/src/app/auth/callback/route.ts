@@ -13,11 +13,16 @@ export async function GET(request: Request) {
   const forwardedHost = request.headers.get("x-forwarded-host");
   const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
   const isLocalEnv = process.env.NODE_ENV === "development";
-  const redirectBase = isLocalEnv
+  let redirectBase = isLocalEnv
     ? origin
     : forwardedHost
       ? `${forwardedProto}://${forwardedHost}`
       : origin;
+
+  // Pertahanan anti-localhost: jika berjalan di production, jangan pernah redirect ke localhost
+  if (!isLocalEnv && (redirectBase.includes("localhost") || redirectBase.includes("127.0.0.1"))) {
+    redirectBase = "https://biosphereroastery.vercel.app";
+  }
 
   // Tangkap error langsung dari provider OAuth (mis. user menolak izin / access_denied)
   const errorParam = searchParams.get("error");

@@ -1,6 +1,21 @@
 /** Helper kecil untuk membaca env dengan aman. */
 export const env = {
-  siteUrl: () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  siteUrl: () => {
+    const raw = process.env.NEXT_PUBLIC_SITE_URL;
+    if (raw && !raw.includes("localhost") && !raw.includes("127.0.0.1")) {
+      return raw.replace(/\/+$/, "");
+    }
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+      return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`.replace(/\/+$/, "");
+    }
+    if (process.env.VERCEL_URL) {
+      return `https://${process.env.VERCEL_URL}`.replace(/\/+$/, "");
+    }
+    if (process.env.NODE_ENV === "production") {
+      return "https://biosphereroastery.vercel.app";
+    }
+    return raw ? raw.replace(/\/+$/, "") : "http://localhost:3000";
+  },
   supabaseUrl: () => process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
   supabaseAnonKey: () => process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
   /** Kunci sisi-klien: publishable key (format baru) atau anon key (legacy). */

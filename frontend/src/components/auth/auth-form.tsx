@@ -75,10 +75,20 @@ export function AuthForm({
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
+      let origin = typeof window !== "undefined" ? window.location.origin : "";
+      if (
+        !origin ||
+        origin === "null" ||
+        (process.env.NODE_ENV === "production" &&
+          (origin.includes("localhost") || origin.includes("127.0.0.1")))
+      ) {
+        origin = "https://biosphereroastery.vercel.app";
+      }
+      const callbackUrl = `${origin.replace(/\/+$/, "")}/auth/callback`;
+
       // Prioritas 1: Jalankan langsung dari browser client dengan origin yang aktif
       const supabase = getSupabaseBrowser();
       if (supabase && typeof window !== "undefined") {
-        const callbackUrl = `${window.location.origin}/auth/callback`;
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
@@ -104,7 +114,6 @@ export function AuthForm({
       }
 
       // Fallback: Server action dengan origin aktif
-      const origin = typeof window !== "undefined" ? window.location.origin : undefined;
       const result = await signInWithGoogle(origin);
       if (result?.url) {
         window.location.assign(result.url);
@@ -147,6 +156,7 @@ export function AuthForm({
           )}
 
           <Button
+            type="button"
             variant="outline"
             className="w-full h-11 font-semibold gap-2 border-border/80 hover:border-gold hover:bg-accent/40 transition-all"
             onClick={handleGoogle}
