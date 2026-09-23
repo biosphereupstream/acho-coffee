@@ -12,10 +12,9 @@ import type { CatalogCoffee } from "@/lib/types";
 
 const PROCESS_FILTERS = [
   { id: "all", label: "Semua Biji Kopi" },
-  { id: "Bio-Natural", label: "Bio-Natural" },
-  { id: "Bio-Honey", label: "Bio-Honey" },
+  { id: "Natural", label: "Natural" },
+  { id: "Honey", label: "Honey" },
   { id: "Semi Washed", label: "Semi Washed" },
-  { id: "Wine", label: "Wine Fermentation" },
 ] as const;
 
 export function BeansCatalog({ coffees: initialCoffees }: { coffees: CatalogCoffee[] }) {

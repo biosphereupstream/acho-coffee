@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CoffeeBagArt } from "@/components/coffee-bag-art";
 import { OrderBuilder } from "@/components/order/order-builder";
 import { MobileProductHeader } from "@/components/order/mobile-product-header";
+import { ProductHeroMedia } from "@/components/shop/product-hero-media";
 import { getLiveCoffee } from "@/lib/menu";
 import { formatIDR } from "@/lib/constants";
 
@@ -43,15 +44,7 @@ export default async function PesanPage({ params }: { params: Promise<{ slug: st
         {/* desktop-only full product card */}
         <div className="hidden lg:block">
           <div className="glossy-card overflow-hidden rounded-2xl border border-border">
-            <div className="relative aspect-square bg-gradient-to-b from-secondary/60 to-background p-6">
-              <CoffeeBagArt coffee={coffee} />
-              <div className="absolute left-4 top-4 flex gap-2">
-                <Badge variant={coffee.type === "single_origin" ? "default" : "gold"}>
-                  {coffee.type === "single_origin" ? "Single Origin" : "Blend"}
-                </Badge>
-                {coffee.badge && <Badge variant="outline" className="bg-white/80">{coffee.badge}</Badge>}
-              </div>
-            </div>
+            <ProductHeroMedia coffee={coffee} />
             <div className="p-6">
               <h1 className="font-[var(--font-display)] text-2xl font-bold text-green-deep">{coffee.name}</h1>
               <p className="mt-1 text-sm text-muted-foreground">

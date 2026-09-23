@@ -262,9 +262,25 @@ export async function getLiveMenu(options: GetLiveMenuOptions = {}): Promise<Cat
 export async function getLiveCoffee(slug: string): Promise<CatalogCoffee | null> {
   const cleanSlug = decodeURIComponent(slug).trim().toLowerCase();
   const all = await getLiveMenu({ includeInactive: true });
+
+  const aliasMap: Record<string, string> = {
+    "sukarasa-ciwidey-natural": "ciwidey-bio-natural",
+    "sukarasa-natural": "ciwidey-bio-natural",
+    "sukarasa-ciwidey-honey": "ciwidey-bio-honey",
+    "sukarasa-honey": "ciwidey-bio-honey",
+    "sukarasa-ciwidey-semi-washed": "ciwidey-semi-washed",
+    "sukarasa-semi-washed": "ciwidey-semi-washed",
+  };
+  const targetSlug = aliasMap[cleanSlug] || cleanSlug;
+
   return (
-    all.find((c) => c.slug.toLowerCase() === cleanSlug || c.slug.toLowerCase().replace(/_/g, "-") === cleanSlug) ||
-    null
+    all.find(
+      (c) =>
+        c.slug.toLowerCase() === targetSlug ||
+        c.slug.toLowerCase().replace(/_/g, "-") === targetSlug ||
+        c.slug.toLowerCase() === cleanSlug ||
+        c.name.toLowerCase().replace(/\s+/g, "-") === cleanSlug
+    ) || null
   );
 }
 

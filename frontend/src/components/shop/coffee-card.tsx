@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -14,10 +15,23 @@ export function CoffeeCard({ coffee }: { coffee: CatalogCoffee }) {
       href={"/pesan/" + coffee.slug}
       className="gold-ring-hover glossy-card group flex flex-col overflow-hidden rounded-2xl border border-border transition-all duration-300 hover:shadow-md"
     >
-      <div className="relative aspect-[4/3.2] overflow-hidden bg-gradient-to-b from-secondary/60 to-background flex items-center justify-center">
-        <CoffeeBagArt coffee={coffee} className="p-4 transition-transform duration-500 group-hover:scale-105" />
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-          <Badge variant={coffee.type === "single_origin" ? "default" : "gold"} className="text-[10px] font-bold">
+      <div className="relative aspect-[4/3.2] overflow-hidden bg-gradient-to-b from-emerald-950/10 via-secondary/40 to-background flex items-center justify-center p-2.5">
+        {coffee.imageUrl ? (
+          <div className="relative h-full w-full drop-shadow-md transition-transform duration-500 group-hover:scale-105">
+            <Image
+              src={coffee.imageUrl}
+              alt={coffee.name}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-contain"
+              priority={coffee.category === "beans"}
+            />
+          </div>
+        ) : (
+          <CoffeeBagArt coffee={coffee} className="p-4 transition-transform duration-500 group-hover:scale-105" />
+        )}
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5 z-10">
+          <Badge variant={coffee.type === "single_origin" ? "default" : "gold"} className="text-[10px] font-bold shadow-xs">
             {coffee.type === "single_origin" ? "Single Origin" : "Blend"}
           </Badge>
           {coffee.packageType && (

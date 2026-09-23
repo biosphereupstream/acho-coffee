@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { ChevronDown, Leaf, MapPin, Mountain } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CoffeeBagArt } from "@/components/coffee-bag-art";
@@ -15,8 +16,18 @@ export function MobileProductHeader({ coffee }: { coffee: CatalogCoffee }) {
     <div className="glossy-card mb-6 overflow-hidden rounded-2xl border border-gold/30 lg:hidden">
       {/* Baris utama: ringkas & rapi */}
       <div className="flex items-center gap-3.5 p-4">
-        <div className="relative h-18 w-18 shrink-0 overflow-hidden rounded-xl bg-gradient-to-b from-secondary/70 to-background p-1.5 shadow-inner">
-          <CoffeeBagArt coffee={coffee} />
+        <div className="relative h-18 w-18 shrink-0 overflow-hidden rounded-xl bg-gradient-to-b from-secondary/70 to-background p-1 shadow-inner flex items-center justify-center">
+          {coffee.imageUrl ? (
+            <Image
+              src={coffee.imageUrl}
+              alt={coffee.name}
+              fill
+              sizes="72px"
+              className="object-contain p-0.5"
+            />
+          ) : (
+            <CoffeeBagArt coffee={coffee} />
+          )}
         </div>
 
         <div className="min-w-0 flex-1">
