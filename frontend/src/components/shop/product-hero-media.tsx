@@ -29,7 +29,7 @@ export function ProductHeroMedia({ coffee }: { coffee: CatalogCoffee }) {
           />
           <div className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-3 py-1 text-[11px] font-semibold text-white/95 opacity-0 group-hover:opacity-100 transition-opacity duration-200 border border-white/20 shadow-md">
             <ZoomIn className="h-3.5 w-3.5 text-gold-light" />
-            <span>Perbesar Kartu Lot</span>
+            <span>{coffee.category === "beans" ? "Perbesar Kartu Lot" : "Perbesar Label"}</span>
           </div>
         </div>
       ) : (
@@ -56,12 +56,12 @@ export function ProductHeroMedia({ coffee }: { coffee: CatalogCoffee }) {
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-gold-deep" />
                 <DialogTitle className="text-base font-bold text-green-deep">
-                  Kartu Spesifikasi Resmi • {coffee.name}
+                  {coffee.category === "beans" ? "Kartu Spesifikasi Resmi" : "Label Resmi Kemasan"} • {coffee.name}
                 </DialogTitle>
               </div>
             </div>
 
-            <div className="relative aspect-[3/3.6] w-full max-h-[75vh] mt-2 overflow-hidden rounded-2xl bg-black/5 flex items-center justify-center">
+            <div className={`relative ${coffee.category === "beans" ? "aspect-[3/3.6]" : "aspect-square"} w-full max-h-[75vh] mt-2 overflow-hidden rounded-2xl bg-black/5 flex items-center justify-center`}>
               <Image
                 src={coffee.imageUrl}
                 alt={coffee.name}

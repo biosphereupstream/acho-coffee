@@ -22,8 +22,7 @@ const DRINK_TABS: { id: "semua" | ProductCategory; label: string; icon: React.Co
 const SUB_FILTERS = [
   { id: "all", label: "Semua Rasa" },
   { id: "refreshing", label: "Refreshing (Americano)" },
-  { id: "creamy", label: "Creamy (Latte & Susu)" },
-  { id: "single_origin", label: "Single Origin Brew" },
+  { id: "creamy", label: "Creamy (Latte)" },
 ] as const;
 
 export function DrinksCatalog({ coffees: initialCoffees }: { coffees: CatalogCoffee[] }) {

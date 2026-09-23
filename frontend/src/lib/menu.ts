@@ -270,6 +270,10 @@ export async function getLiveCoffee(slug: string): Promise<CatalogCoffee | null>
     "sukarasa-honey": "ciwidey-bio-honey",
     "sukarasa-ciwidey-semi-washed": "ciwidey-semi-washed",
     "sukarasa-semi-washed": "ciwidey-semi-washed",
+    "liter-refreshing-americano": "liter-lime-peach-americano",
+    "liter-americano-single-origin": "liter-bitter-orange-americano",
+    "can-lime-americano": "can-lime-peach-americano",
+    "kale-lime-americano": "kale-lime-peach-americano",
   };
   const targetSlug = aliasMap[cleanSlug] || cleanSlug;
 
