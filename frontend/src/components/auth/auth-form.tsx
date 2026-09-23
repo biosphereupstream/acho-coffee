@@ -83,9 +83,10 @@ export function AuthForm({
           provider: "google",
           options: {
             redirectTo: callbackUrl,
+            skipBrowserRedirect: true,
             queryParams: {
               access_type: "offline",
-              prompt: "consent",
+              prompt: "select_account",
             },
           },
         });
