@@ -273,6 +273,55 @@ export const inventoryLogs = pgTable("inventory_logs", {
   createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
 });
 
+/* ============ CUSTOMERS & CRM ============ */
+export const customers = pgTable(
+  "customers",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    userId: uuid("user_id"),
+    fullName: varchar("full_name", { length: 160 }).notNull(),
+    email: varchar("email", { length: 191 }).notNull(),
+    phone: varchar("phone", { length: 30 }).notNull().default(""),
+    preferredBrew: text("preferred_brew").default("V60 / Pour Over"),
+    loyaltyTier: varchar("loyalty_tier", { length: 30 }).notNull().default("retail"),
+    totalOrders: integer("total_orders").notNull().default(0),
+    totalSpentIdr: integer("total_spent_idr").notNull().default(0),
+    tags: jsonb("tags").$type<string[]>().notNull().default([]),
+    notes: text("notes").default(""),
+    isActive: boolean("is_active").notNull().default(true),
+    lastOrderAt: timestamp("last_order_at", { mode: "string" }),
+    createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("customers_email_idx").on(t.email),
+    index("customers_user_id_idx").on(t.userId),
+    index("customers_tier_idx").on(t.loyaltyTier),
+    index("customers_is_active_idx").on(t.isActive),
+  ]
+);
+
+export const customerBroadcasts = pgTable(
+  "customer_broadcasts",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    promoCode: varchar("promo_code", { length: 50 }).notNull(),
+    title: varchar("title", { length: 200 }).notNull(),
+    discountPercent: integer("discount_percent").notNull().default(10),
+    recipientsCount: integer("recipients_count").notNull().default(0),
+    channel: varchar("channel", { length: 30 }).notNull().default("whatsapp"),
+    messagePreview: text("message_preview").notNull(),
+    validUntil: varchar("valid_until", { length: 60 }),
+    status: varchar("status", { length: 30 }).notNull().default("sent"),
+    sentAt: timestamp("sent_at", { mode: "string" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("customer_broadcasts_promo_code_idx").on(t.promoCode),
+    index("customer_broadcasts_sent_at_idx").on(t.sentAt),
+  ]
+);
+
 /* ============ INFERRED TYPES ============ */
 export type Coffee = typeof coffees.$inferSelect;
 export type NewCoffee = typeof coffees.$inferInsert;
@@ -294,4 +343,9 @@ export type FulfillmentType = (typeof fulfillmentEnum.enumValues)[number];
 export type SiteConfig = typeof siteConfig.$inferSelect;
 export type InventoryItem = typeof inventoryItems.$inferSelect;
 export type InventoryLog = typeof inventoryLogs.$inferSelect;
+export type Customer = typeof customers.$inferSelect;
+export type NewCustomer = typeof customers.$inferInsert;
+export type CustomerBroadcast = typeof customerBroadcasts.$inferSelect;
+export type NewCustomerBroadcast = typeof customerBroadcasts.$inferInsert;
+
 

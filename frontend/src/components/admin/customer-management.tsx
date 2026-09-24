@@ -52,6 +52,19 @@ interface PromotionBroadcast {
   sent_at: string;
 }
 
+function getWhatsAppUrl(phone: string, customerName?: string) {
+  let cleaned = phone.replace(/[^0-9]/g, "");
+  if (cleaned.startsWith("0")) {
+    cleaned = "62" + cleaned.slice(1);
+  } else if (!cleaned.startsWith("62") && cleaned.length > 0) {
+    cleaned = "62" + cleaned;
+  }
+  const text = customerName 
+    ? `Halo Kak ${customerName}, salam dari Biosphere Roast Works!` 
+    : `Halo Kak, salam dari Biosphere Roast Works!`;
+  return `https://wa.me/${cleaned}?text=${encodeURIComponent(text)}`;
+}
+
 export function CustomerManagement() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +82,7 @@ export function CustomerManagement() {
 
   // Send Promotion Modal
   const [showPromoModal, setShowPromoModal] = useState(false);
-  const [promoTitle, setPromoTitle] = useState("Promo Spesial Mitra ACHO");
+  const [promoTitle, setPromoTitle] = useState("Promo Spesial Mitra Biosphere");
   const [promoCode, setPromoCode] = useState("");
   const [discountPercent, setDiscountPercent] = useState<number>(10);
   const [channel, setChannel] = useState<"whatsapp" | "email" | "both">("whatsapp");
@@ -503,11 +516,24 @@ export function CustomerManagement() {
                         )}
                       </td>
                       <td className="p-3">
-                        <p className="text-[11px] text-foreground flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-muted-foreground" />
-                          <span>{cust.phone}</span>
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">{cust.preferred_brew}</p>
+                        {cust.phone && cust.phone.trim() !== "" ? (
+                          <a
+                            href={getWhatsAppUrl(cust.phone, cust.full_name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-medium inline-flex items-center gap-1 hover:underline"
+                            title="Chat via WhatsApp"
+                          >
+                            <MessageCircle className="h-3 w-3 shrink-0" />
+                            <span>{cust.phone}</span>
+                          </a>
+                        ) : (
+                          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            <span className="italic">Tanpa No. HP</span>
+                          </p>
+                        )}
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{cust.preferred_brew}</p>
                       </td>
                       <td className="p-3">
                         <p className="font-bold text-foreground">{formatIDR(cust.total_spent_idr)}</p>
@@ -524,6 +550,17 @@ export function CustomerManagement() {
                       </td>
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {cust.phone && cust.phone.trim() !== "" && (
+                            <a
+                              href={getWhatsAppUrl(cust.phone, cust.full_name)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-7 w-7 inline-flex items-center justify-center rounded-md text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
+                              title="Chat via WhatsApp"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" />
+                            </a>
+                          )}
                           <Button
                             size="sm"
                             variant="ghost"
@@ -623,7 +660,7 @@ export function CustomerManagement() {
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value)}
                     className="w-full mt-1 bg-background border border-input rounded-xl p-2 text-xs font-mono uppercase"
-                    placeholder="Auto: ACHO-XXXXX"
+                    placeholder="Auto: BIOSPHERE-XXXXX"
                   />
                 </div>
               </div>

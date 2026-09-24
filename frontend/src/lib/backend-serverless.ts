@@ -3,7 +3,7 @@ import { COFFEES } from "@/data/coffees";
 import { listOrdersForAdmin } from "@/lib/store/orders";
 import { env } from "@/lib/env";
 import { db, schema } from "@/db";
-import { eq, or, inArray } from "drizzle-orm";
+import { eq, or, inArray, and, desc, like, sql } from "drizzle-orm";
 import { deleteFromR2, purgeCloudflareCache } from "@/lib/r2";
 import { inferProductCategory } from "@/lib/menu";
 
@@ -651,41 +651,127 @@ export async function handleServerlessBackend(
     return NextResponse.json({ message: "Item inventaris berhasil dihapus" });
   }
 
-  // Helper to persist customers to DB
-  const persistCustomers = async (customersList: any[]) => {
-    if (!db) return;
-    try {
-      const existing = await db.select().from(schema.siteConfig).where(eq(schema.siteConfig.key, "admin_customers"));
-      if (existing.length > 0) {
-        await db.update(schema.siteConfig)
-          .set({ value: customersList, updatedAt: new Date().toISOString() })
-          .where(eq(schema.siteConfig.key, "admin_customers"));
-      } else {
-        await db.insert(schema.siteConfig).values({
-          key: "admin_customers",
-          value: customersList,
-          updatedAt: new Date().toISOString(),
-        });
-      }
-    } catch (err) {
-      console.warn("[Supabase] Failed to persist customers:", err);
-    }
+  // Helper to normalize phone numbers to Indonesian standard format
+  const normalizePhone = (raw?: string): string => {
+    if (!raw) return "";
+    let clean = raw.replace(/\D/g, "");
+    if (clean.startsWith("08")) clean = "628" + clean.slice(2);
+    else if (clean.startsWith("8")) clean = "628" + clean.slice(1);
+    else if (!clean.startsWith("62") && clean.length > 5) clean = "62" + clean;
+    return clean;
   };
 
-  // 8. CUSTOMERS
+  // 8. CUSTOMERS & CRM
   if (subPath === "customers" && method === "GET") {
-    const search = (url.searchParams.get("search") || "").toLowerCase();
+    const search = (url.searchParams.get("search") || "").trim().toLowerCase();
     const tier = url.searchParams.get("tier");
+    const includeInactive = url.searchParams.get("include_inactive") === "true";
 
-    // Try loading from Supabase DB first
     if (db) {
       try {
-        const rows = await db.select().from(schema.siteConfig).where(eq(schema.siteConfig.key, "admin_customers"));
-        if (rows.length > 0 && Array.isArray(rows[0].value)) {
-          state.customers = rows[0].value as typeof state.customers;
+        const conditions = [];
+        if (!includeInactive) {
+          conditions.push(eq(schema.customers.isActive, true));
+        }
+        if (tier && tier !== "all") {
+          conditions.push(eq(schema.customers.loyaltyTier, tier));
+        }
+
+        let dbCustomers = conditions.length > 0
+          ? await db.select().from(schema.customers).where(and(...conditions)).orderBy(desc(schema.customers.createdAt))
+          : await db.select().from(schema.customers).orderBy(desc(schema.customers.createdAt));
+
+        // Filter pencarian nama, email, atau no HP
+        if (search) {
+          dbCustomers = dbCustomers.filter(c =>
+            c.fullName.toLowerCase().includes(search) ||
+            c.email.toLowerCase().includes(search) ||
+            c.phone.includes(search)
+          );
+        }
+
+        // Agregasi statistik pesanan dari tabel orders
+        try {
+          const paidOrders = await db
+            .select({
+              userId: schema.orders.userId,
+              customerEmail: schema.orders.customerEmail,
+              total: schema.orders.total,
+              paidAt: schema.orders.paidAt,
+              createdAt: schema.orders.createdAt,
+            })
+            .from(schema.orders)
+            .where(
+              or(
+                eq(schema.orders.paymentStatus, "paid"),
+                inArray(schema.orders.status, [
+                  "paid",
+                  "queued",
+                  "roasting",
+                  "resting",
+                  "ready_pickup",
+                  "shipped",
+                  "delivered",
+                  "completed",
+                ])
+              )
+            );
+
+          const statsMap = new Map<string, { count: number; total: number; lastOrder?: string }>();
+          for (const o of paidOrders) {
+            const key = o.customerEmail.toLowerCase().trim();
+            const current = statsMap.get(key) || { count: 0, total: 0 };
+            current.count += 1;
+            current.total += o.total;
+            const orderTime = o.paidAt || o.createdAt;
+            if (!current.lastOrder || (orderTime && orderTime > current.lastOrder)) {
+              current.lastOrder = orderTime;
+            }
+            statsMap.set(key, current);
+          }
+
+          const formatted = dbCustomers.map(c => {
+            const stats = statsMap.get(c.email.toLowerCase().trim());
+            return {
+              id: c.id,
+              user_id: c.userId,
+              full_name: c.fullName,
+              email: c.email,
+              phone: c.phone,
+              preferred_brew: c.preferredBrew || "V60 / Pour Over",
+              loyalty_tier: c.loyaltyTier,
+              total_orders: stats ? stats.count : c.totalOrders,
+              total_spent_idr: stats ? stats.total : c.totalSpentIdr,
+              tags: Array.isArray(c.tags) ? c.tags : [],
+              notes: c.notes || "",
+              is_active: c.isActive,
+              created_at: c.createdAt,
+              last_order_at: stats?.lastOrder || c.lastOrderAt,
+            };
+          });
+
+          return NextResponse.json({ customers: formatted, total: formatted.length });
+        } catch {
+          const formatted = dbCustomers.map(c => ({
+            id: c.id,
+            user_id: c.userId,
+            full_name: c.fullName,
+            email: c.email,
+            phone: c.phone,
+            preferred_brew: c.preferredBrew || "V60 / Pour Over",
+            loyalty_tier: c.loyaltyTier,
+            total_orders: c.totalOrders,
+            total_spent_idr: c.totalSpentIdr,
+            tags: Array.isArray(c.tags) ? c.tags : [],
+            notes: c.notes || "",
+            is_active: c.isActive,
+            created_at: c.createdAt,
+            last_order_at: c.lastOrderAt,
+          }));
+          return NextResponse.json({ customers: formatted, total: formatted.length });
         }
       } catch (err) {
-        console.warn("[Supabase] Failed to load customers:", err);
+        console.warn("[Customers DB] Query failed:", err);
       }
     }
 
@@ -699,28 +785,56 @@ export async function handleServerlessBackend(
     return NextResponse.json({ customers: list, total: list.length });
   }
 
+  // Customer: Bulk Edit (POST /customers/bulk-edit)
   if (subPath === "customers/bulk-edit" && method === "POST") {
     try {
       const body = await parseJson();
-      let count = 0;
-      for (const cust of state.customers) {
-        if (body.select_all || (body.customer_ids && body.customer_ids.includes(cust.id))) {
+      const ids: string[] = body.customer_ids || [];
+      const isAll = Boolean(body.select_all);
+
+      if (db) {
+        try {
           if (body.action === "set_tier" && body.set_tier) {
-            cust.loyalty_tier = body.set_tier;
-            count++;
+            if (isAll) {
+              await db
+                .update(schema.customers)
+                .set({ loyaltyTier: body.set_tier, updatedAt: new Date().toISOString() })
+                .where(eq(schema.customers.isActive, true));
+            } else if (ids.length > 0) {
+              await db
+                .update(schema.customers)
+                .set({ loyaltyTier: body.set_tier, updatedAt: new Date().toISOString() })
+                .where(inArray(schema.customers.id, ids));
+            }
           } else if (body.action === "add_tag" && body.tag) {
-            if (!cust.tags.includes(body.tag)) cust.tags.push(body.tag);
-            count++;
+            const targets = isAll
+              ? await db.select().from(schema.customers).where(eq(schema.customers.isActive, true))
+              : await db.select().from(schema.customers).where(inArray(schema.customers.id, ids));
+            for (const t of targets) {
+              const currentTags = Array.isArray(t.tags) ? t.tags : [];
+              if (!currentTags.includes(body.tag)) {
+                await db
+                  .update(schema.customers)
+                  .set({
+                    tags: [...currentTags, body.tag],
+                    updatedAt: new Date().toISOString(),
+                  })
+                  .where(eq(schema.customers.id, t.id));
+              }
+            }
           }
+        } catch (err) {
+          console.warn("[Customers DB] Bulk edit failed:", err);
         }
       }
-      await persistCustomers(state.customers);
-      return NextResponse.json({ message: `Berhasil memperbarui ${count} pelanggan`, updated_count: count });
+
+      return NextResponse.json({ message: "Berhasil memperbarui pelanggan terpilih", updated_count: ids.length });
     } catch {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
     }
   }
 
+  // Customer: Send Promotion (POST /customers/send-promotion)
   if (subPath === "customers/send-promotion" && method === "POST") {
     try {
       const body = await parseJson();
@@ -732,39 +846,88 @@ export async function handleServerlessBackend(
         discount = 10;
       }
 
-      const promoCode = (body.promo_code || "ACHO-" + Math.random().toString(36).slice(2, 7).toUpperCase()).toUpperCase();
-      const count = body.select_all ? state.customers.length : (body.customer_ids?.length || 1);
+      const promoCode = (body.promo_code || "BIOSPHERE-" + Math.random().toString(36).slice(2, 7).toUpperCase()).toUpperCase();
+      const count = body.select_all ? (body.recipients_count || 1) : (body.customer_ids?.length || 1);
+      const validUntil = body.valid_until || "31 Desember 2026";
 
-      const waTemplate = `Halo Kak!\n\nKabar gembira dari *ACHO Coffee Roastery*!\n✨ *${body.promo_title || "Promo Spesial"}*\n\n🎁 *Diskon:* ${discount}%\n🎟️ *Kode Voucher:* \`${promoCode}\`\n⏳ *Berlaku hingga:* ${body.valid_until || "30 September 2026"}\n\nPesan sekarang di: https://achoroastery.vercel.app/kopi?voucher=${promoCode}`;
+      const waTemplate = `Halo Kak!\n\nKabar gembira dari *Biosphere Roast Works*!\n✨ *${body.promo_title || "Promo Spesial"}*\n\n🎁 *Diskon:* ${discount}%\n🎟️ *Kode Voucher:* \`${promoCode}\`\n⏳ *Berlaku hingga:* ${validUntil}\n\nPesan sekarang di: https://biosphereroastery.vercel.app/kopi?voucher=${promoCode}`;
 
-      const broadcast = {
-        id: "pbc-" + Date.now(),
-        promo_code: promoCode,
-        title: body.promo_title || "Promo Spesial ACHO",
-        discount_percent: discount,
-        recipients_count: count,
+      const broadcastRecord = {
+        id: "bc_" + Date.now(),
+        promoCode,
+        title: body.promo_title || "Promo Spesial Biosphere",
+        discountPercent: discount,
+        recipientsCount: count,
         channel: body.channel || "whatsapp",
-        message_preview: waTemplate,
+        messagePreview: waTemplate,
+        validUntil,
         status: "sent",
-        sent_at: new Date().toISOString(),
+        sentAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
-      state.broadcasts.unshift(broadcast);
+
+      if (db) {
+        try {
+          await db.insert(schema.customerBroadcasts).values(broadcastRecord);
+        } catch (err) {
+          console.warn("[Broadcast DB] Insert failed:", err);
+        }
+      }
+
+      const broadcastResponse = {
+        id: broadcastRecord.id,
+        promo_code: broadcastRecord.promoCode,
+        title: broadcastRecord.title,
+        discount_percent: broadcastRecord.discountPercent,
+        recipients_count: broadcastRecord.recipientsCount,
+        channel: broadcastRecord.channel,
+        message_preview: broadcastRecord.messagePreview,
+        valid_until: broadcastRecord.validUntil,
+        status: broadcastRecord.status,
+        sent_at: broadcastRecord.sentAt,
+      };
+
+      state.broadcasts.unshift(broadcastResponse);
 
       return NextResponse.json({
-        message: `Promosi berhasil dikirim ke ${count} pelanggan!`,
+        message: `Promosi berhasil disimpan dan dikirim ke ${count} pelanggan!`,
         promo_code: promoCode,
         discount_percent: discount,
         recipients_count: count,
         channel: body.channel || "whatsapp",
         whatsapp_template: waTemplate,
-        broadcast,
+        broadcast: broadcastResponse,
       });
     } catch {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
     }
   }
 
+  // Customer: Broadcast History (GET /customers/promotions)
   if (subPath === "customers/promotions" && method === "GET") {
+    if (db) {
+      try {
+        const rows = await db
+          .select()
+          .from(schema.customerBroadcasts)
+          .orderBy(desc(schema.customerBroadcasts.sentAt));
+        const formatted = rows.map((r) => ({
+          id: r.id,
+          promo_code: r.promoCode,
+          title: r.title,
+          discount_percent: r.discountPercent,
+          recipients_count: r.recipientsCount,
+          channel: r.channel,
+          message_preview: r.messagePreview,
+          valid_until: r.validUntil,
+          status: r.status,
+          sent_at: r.sentAt,
+        }));
+        return NextResponse.json({ promotions: formatted, total: formatted.length });
+      } catch (err) {
+        console.warn("[Broadcast DB] Query failed:", err);
+      }
+    }
     return NextResponse.json({ promotions: state.broadcasts, total: state.broadcasts.length });
   }
 
@@ -772,56 +935,97 @@ export async function handleServerlessBackend(
   if (subPath === "customers" && method === "POST") {
     try {
       const body = await parseJson();
-      const customer = {
-        ...body,
-        id: "cust-" + Math.random().toString(36).slice(2, 8),
-        loyalty_tier: body.loyalty_tier || "retail",
+      const phoneNorm = normalizePhone(body.phone);
+      const emailTrim = (body.email || "").trim().toLowerCase();
+      const newId = "cust_" + Math.random().toString(36).slice(2, 10);
+
+      const customerData = {
+        id: newId,
+        fullName: (body.full_name || body.fullName || "Pelanggan Baru").trim(),
+        email: emailTrim,
+        phone: phoneNorm,
+        preferredBrew: body.preferred_brew || body.preferredBrew || "V60 / Pour Over",
+        loyaltyTier: body.loyalty_tier || body.loyaltyTier || "retail",
+        totalOrders: 0,
+        totalSpentIdr: 0,
+        tags: Array.isArray(body.tags) ? body.tags : ["new-customer"],
+        notes: body.notes || "",
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (db) {
+        try {
+          const existing = await db.select().from(schema.customers).where(eq(schema.customers.email, emailTrim));
+          if (existing.length > 0) {
+            await db
+              .update(schema.customers)
+              .set({
+                fullName: customerData.fullName,
+                phone: customerData.phone,
+                preferredBrew: customerData.preferredBrew,
+                loyaltyTier: customerData.loyaltyTier,
+                tags: customerData.tags,
+                notes: customerData.notes,
+                isActive: true,
+                updatedAt: new Date().toISOString(),
+              })
+              .where(eq(schema.customers.id, existing[0].id));
+            return NextResponse.json({ ...existing[0], ...customerData, id: existing[0].id }, { status: 200 });
+          }
+          await db.insert(schema.customers).values(customerData);
+        } catch (err) {
+          console.warn("[Customers DB] Insert failed:", err);
+        }
+      }
+
+      const formatted = {
+        id: customerData.id,
+        full_name: customerData.fullName,
+        email: customerData.email,
+        phone: customerData.phone,
+        preferred_brew: customerData.preferredBrew,
+        loyalty_tier: customerData.loyaltyTier,
         total_orders: 0,
         total_spent_idr: 0,
-        tags: Array.isArray(body.tags) ? body.tags : ["new-customer"],
+        tags: customerData.tags,
+        notes: customerData.notes,
         is_active: true,
-        created_at: new Date().toISOString(),
+        created_at: customerData.createdAt,
       };
-      state.customers.unshift(customer);
-      await persistCustomers(state.customers);
-      return NextResponse.json(customer, { status: 201 });
+      state.customers.unshift(formatted);
+      return NextResponse.json(formatted, { status: 201 });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
   }
 
-  // Customer: Bulk Delete (POST /customers/bulk-delete)
+  // Customer: Bulk Delete / Soft-Delete (POST /customers/bulk-delete)
   if (subPath === "customers/bulk-delete" && method === "POST") {
     try {
       const body = await parseJson();
-      const initialCount = state.customers.length;
-      let deletedIds: string[] = [];
+      const ids: string[] = body.customer_ids || [];
+      const isAll = Boolean(body.select_all);
 
-      if (body.select_all) {
-        deletedIds = state.customers.map((c) => c.id);
-        state.customers = [];
-      } else if (Array.isArray(body.customer_ids)) {
-        deletedIds = body.customer_ids;
-        state.customers = state.customers.filter((c) => !body.customer_ids.includes(c.id));
-      }
-
-      const deleted = initialCount - state.customers.length;
-      await persistCustomers(state.customers);
-
-      // Sync bulk delete to Supabase PostgreSQL (profiles table)
-      if (db && deletedIds.length > 0) {
+      if (db) {
         try {
-          if (body.select_all) {
-            await db.delete(schema.profiles);
-          } else {
-            await db.delete(schema.profiles).where(inArray(schema.profiles.id, deletedIds));
+          if (isAll) {
+            await db
+              .update(schema.customers)
+              .set({ isActive: false, updatedAt: new Date().toISOString() });
+          } else if (ids.length > 0) {
+            await db
+              .update(schema.customers)
+              .set({ isActive: false, updatedAt: new Date().toISOString() })
+              .where(inArray(schema.customers.id, ids));
           }
         } catch (err) {
-          console.warn("[Supabase] Failed bulk delete profiles:", err);
+          console.warn("[Customers DB] Bulk soft-delete failed:", err);
         }
       }
 
-      return NextResponse.json({ message: `Berhasil menghapus ${deleted} pelanggan dari sistem & Supabase`, deleted_count: deleted });
+      return NextResponse.json({ message: "Berhasil menonaktifkan pelanggan terpilih (soft delete)" });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
@@ -832,37 +1036,53 @@ export async function handleServerlessBackend(
     const id = pathParts[1];
     try {
       const body = await parseJson();
+      const phoneNorm = body.phone ? normalizePhone(body.phone) : undefined;
+      const updatePayload: any = {
+        updatedAt: new Date().toISOString(),
+      };
+      if (body.full_name !== undefined) updatePayload.fullName = body.full_name;
+      if (body.fullName !== undefined) updatePayload.fullName = body.fullName;
+      if (phoneNorm !== undefined) updatePayload.phone = phoneNorm;
+      if (body.preferred_brew !== undefined) updatePayload.preferredBrew = body.preferred_brew;
+      if (body.loyalty_tier !== undefined) updatePayload.loyaltyTier = body.loyalty_tier;
+      if (body.tags !== undefined) updatePayload.tags = body.tags;
+      if (body.notes !== undefined) updatePayload.notes = body.notes;
+      if (body.is_active !== undefined) updatePayload.isActive = body.is_active;
+
+      if (db) {
+        try {
+          await db.update(schema.customers).set(updatePayload).where(eq(schema.customers.id, id));
+        } catch (err) {
+          console.warn("[Customers DB] Update failed:", err);
+        }
+      }
+
       const idx = state.customers.findIndex((c) => c.id === id);
-      if (idx === -1) return NextResponse.json({ error: "Pelanggan tidak ditemukan" }, { status: 404 });
-      state.customers[idx] = { ...state.customers[idx], ...body };
-      await persistCustomers(state.customers);
-      return NextResponse.json({ message: "Pelanggan berhasil diperbarui", customer: state.customers[idx] });
+      if (idx !== -1) {
+        state.customers[idx] = { ...state.customers[idx], ...body };
+        if (phoneNorm) state.customers[idx].phone = phoneNorm;
+      }
+      return NextResponse.json({ message: "Pelanggan berhasil diperbarui" });
     } catch {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
   }
 
-  // Customer: Single Item Delete (DELETE /customers/:id)
+  // Customer: Single Item Soft Delete (DELETE /customers/:id)
   if (subPath.startsWith("customers/") && method === "DELETE") {
     const id = pathParts[1];
-    const target = state.customers.find((c) => c.id === id);
-    const initialCount = state.customers.length;
-    state.customers = state.customers.filter((c) => c.id !== id);
-    if (state.customers.length === initialCount) {
-      return NextResponse.json({ error: "Pelanggan tidak ditemukan" }, { status: 404 });
-    }
-    await persistCustomers(state.customers);
-
-    // Sync deletion to Supabase PostgreSQL (profiles table)
     if (db) {
       try {
-        await db.delete(schema.profiles).where(or(eq(schema.profiles.id, id), eq(schema.profiles.phone, target?.phone || id)));
+        await db
+          .update(schema.customers)
+          .set({ isActive: false, updatedAt: new Date().toISOString() })
+          .where(eq(schema.customers.id, id));
       } catch (err) {
-        console.warn("[Supabase] Failed to delete customer profile:", err);
+        console.warn("[Customers DB] Soft delete failed:", err);
       }
     }
-
-    return NextResponse.json({ message: "Pelanggan berhasil dihapus dari sistem & Supabase" });
+    state.customers = state.customers.filter((c) => c.id !== id);
+    return NextResponse.json({ message: "Pelanggan berhasil dinonaktifkan (soft delete)", id });
   }
 
   // 9. MENU
