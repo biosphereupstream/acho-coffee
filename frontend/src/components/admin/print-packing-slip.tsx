@@ -5,8 +5,22 @@ import { ArrowLeft, Printer, PackageCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GRIND_LABELS } from "@/lib/constants";
 import type { OrderRecord } from "@/lib/types";
+import { useFrontendConfig } from "@/components/frontend-config-provider";
 
 export function PrintPackingSlipView({ order }: { order: OrderRecord }) {
+  const config = useFrontendConfig();
+  const rawPhone = (config?.contact_whatsapp || "6281291731358").replace(/\D/g, "");
+  const phone = rawPhone.startsWith("62")
+    ? `0${rawPhone.slice(2, 5)}-${rawPhone.slice(5, 9)}-${rawPhone.slice(9)}`
+    : rawPhone.startsWith("0")
+    ? `${rawPhone.slice(0, 4)}-${rawPhone.slice(4, 8)}-${rawPhone.slice(8)}`
+    : "0812-9173-1358";
+  const email = config?.contact_email || "biosphere.upstream@gmail.com";
+  const address =
+    config?.contact_address ||
+    "Jl. Srikaya Perum Bumi Tajur Raya Blok A4 No 7, Desa Tajur, Kec. Citeureup, Kabupaten Bogor, Jawa Barat 16811";
+  const shortAddress = "Citeureup, Kab. Bogor 16811";
+
   function handlePrint() {
     window.print();
   }
@@ -48,7 +62,7 @@ export function PrintPackingSlipView({ order }: { order: OrderRecord }) {
               </span>
             </div>
             <p className="text-[11px] text-neutral-600 mt-0.5">
-              Jl. Dago No. 128, Bandung • 0812-3456-7890
+              {shortAddress} • {phone} • {email}
             </p>
           </div>
 
@@ -95,9 +109,10 @@ export function PrintPackingSlipView({ order }: { order: OrderRecord }) {
               Pengirim:
             </p>
             <p className="font-bold text-sm text-black mt-1">Biosphere Roast Works</p>
-            <p className="text-neutral-700">0812-3456-7890</p>
-            <p className="text-neutral-600 mt-1">
-              Sumur Bandung, Kota Bandung, Jawa Barat 40111
+            <p className="text-neutral-800 font-semibold">{phone}</p>
+            <p className="text-neutral-600 text-[11px]">{email}</p>
+            <p className="text-neutral-600 mt-1 leading-relaxed">
+              {address}
             </p>
           </div>
 

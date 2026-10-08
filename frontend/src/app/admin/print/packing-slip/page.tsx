@@ -4,7 +4,7 @@ import { getOrderByNumber } from "@/lib/store/orders";
 import { PrintPackingSlipView } from "@/components/admin/print-packing-slip";
 
 export const metadata: Metadata = {
-  title: "Surat Jalan & Packing Slip Kurir — ACHO Roastery",
+  title: "Surat Jalan & Packing Slip Kurir — Biosphere Roast Works",
 };
 
 export default async function PrintPackingSlipPage({

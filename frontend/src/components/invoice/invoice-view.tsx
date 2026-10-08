@@ -7,8 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatIDR, formatDateID, GRIND_LABELS } from "@/lib/constants";
 import type { OrderRecord } from "@/lib/types";
+import { useFrontendConfig } from "@/components/frontend-config-provider";
 
 export function InvoiceView({ order }: { order: OrderRecord }) {
+  const config = useFrontendConfig();
+  const rawPhone = (config?.contact_whatsapp || "6281291731358").replace(/\D/g, "");
+  const phone = rawPhone.startsWith("62")
+    ? `0${rawPhone.slice(2, 5)}-${rawPhone.slice(5, 9)}-${rawPhone.slice(9)}`
+    : rawPhone.startsWith("0")
+    ? `${rawPhone.slice(0, 4)}-${rawPhone.slice(4, 8)}-${rawPhone.slice(8)}`
+    : "0812-9173-1358";
+  const email = config?.contact_email || "biosphere.upstream@gmail.com";
+
   function handlePrint() {
     window.print();
   }
@@ -64,7 +74,7 @@ export function InvoiceView({ order }: { order: OrderRecord }) {
               Freshly Brewed · Straight to Your Door
             </p>
             <p className="text-xs text-muted-foreground">
-              Sumur Bandung, Kota Bandung • hello@biosphereroastworks.com
+              Citeureup, Kab. Bogor • {phone} • {email}
             </p>
           </div>
 
