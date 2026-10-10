@@ -217,16 +217,24 @@ export async function createShipment(params: {
 }
 
 /** Ambil status tracing terbaru dari Biteship. */
-export async function getTracking(waybillId: string): Promise<{
+export async function getTracking(
+  waybillId: string,
+  courierCode?: string
+): Promise<{
   status: string;
+  courierCompany?: string;
+  trackingUrl?: string;
   history: { note: string; updatedAt: string; status: string }[];
 }> {
+  const fallbackUrl = "https://biteship.com/id/track/" + waybillId;
   if (!env.biteship.configured() || !waybillId || waybillId.startsWith("WB") || waybillId.startsWith("DEMO-")) {
     return {
       status: "confirmed",
+      courierCompany: courierCode,
+      trackingUrl: fallbackUrl,
       history: [
         {
-          note: "Order pengiriman tercatat — kurir dijadwalkan pickup.",
+          note: "Order pengiriman tercatat — kurir dijadwalkan pickup di roastery.",
           updatedAt: new Date().toISOString(),
           status: "confirmed",
         },
@@ -234,22 +242,31 @@ export async function getTracking(waybillId: string): Promise<{
     };
   }
   try {
+    const path = courierCode && courierCode !== "manual"
+      ? `/trackings/${waybillId}/couriers/${courierCode}`
+      : `/trackings/${waybillId}`;
     const json = await biteshipFetch<{
       success: boolean;
       status?: string;
+      link?: string;
+      courier?: { company?: string; name?: string; link?: string };
       history?: { note: string; updated_at: string; status: string }[];
-    }>("/trackings/" + waybillId);
+    }>(path);
     return {
-      status: json.status ?? "",
+      status: json.status ?? "confirmed",
+      courierCompany: json.courier?.company ?? json.courier?.name ?? courierCode,
+      trackingUrl: json.courier?.link ?? json.link ?? fallbackUrl,
       history: (json.history ?? []).map((h) => ({ note: h.note, updatedAt: h.updated_at, status: h.status })),
     };
   } catch (e) {
     console.warn("[biteship] Gagal getTracking:", e instanceof Error ? e.message : e);
     return {
       status: "confirmed",
+      courierCompany: courierCode,
+      trackingUrl: fallbackUrl,
       history: [
         {
-          note: "Paket dalam penanganan logistik.",
+          note: "Paket dalam penanganan logistik dan kurir ekspedisi.",
           updatedAt: new Date().toISOString(),
           status: "confirmed",
         },

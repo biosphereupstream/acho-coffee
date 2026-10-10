@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const waybill = url.searchParams.get("waybill") ?? "";
+  const courier = url.searchParams.get("courier") ?? undefined;
   if (!waybill) return NextResponse.json({ status: "", history: [] });
-  const data = await getTracking(waybill);
+  const data = await getTracking(waybill, courier);
   return NextResponse.json(data);
 }
