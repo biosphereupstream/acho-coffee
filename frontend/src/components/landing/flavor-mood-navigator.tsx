@@ -60,6 +60,15 @@ export function FlavorMoodNavigator({ initialCoffees }: FlavorMoodNavigatorProps
   const [activeCategory, setActiveCategory] = useState<"beans" | "drinks">("beans");
   const [selectedMood, setSelectedMood] = useState<string>("all");
 
+  const beansCount = useMemo(
+    () => initialCoffees.filter((c) => c.category === "beans").length,
+    [initialCoffees]
+  );
+  const drinksCount = useMemo(
+    () => initialCoffees.filter((c) => c.category !== "beans").length,
+    [initialCoffees]
+  );
+
   const categoryCoffees = useMemo(() => {
     if (activeCategory === "beans") {
       return initialCoffees.filter((c) => c.category === "beans");
@@ -94,18 +103,18 @@ export function FlavorMoodNavigator({ initialCoffees }: FlavorMoodNavigatorProps
   }, [categoryCoffees, selectedMood, activeCategory]);
 
   return (
-    <section id="katalog" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
+    <section id="katalog" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-12 sm:px-6 lg:py-20">
       {/* Header and Dual-Track Switcher */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border/80 pb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border/80 pb-6 sm:pb-8">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-gold/15 border border-gold/30 px-3.5 py-1 text-xs font-bold text-gold-deep mb-3">
             <Sparkles className="h-3.5 w-3.5 text-gold-deep" />
             <span>Sensory Appetite Navigator • Temukan Selera Lidahmu</span>
           </div>
-          <h2 className="font-[var(--font-display)] text-3xl font-extrabold text-green-deep sm:text-4xl">
+          <h2 className="font-[var(--font-display)] text-2xl font-extrabold text-green-deep sm:text-4xl">
             Pilihan Rasa yang <span className="text-gold-gradient">Memanjakan Cangkir</span>
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground max-w-xl leading-relaxed">
+          <p className="mt-2 text-xs sm:text-sm text-muted-foreground max-w-xl leading-relaxed">
             Dari aroma cokelat karamel legit hingga ledakan buah ceri wine fermentasi. Pilih kategori dan suasana rasa yang kamu dambakan hari ini.
           </p>
         </div>
@@ -126,8 +135,15 @@ export function FlavorMoodNavigator({ initialCoffees }: FlavorMoodNavigatorProps
           >
             <Coffee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gold shrink-0" />
             <span className="truncate">Biji Kopi</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-mono shrink-0">
-              4
+            <span
+              className={cn(
+                "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0",
+                activeCategory === "beans"
+                  ? "bg-white/20 text-white"
+                  : "bg-primary/10 text-primary"
+              )}
+            >
+              {beansCount}
             </span>
           </button>
 
@@ -145,8 +161,15 @@ export function FlavorMoodNavigator({ initialCoffees }: FlavorMoodNavigatorProps
           >
             <CupSoda className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gold shrink-0" />
             <span className="truncate">Minuman Botol</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-mono shrink-0">
-              45
+            <span
+              className={cn(
+                "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0",
+                activeCategory === "drinks"
+                  ? "bg-white/20 text-white"
+                  : "bg-primary/10 text-primary"
+              )}
+            >
+              {drinksCount}
             </span>
           </button>
         </div>

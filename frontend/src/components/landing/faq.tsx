@@ -66,18 +66,18 @@ const GROUPS = [
 
 export function LandingFAQ() {
   return (
-    <div className="space-y-10">
+    <div className="space-y-7 sm:space-y-10">
       {GROUPS.map((group) => (
         <div key={group.id} id={group.id} className="scroll-mt-24">
-          <h3 className="mb-3 flex items-center gap-2 font-[var(--font-display)] text-xl font-bold text-green-deep">
+          <h3 className="mb-3 flex items-center gap-2 font-[var(--font-display)] text-lg sm:text-xl font-bold text-green-deep">
             <span className="inline-block h-5 w-1.5 rounded-full metal-gold" />
             {group.title}
           </h3>
-          <Accordion type="single" collapsible className="glossy-card rounded-xl border border-border px-5">
+          <Accordion type="single" collapsible className="glossy-card rounded-xl border border-border px-4 sm:px-5">
             {group.items.map((item, i) => (
               <AccordionItem key={i} value={group.id + "-" + i}>
-                <AccordionTrigger className="text-base font-semibold">{item.q}</AccordionTrigger>
-                <AccordionContent className="text-[15px] leading-relaxed">{item.a}</AccordionContent>
+                <AccordionTrigger className="text-sm sm:text-base font-semibold text-left">{item.q}</AccordionTrigger>
+                <AccordionContent className="text-xs sm:text-[15px] leading-relaxed text-muted-foreground">{item.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>

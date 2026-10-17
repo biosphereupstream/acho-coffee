@@ -14,6 +14,7 @@ import { FlavorMoodNavigator } from "@/components/landing/flavor-mood-navigator"
 import { FreshnessTelemetry } from "@/components/landing/freshness-telemetry";
 import { StickyMobileCTA } from "@/components/landing/sticky-mobile-cta";
 import { LandingFAQ } from "@/components/landing/faq";
+import RoastJourney from "@/components/landing/roast-journey-wrapper";
 import HeroV60WebGLWrapper from "@/components/landing/hero-v60-webgl-wrapper";
 import { getLiveFrontendConfig, getLiveMenu } from "@/lib/menu";
 
@@ -91,6 +92,23 @@ export default async function HomePage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ================= INTERACTIVE ROAST TELEMETRY COCKPIT ================= */}
+      <section id="roast-cockpit" className="relative scroll-mt-20 mx-auto max-w-7xl px-4 pt-12 pb-8 sm:px-6 sm:pt-20 sm:pb-12">
+        <div className="mx-auto max-w-3xl text-center mb-6 sm:mb-10">
+          <div className="inline-flex items-center gap-2 rounded-full bg-gold/15 border border-gold/30 px-3.5 py-1 text-xs font-bold text-gold-deep mb-3">
+            <Flame className="h-3.5 w-3.5 text-gold-deep" />
+            <span>Live Artisan Telemetry • Dari Mesin Sangrai ke V60</span>
+          </div>
+          <h2 className="font-[var(--font-display)] text-2xl font-extrabold text-green-deep sm:text-4xl lg:text-5xl leading-tight">
+            Simulasi Kurva <span className="text-gold-gradient">Roasting Presisi</span>
+          </h2>
+          <p className="mt-2.5 text-xs sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Seduhan V60 yang sempurna berawal dari kurva sangrai yang presisi. Eksplorasi kurva Bean Temperature (BT), Rate of Rise (RoR), dan Development Time Ratio (DTR) secara interaktif pada setiap profil sangrai Biosphere.
+          </p>
+        </div>
+        <RoastJourney />
       </section>
 
       {/* ================= 7 FASE SAINS ROASTING INTERAKTIF ================= */}

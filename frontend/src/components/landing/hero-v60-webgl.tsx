@@ -252,7 +252,6 @@ const WATER_STREAM_FRAGMENT_SHADER = `
     float streak = 0.78 + 0.22 * sin(vUv.y * 42.0 - uTime * 16.0 + vUv.x * 6.28);
     vec3 col = mix(uColorTop, uColorBottom, vUv.y) * streak;
     float edgeFade = smoothstep(0.0, 0.08, vUv.y) * (1.0 - smoothstep(max(0.0, uProgress - 0.12), uProgress, vUv.y));
-    gl_Position;
     gl_FragColor = vec4(col, uOpacity * edgeFade);
   }
 `;
@@ -1515,11 +1514,20 @@ export function HeroV60WebGL({ announcementText }: HeroV60WebGLProps) {
               <div className="flex items-center justify-between text-[9.5px] sm:text-[11px] font-mono text-white/65 mb-1.5">
                 <span className="flex items-center gap-1 truncate">
                   <Flame className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-400 shrink-0" />
-                  <span className="truncate">SCROLL UNTUK MENYEDUH V60 (ATAU KLIK CHAPTER 01–07)</span>
+                  <span className="truncate">SCROLL UNTUK MENYEDUH V60 (KLIK CHAPTER 01–07)</span>
                 </span>
-                <span className="text-amber-300 font-bold shrink-0 ml-2">
-                  {scrollPct}% BREW TIMELINE
-                </span>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <span className="text-amber-300 font-bold">
+                    {scrollPct}% BREW
+                  </span>
+                  <a
+                    href="#roast-cockpit"
+                    className="lg:hidden inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-950/60 px-2 py-0.5 text-[9.5px] font-bold text-amber-200"
+                  >
+                    <span>Skip</span>
+                    <ChevronDown className="h-3 w-3" />
+                  </a>
+                </div>
               </div>
 
               {/* 7 Chapter Pills (Swipeable di Smartphone, 7 Kolom di Desktop) */}
@@ -1562,10 +1570,10 @@ export function HeroV60WebGL({ announcementText }: HeroV60WebGLProps) {
             </div>
 
             <a
-              href="#proses"
+              href="#roast-cockpit"
               className="hidden lg:inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-black/60 px-4 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-500/20 transition-colors backdrop-blur-md shrink-0"
             >
-              <span>Skip Animasi</span>
+              <span>Skip ke Kurva Roasting</span>
               <ChevronDown className="h-4 w-4 animate-bounce" />
             </a>
           </div>

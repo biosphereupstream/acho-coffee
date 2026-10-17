@@ -5,21 +5,21 @@ import { Badge } from "@/components/ui/badge";
 
 export function FreshnessTelemetry() {
   return (
-    <section className="border-y border-border/80 bg-gradient-to-b from-card via-background to-secondary/30 py-16 sm:py-20">
+    <section className="border-y border-border/80 bg-gradient-to-b from-card via-background to-secondary/30 py-12 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 sm:mb-12">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 mb-3">
               <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Live Freshness & Batch Telemetry • Jaminan Kesegaran Mutlak</span>
             </div>
-            <h2 className="font-[var(--font-display)] text-3xl font-extrabold text-green-deep sm:text-4xl">
+            <h2 className="font-[var(--font-display)] text-2xl font-extrabold text-green-deep sm:text-4xl">
               Bukan Kopi Stok Rak. <span className="text-gold-gradient">Dipanggang Setelah Kamu Bayar.</span>
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground max-w-2xl leading-relaxed">
-              Kopi komersial di supermarket sering kali sudah berbulan-bulan kehilangan aromanya. Biosphere beroperasi dengan prinsip *Zero Old Stock* — setiap batch diproses langsung secara segar.
+            <p className="mt-2 text-xs sm:text-sm text-muted-foreground max-w-2xl leading-relaxed">
+              Kopi komersial di supermarket sering kali sudah berbulan-bulan kehilangan aromanya. Biosphere beroperasi dengan prinsip <span className="font-semibold text-foreground">Zero Old Stock</span> — setiap batch diproses langsung secara segar.
             </p>
           </div>
 
@@ -35,7 +35,7 @@ export function FreshnessTelemetry() {
         </div>
 
         {/* 4 Telemetry Cards Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
           
           {/* Card 1: Roast On Demand */}
           <div className="relative rounded-2xl border border-border/80 bg-card p-6 shadow-xs hover:border-gold/50 transition-all duration-300">

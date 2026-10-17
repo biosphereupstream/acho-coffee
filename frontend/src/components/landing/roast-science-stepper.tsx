@@ -110,23 +110,23 @@ export function RoastScienceStepper() {
   const insights = CHEMICAL_INSIGHTS[currentStage.key] || CHEMICAL_INSIGHTS.drying;
 
   return (
-    <section id="proses" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-16 sm:px-6 lg:py-24">
+    <section id="proses" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-12 sm:px-6 lg:py-20">
       {/* Header Section */}
       <div className="mx-auto max-w-3xl text-center">
         <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3.5 py-1 text-xs font-bold text-primary mb-3">
           <Flame className="h-3.5 w-3.5 text-gold-deep" />
           <span>Where Science Meets Soul • Kontrol Suhu Presisi</span>
         </div>
-        <h2 className="font-[var(--font-display)] text-3xl font-extrabold text-green-deep sm:text-4xl lg:text-5xl leading-tight">
+        <h2 className="font-[var(--font-display)] text-2xl font-extrabold text-green-deep sm:text-4xl lg:text-5xl leading-tight">
           7 Fase Reaksi Kimia <span className="text-gold-gradient">Roasting Kopi</span>
         </h2>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base max-w-2xl mx-auto">
+        <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground sm:text-base max-w-2xl mx-auto">
           Roasting di Biosphere bukan tebak-tebakan. Ini adalah ilmu termodinamika dan mikrobiologi presisi yang mengubah biji hijau menjadi simfoni rasa terroir Jawa Barat.
         </p>
       </div>
 
       {/* Interactive Roasting Curve & Timeline Nav */}
-      <div className="mt-12">
+      <div className="mt-8 sm:mt-12">
         {/* Timeline Stepper Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-4 pt-1 sm:justify-center scrollbar-none">
           {ROAST_STAGES.map((stage, idx) => {
@@ -185,7 +185,7 @@ export function RoastScienceStepper() {
               <div className="relative my-5 sm:my-8 flex items-center justify-center">
                 <div
                   className={cn(
-                    "relative h-32 w-22 sm:h-40 sm:w-28 rounded-[50%/40%] shadow-2xl transition-all duration-500 bg-gradient-to-br flex items-center justify-center border-2",
+                    "relative h-32 w-24 sm:h-40 sm:w-28 rounded-[50%/40%] shadow-2xl transition-all duration-500 bg-gradient-to-br flex items-center justify-center border-2",
                     beanVisual.bg
                   )}
                   style={{
