@@ -1,12 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Flame, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function StickyMobileCTA() {
+interface StickyMobileCTAProps {
+  totalCount?: number;
+}
+
+export function StickyMobileCTA({ totalCount = 49 }: StickyMobileCTAProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 block md:hidden border-t border-border/80 bg-background/95 backdrop-blur-md px-4 py-2.5 shadow-2xl safe-area-bottom">
+    <div
+      role="region"
+      aria-label="Aksi Cepat Pemesanan Kopi"
+      className="fixed bottom-0 left-0 right-0 z-40 block md:hidden border-t border-border/80 bg-background/95 backdrop-blur-md px-4 py-2.5 shadow-2xl safe-area-bottom"
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
@@ -14,7 +22,7 @@ export function StickyMobileCTA() {
             <span className="truncate">Roast On-Demand 72 Jam</span>
           </div>
           <p className="text-[10px] text-muted-foreground truncate">
-            49 Pilihan Biji Kopi & Minuman
+            {totalCount} Pilihan Biji Kopi & Minuman Segar
           </p>
         </div>
 

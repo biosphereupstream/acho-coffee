@@ -12,6 +12,8 @@ import {
   Clock,
   Coffee,
   Droplets,
+  Eye,
+  EyeOff,
   Flame,
   Scale,
   Sparkles,
@@ -441,16 +443,18 @@ function V60BrewingScene({ tlStateRef }: V60SceneProps) {
     const tl = tlStateRef.current;
     const t = state.clock.getElapsedTime();
     const isPortraitMobile = size.width < 768;
+    const isDesktopWidescreen = size.width >= 1024;
 
-    // 1. Kamera Sinematik dari GSAP Keyframes + Penyesuaian Otomatis Smartphone + Parallax Halus
-    const mobileZPullback = isPortraitMobile ? 1.55 : 0;
-    const mobileYShift = isPortraitMobile ? -0.32 : 0;
-    const targetCamX = tl.camX + pointer.x * 0.14;
+    // 1. Kamera Sinematik dari GSAP Keyframes + Framing Panggung Kanan (Desktop) & Jendela Atas (Mobile)
+    const desktopXShift = isDesktopWidescreen ? -0.78 : 0;
+    const mobileZPullback = isPortraitMobile ? 1.45 : 0;
+    const mobileYShift = isPortraitMobile ? -0.45 : 0;
+    const targetCamX = tl.camX + desktopXShift * 0.4 + pointer.x * 0.14;
     const targetCamY = tl.camY + pointer.y * 0.1;
     const targetCamZ = tl.camZ + mobileZPullback;
 
     camera.position.lerp(new THREE.Vector3(targetCamX, targetCamY, targetCamZ), Math.min(1, delta * 8));
-    camera.lookAt(tl.lookX, tl.lookY + mobileYShift, tl.lookZ);
+    camera.lookAt(tl.lookX + desktopXShift, tl.lookY + mobileYShift, tl.lookZ);
 
     // 2. Update 60 Biji Kopi (Chapter 1 & 2)
     if (beansMeshRef.current) {
@@ -1186,31 +1190,33 @@ export function HeroV60WebGL({ announcementText }: HeroV60WebGLProps) {
   const tlStateRef = useRef<V60TimelineState>(createInitialTimelineState());
   const [activeChapterIdx, setActiveChapterIdx] = useState<number>(0);
   const [scrollPct, setScrollPct] = useState<number>(0);
+  const [hudMinimized, setHudMinimized] = useState<boolean>(false);
 
-  // Master GSAP Timeline di-scrub oleh ScrollTrigger sepanjang ±700vh (7 Chapter)
+  // Master GSAP Timeline di-scrub oleh ScrollTrigger + Native Scroll Sync sepanjang ±700vh (7 Chapter)
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const el = containerRef.current;
     if (!el) return;
 
     const s = tlStateRef.current;
+    let masterTl: gsap.core.Timeline | null = null;
+
+    const applyProgress = (progress: number) => {
+      const clamped = Math.min(1, Math.max(0, progress));
+      if (masterTl) {
+        masterTl.progress(clamped);
+      }
+      s.totalProgress = clamped;
+      const chIdx = Math.min(6, Math.floor(clamped * 7));
+      s.activeChapter = chIdx;
+      setActiveChapterIdx((prev) => (prev === chIdx ? prev : chIdx));
+      const pct = Math.round(clamped * 100);
+      setScrollPct((prev) => (prev === pct ? prev : pct));
+    };
 
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: el,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 0.7,
-          onUpdate: (self) => {
-            s.totalProgress = self.progress;
-            const chIdx = Math.min(6, Math.floor(self.progress * 7));
-            s.activeChapter = chIdx;
-            setActiveChapterIdx(chIdx);
-            setScrollPct(Math.round(self.progress * 100));
-          },
-        },
-      });
+      const tl = gsap.timeline({ paused: true });
+      masterTl = tl;
 
       // CHAPTER 1 (0 -> 1): 60 Biji Kopi melayang & jatuh ke Hopper Hand Grinder
       tl.to(
@@ -1330,9 +1336,35 @@ export function HeroV60WebGL({ announcementText }: HeroV60WebGLProps) {
         },
         6
       );
+
+      ScrollTrigger.create({
+        trigger: el,
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 0.5,
+        onUpdate: (self) => {
+          applyProgress(self.progress);
+        },
+      });
     }, el);
 
-    return () => ctx.revert();
+    const handleNativeScroll = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const scrollable = Math.max(1, rect.height - window.innerHeight);
+      const rawProgress = -rect.top / scrollable;
+      applyProgress(rawProgress);
+    };
+
+    handleNativeScroll();
+    window.addEventListener("scroll", handleNativeScroll, { passive: true });
+    window.addEventListener("resize", handleNativeScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleNativeScroll);
+      window.removeEventListener("resize", handleNativeScroll);
+      ctx.revert();
+    };
   }, []);
 
   const currentChapter = V60_CHAPTERS[activeChapterIdx] || V60_CHAPTERS[0];
@@ -1356,13 +1388,13 @@ export function HeroV60WebGL({ announcementText }: HeroV60WebGLProps) {
       className="relative h-[700vh] w-full bg-[#0c0705] text-white select-none"
     >
       {/* ================= STICKY FULL-VIEWPORT 3D V60 STAGE ================= */}
-      <div className="sticky top-14 sm:top-16 h-[calc(100dvh-3.5rem)] sm:h-[calc(100dvh-4rem)] w-full overflow-hidden">
+      <div className="sticky top-16 h-[calc(100dvh-4rem)] w-full overflow-hidden">
         {/* Warm Copper & Espresso Studio Ambient Glow */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(60% 50% at 62% 42%, rgba(217,119,6,0.18) 0%, transparent 70%), radial-gradient(45% 45% at 20% 25%, rgba(120,53,15,0.22) 0%, transparent 65%)",
+              "radial-gradient(60% 50% at 68% 45%, rgba(217,119,6,0.22) 0%, transparent 70%), radial-gradient(45% 45% at 25% 30%, rgba(120,53,15,0.22) 0%, transparent 65%)",
           }}
         />
 
@@ -1379,24 +1411,30 @@ export function HeroV60WebGL({ announcementText }: HeroV60WebGLProps) {
 
         {/* Mobile Portrait Vignette: Tengah-atas terang untuk Panggung 3D V60, bawah gelap untuk HUD */}
         <div
-          className="pointer-events-none absolute inset-0 z-10 lg:hidden"
+          className={cn(
+            "pointer-events-none absolute inset-0 z-10 lg:hidden transition-opacity duration-300",
+            hudMinimized ? "opacity-30" : "opacity-100"
+          )}
           style={{
             background:
-              "linear-gradient(180deg, rgba(12,7,5,0.78) 0%, rgba(12,7,5,0.06) 14%, rgba(12,7,5,0.06) 46%, rgba(12,7,5,0.88) 62%, rgba(12,7,5,0.98) 100%)",
+              "linear-gradient(180deg, rgba(12,7,5,0.75) 0%, rgba(12,7,5,0.04) 14%, rgba(12,7,5,0.04) 50%, rgba(12,7,5,0.86) 66%, rgba(12,7,5,0.96) 100%)",
           }}
         />
 
         {/* Desktop Widescreen Vignette */}
         <div
-          className="pointer-events-none absolute inset-0 z-10 hidden lg:block"
+          className={cn(
+            "pointer-events-none absolute inset-0 z-10 hidden lg:block transition-opacity duration-300",
+            hudMinimized ? "opacity-25" : "opacity-100"
+          )}
           style={{
             background:
-              "linear-gradient(90deg, rgba(12,7,5,0.92) 0%, rgba(12,7,5,0.68) 42%, rgba(12,7,5,0.12) 72%, rgba(12,7,5,0.45) 100%), linear-gradient(180deg, rgba(12,7,5,0.45) 0%, transparent 20%, transparent 78%, rgba(12,7,5,0.95) 100%)",
+              "linear-gradient(90deg, rgba(12,7,5,0.88) 0%, rgba(12,7,5,0.58) 38%, rgba(12,7,5,0.05) 64%, rgba(12,7,5,0.35) 100%), linear-gradient(180deg, rgba(12,7,5,0.4) 0%, transparent 18%, transparent 80%, rgba(12,7,5,0.92) 100%)",
           }}
         />
 
         {/* ================= FOREGROUND HUD & SCROLLYTELLING OVERLAY ================= */}
-        <div className="relative z-20 mx-auto flex h-full max-w-7xl flex-col justify-between px-3.5 pt-2.5 pb-[68px] sm:px-6 sm:py-6 md:pb-6 lg:py-9">
+        <div className="relative z-20 mx-auto flex h-full max-w-7xl flex-col justify-between px-3.5 pt-2.5 pb-[68px] sm:px-6 sm:py-5 md:pb-5 lg:py-8">
           {/* TOP BAR: BRAND BADGES & LIVE BARISTA SCALE METRICS */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -1407,8 +1445,25 @@ export function HeroV60WebGL({ announcementText }: HeroV60WebGLProps) {
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
                 Chapter {currentChapter.code}/07 • {scrollPct}%
               </span>
+              <button
+                type="button"
+                onClick={() => setHudMinimized((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/60 hover:bg-white/10 px-2.5 py-0.5 text-[10px] sm:text-[11px] font-semibold text-white/90 backdrop-blur-md transition-colors"
+              >
+                {hudMinimized ? (
+                  <>
+                    <Eye className="h-3 w-3 text-amber-400" />
+                    <span>Tampilkan Info</span>
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-3 w-3 text-amber-400" />
+                    <span>Fokus 3D</span>
+                  </>
+                )}
+              </button>
               {announcementText && (
-                <div className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-gold/20 border border-gold/45 px-3 py-0.5 text-xs text-gold-light font-semibold backdrop-blur-md">
+                <div className="hidden xl:inline-flex items-center gap-1.5 rounded-full bg-gold/20 border border-gold/45 px-3 py-0.5 text-xs text-gold-light font-semibold backdrop-blur-md">
                   <Sparkles className="h-3 w-3 text-gold-light shrink-0" />
                   <span className="truncate max-w-xs">{announcementText}</span>
                 </div>
@@ -1440,10 +1495,17 @@ export function HeroV60WebGL({ announcementText }: HeroV60WebGLProps) {
           </div>
 
           {/* JENDELA PANGGUNG 3D DI LAYAR MOBILE */}
-          <div className="flex-1 min-h-[24vh] sm:min-h-[18vh] lg:hidden pointer-events-none" />
+          <div className="flex-1 min-h-[26vh] sm:min-h-[20vh] lg:hidden pointer-events-none" />
 
           {/* STORYTELLING COLUMN */}
-          <div className="lg:my-auto max-w-xl lg:max-w-xl space-y-2.5 sm:space-y-4">
+          <div
+            className={cn(
+              "lg:my-auto max-w-lg lg:max-w-lg space-y-2 sm:space-y-3.5 transition-all duration-300",
+              hudMinimized
+                ? "opacity-0 pointer-events-none translate-y-4 lg:-translate-x-6 h-0 overflow-hidden"
+                : "opacity-100"
+            )}
+          >
             <div className="inline-flex items-center gap-1.5 rounded-lg sm:rounded-xl border border-amber-500/40 bg-black/65 px-2.5 py-1 sm:px-3.5 sm:py-1.5 backdrop-blur-md">
               <Coffee className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-400 shrink-0" />
               <span className="font-mono text-[9.5px] sm:text-xs font-bold tracking-wider text-amber-200 uppercase truncate">
@@ -1451,19 +1513,19 @@ export function HeroV60WebGL({ announcementText }: HeroV60WebGLProps) {
               </span>
             </div>
 
-            <h1 className="font-[var(--font-display)] text-2xl sm:text-4xl lg:text-[3.1rem] font-bold leading-[1.14] tracking-tight text-white drop-shadow-md">
+            <h1 className="font-[var(--font-display)] text-xl sm:text-3xl lg:text-[2.75rem] font-bold leading-[1.15] tracking-tight text-white drop-shadow-md">
               {currentChapter.headlinePrimary}{" "}
               <span className="text-gold-gradient inline-block">
                 {currentChapter.headlineAccent}
               </span>
             </h1>
 
-            <p className="max-w-lg text-xs sm:text-base leading-relaxed text-white/80 line-clamp-2 sm:line-clamp-3 lg:line-clamp-none">
+            <p className="max-w-md text-xs sm:text-sm lg:text-base leading-relaxed text-white/80 line-clamp-2 sm:line-clamp-3">
               {currentChapter.description}
             </p>
 
             {/* Sensory & Barista Tip Cards */}
-            <div className="grid grid-cols-2 gap-2 max-w-lg">
+            <div className="grid grid-cols-2 gap-2 max-w-md">
               <div className="rounded-xl border border-white/12 bg-black/55 p-2 sm:p-2.5 backdrop-blur-md min-w-0">
                 <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-amber-300/85 block truncate">
                   Sensory Notes
@@ -1483,11 +1545,11 @@ export function HeroV60WebGL({ announcementText }: HeroV60WebGLProps) {
             </div>
 
             {/* Primary CTA Buttons */}
-            <div className="pt-1 grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="pt-0.5 grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
               <Button
                 size="lg"
                 variant="gold"
-                className="w-full sm:w-auto h-10 sm:h-12 px-3 sm:px-6 text-xs sm:text-sm font-bold shadow-xl justify-center"
+                className="w-full sm:w-auto h-9 sm:h-11 px-3 sm:px-5 text-xs sm:text-sm font-bold shadow-xl justify-center"
                 asChild
               >
                 <Link href="/menu">
@@ -1498,7 +1560,7 @@ export function HeroV60WebGL({ announcementText }: HeroV60WebGLProps) {
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full sm:w-auto h-10 sm:h-12 px-3 sm:px-5 text-xs sm:text-sm font-semibold justify-center border-white/25 bg-white/5 text-white hover:bg-white/15 hover:text-white backdrop-blur-md"
+                className="w-full sm:w-auto h-9 sm:h-11 px-3 sm:px-5 text-xs sm:text-sm font-semibold justify-center border-white/25 bg-white/5 text-white hover:bg-white/15 hover:text-white backdrop-blur-md"
                 asChild
               >
                 <a href="#katalog">

@@ -121,18 +121,24 @@ export default async function HomePage() {
       <FreshnessTelemetry />
 
       {/* ================= KEUNGGULAN ================= */}
-      <section id="tentang" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-14 sm:px-6 sm:py-20">
+      <section id="tentang" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-12 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="secondary" className="text-primary">Kenapa Biosphere Roast Works?</Badge>
-          <h2 className="mt-3 font-[var(--font-display)] text-2xl font-bold text-green-deep sm:text-4xl">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3.5 py-1 text-xs font-bold text-primary mb-3">
+            <Sparkles className="h-3.5 w-3.5 text-gold-deep" />
+            <span>Kenapa Biosphere Roast Works?</span>
+          </div>
+          <h2 className="font-[var(--font-display)] text-2xl font-extrabold text-green-deep sm:text-4xl">
             Where Science <span className="text-gold-gradient">Meets Soul</span>
           </h2>
+          <p className="mt-2 text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            Empat pilar layanan roastery modern yang memastikan setiap gram biji kopi tiba di cangkirmu dalam kondisi puncak.
+          </p>
         </div>
 
         <div className="mt-8 sm:mt-12 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((f) => (
-            <div key={f.title} className="gold-ring-hover glossy-card rounded-2xl border border-border p-5 sm:p-6">
-              <span className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl metal-green">
+            <div key={f.title} className="gold-ring-hover glossy-card rounded-2xl border border-border p-5 sm:p-6 flex flex-col">
+              <span className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl metal-green shadow-sm">
                 <f.icon className="h-5 w-5 sm:h-6 sm:w-6 text-gold-light" />
               </span>
               <h3 className="mt-3.5 sm:mt-4 text-base font-bold text-green-deep">{f.title}</h3>
@@ -144,23 +150,25 @@ export default async function HomePage() {
 
       {/* ================= TESTIMONI ================= */}
       <section className="border-y border-border/60 bg-white/60">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-20">
           <div className="mx-auto max-w-2xl text-center">
-            <Badge variant="secondary" className="text-primary">Testimoni</Badge>
-            <h2 className="mt-3 font-[var(--font-display)] text-2xl font-bold text-green-deep sm:text-4xl">
-              Kata Mereka yang Sudah Nyeduh
+            <Badge variant="secondary" className="text-primary font-bold">Testimoni Pelanggan</Badge>
+            <h2 className="mt-3 font-[var(--font-display)] text-2xl font-extrabold text-green-deep sm:text-4xl">
+              Kata Mereka yang Sudah <span className="text-gold-gradient">Nyeduh</span>
             </h2>
           </div>
 
           <div className="mt-8 sm:mt-12 grid gap-4 sm:gap-6 md:grid-cols-3">
             {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="glossy-card rounded-2xl border border-border p-5 sm:p-6">
-                <div className="flex gap-0.5">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <Star key={i} className="h-4 w-4 fill-gold text-gold" />
-                  ))}
+              <div key={t.name} className="glossy-card rounded-2xl border border-border p-5 sm:p-6 flex flex-col justify-between">
+                <div>
+                  <div className="flex gap-0.5" aria-label="Rating 5 dari 5 bintang">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <Star key={i} className="h-4 w-4 fill-gold text-gold" />
+                    ))}
+                  </div>
+                  <p className="mt-3.5 sm:mt-4 text-xs sm:text-sm leading-relaxed text-foreground/85">“{t.text}”</p>
                 </div>
-                <p className="mt-3.5 sm:mt-4 text-xs sm:text-sm leading-relaxed text-foreground/85">“{t.text}”</p>
                 <div className="mt-4 sm:mt-5 border-t border-border/70 pt-3.5 sm:pt-4">
                   <p className="text-sm font-bold text-green-deep">{t.name}</p>
                   <p className="text-xs text-muted-foreground">{t.role}</p>
@@ -172,12 +180,15 @@ export default async function HomePage() {
       </section>
 
       {/* ================= FAQ ================= */}
-      <section id="faq" className="mx-auto max-w-4xl scroll-mt-20 px-4 py-14 sm:px-6 sm:py-20">
+      <section id="faq" className="mx-auto max-w-4xl scroll-mt-20 px-4 py-12 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="secondary" className="text-primary">FAQ</Badge>
-          <h2 className="mt-3 font-[var(--font-display)] text-2xl font-bold text-green-deep sm:text-4xl">
+          <Badge variant="secondary" className="text-primary font-bold">FAQ</Badge>
+          <h2 className="mt-3 font-[var(--font-display)] text-2xl font-extrabold text-green-deep sm:text-4xl">
             Sering Ditanyakan
           </h2>
+          <p className="mt-2 text-xs sm:text-sm text-muted-foreground">
+            Informasi lengkap seputar jadwal sangrai, antrian pickup, kurir pengiriman, dan metode pembayaran.
+          </p>
         </div>
         <div className="mt-8 sm:mt-12">
           <LandingFAQ />
@@ -186,7 +197,7 @@ export default async function HomePage() {
 
       {/* ================= CTA ================= */}
       <section className="mx-auto max-w-7xl px-4 pb-24 md:pb-20 sm:px-6">
-        <div className="sheen metal-green-strong relative overflow-hidden rounded-2xl sm:rounded-3xl px-5 py-12 text-center sm:px-16 sm:py-16">
+        <div className="sheen metal-green-strong relative overflow-hidden rounded-2xl sm:rounded-3xl px-5 py-12 text-center sm:px-16 sm:py-16 shadow-xl">
           <div
             className="pointer-events-none absolute inset-0 opacity-40"
             style={{
@@ -201,7 +212,7 @@ export default async function HomePage() {
               Pesan sekarang, bayar aman via Doku, dan pantau perjalanan biji kopimu dari roaster sampai cangkir.
             </p>
             <div className="mt-6 sm:mt-8 flex flex-col items-center justify-center gap-2.5 sm:gap-3 sm:flex-row">
-              <Button size="lg" variant="gold" className="w-full sm:w-auto" asChild>
+              <Button size="lg" variant="gold" className="w-full sm:w-auto font-bold" asChild>
                 <Link href="/menu">
                   Pesan Sekarang <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -215,7 +226,7 @@ export default async function HomePage() {
       </section>
 
       {/* ================= STICKY MOBILE ACTION BAR ================= */}
-      <StickyMobileCTA />
+      <StickyMobileCTA totalCount={coffees.length} />
     </div>
   );
 }
