@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   ArrowRight,
   CalendarClock,
@@ -49,8 +49,8 @@ const ROAST_STAGES: RoastStageInfo[] = [
     headlineAccent: "Dipanggang Khusus Untukmu",
     description:
       "Pilih single origin atau blend nusantara, tentukan profil roasting & gilingan, lalu jadwalkan pengambilan di roastery atau kirim ke rumahmu — lengkap dengan tracing kurir dan update di setiap tahap.",
-    aromaNotes: "Fresh Grass, Sweet Pea, Raw Botanical",
-    chemistryNote: "Endotermik • Penguapan kadar air bebas (11.5% → 6%)",
+    aromaNotes: "Fresh Grass, Sweet Pea, Botanical",
+    chemistryNote: "Endotermik • Evaporasi air (11.5% → 6%)",
     scrollRange: [0, 0.25],
     accentHex: "#6e9968",
   },
@@ -65,8 +65,8 @@ const ROAST_STAGES: RoastStageInfo[] = [
     headlineAccent: "800+ Senyawa Karamel",
     description:
       "Saat suhu melampaui 160°C, asam amino dan gula pereduksi mulai menyatu membentuk melanoidin. Biji kopi menguning keemasan lalu berubah cokelat hangat dengan aroma roti panggang & madu.",
-    aromaNotes: "Toasted Brioche, Caramelized Honey, Roasted Almond",
-    chemistryNote: "Maillard & Strecker • Pembentukan struktur manis & body",
+    aromaNotes: "Toasted Brioche, Honey, Almond",
+    chemistryNote: "Maillard • Pembentukan manis & body",
     scrollRange: [0.25, 0.55],
     accentHex: "#d4a948",
   },
@@ -81,8 +81,8 @@ const ROAST_STAGES: RoastStageInfo[] = [
     headlineAccent: "Ledakan Seluler & Kompleksitas Rasa",
     description:
       "Tekanan uap air dan gas CO₂ memecah dinding sel biji kopi secara eksotermik. Belahan tengah biji membara dan mengembang, melepaskan karakter floral, keasaman buah cerah, dan sweetness puncak.",
-    aromaNotes: "Jasmine Blossom, Strawberry Wine, Citric Bergamot",
-    chemistryNote: "Eksotermik Kritis • Transisi struktur berpori & pelepasan CO₂",
+    aromaNotes: "Jasmine, Strawberry Wine, Bergamot",
+    chemistryNote: "Eksotermik • Ekspansi pori & gas CO₂",
     scrollRange: [0.55, 0.82],
     accentHex: "#e6602e",
   },
@@ -97,8 +97,8 @@ const ROAST_STAGES: RoastStageInfo[] = [
     headlineAccent: "Segar di Tanganmu dalam 72 Jam",
     description:
       "Roaster menghentikan reaksi tepat di sweet-spot Development Time Ratio (DTR) dengan pendinginan udara bertekanan tinggi. Dikemas dengan one-way valve dan langsung dikirim ke alamatmu.",
-    aromaNotes: "Dark Chocolate Truffle, Brown Sugar, Velvety Crema",
-    chemistryNote: "Rapid Quenching • Mengunci senyawa aromatik tanpa baked flavor",
+    aromaNotes: "Dark Chocolate, Brown Sugar, Crema",
+    chemistryNote: "Rapid Cooling • Kunci senyawa aromatik",
     scrollRange: [0.82, 1.0],
     accentHex: "#f59e0b",
   },
@@ -163,7 +163,6 @@ function createCoffeeBeanGeometry(detail = 64, scale = 1): THREE.BufferGeometry 
 // Interpolasi telemetri kontinu dari progress scroll (0.0 -> 1.0)
 function interpolateScrollTelemetry(p: number) {
   const clamped = Math.max(0, Math.min(1, p));
-  // Suhu: 95°C -> 165°C -> 201°C -> 212°C
   const temp =
     clamped < 0.25
       ? 95 + (clamped / 0.25) * 65
@@ -173,19 +172,14 @@ function interpolateScrollTelemetry(p: number) {
       ? 198 + ((clamped - 0.55) / 0.27) * 9
       : 207 + ((clamped - 0.82) / 0.18) * 5;
 
-  // RoR: +22.4 -> +16.2 -> +9.4 -> +4.8 °C/m
   const ror = 22.8 - Math.pow(clamped, 0.85) * 18.0;
-
-  // DTR: muncul setelah First Crack (p >= 0.55)
   const dtr = clamped < 0.55 ? 0 : ((clamped - 0.55) / 0.45) * 17.7;
 
-  // Waktu sangrai: 01:15 (75s) -> 10:20 (620s)
   const sec = Math.round(75 + clamped * 545);
   const mins = Math.floor(sec / 60);
   const remSec = sec % 60;
   const timeFormatted = `${String(mins).padStart(2, "0")}:${String(remSec).padStart(2, "0")}`;
 
-  // Intensity First Crack (puncak di p = 0.68)
   const crackIntensity = Math.exp(-Math.pow((clamped - 0.68) / 0.13, 2));
 
   return {
@@ -230,6 +224,7 @@ function sampleBeanMaterialState(p: number) {
 }
 
 function LivingRoastScene({ scrollProgressRef }: SceneProps) {
+  const { size } = useThree();
   const mainGroupRef = useRef<THREE.Group>(null);
   const heroBeanRef = useRef<THREE.Mesh>(null);
   const heroMatRef = useRef<THREE.MeshPhysicalMaterial>(null);
@@ -244,6 +239,17 @@ function LivingRoastScene({ scrollProgressRef }: SceneProps) {
   const bottomLightRef = useRef<THREE.PointLight>(null);
 
   const smoothedProgress = useRef(0);
+
+  // Deteksi ukuran layar untuk posisi & skala responsif (Mobile Portrait vs Tablet vs Desktop)
+  const isMobile = size.width < 640;
+  const isTablet = size.width >= 640 && size.width < 1024;
+  const stagePosition = useMemo<[number, number, number]>(() => {
+    if (isMobile) return [0, 0.78, 0]; // Tepat di tengah-atas layar smartphone
+    if (isTablet) return [0, 0.55, 0];
+    return [1.05, 0.05, 0]; // Sisi kanan pada layar widescreen desktop
+  }, [isMobile, isTablet]);
+
+  const stageScale = isMobile ? 0.72 : isTablet ? 0.86 : 1.0;
 
   // Procedural geometries
   const heroGeometry = useMemo(() => createCoffeeBeanGeometry(68, 1.32), []);
@@ -307,7 +313,6 @@ function LivingRoastScene({ scrollProgressRef }: SceneProps) {
     const p = smoothedProgress.current;
     const t = state.clock.getElapsedTime();
 
-    // Hitung intensitas First Crack (puncak di p ~ 0.68)
     const crackIntensity = Math.exp(-Math.pow((p - 0.68) / 0.13, 2));
 
     // 1. Update Material Warna & Tekstur Hero Bean
@@ -344,10 +349,10 @@ function LivingRoastScene({ scrollProgressRef }: SceneProps) {
       );
     }
 
-    // 4. Mouse Parallax pada Main Group
+    // 4. Mouse/Touch Parallax pada Main Group
     if (mainGroupRef.current) {
-      const targetRotY = state.pointer.x * 0.32;
-      const targetRotX = -state.pointer.y * 0.22;
+      const targetRotY = state.pointer.x * 0.28;
+      const targetRotX = -state.pointer.y * 0.18;
       mainGroupRef.current.rotation.y = THREE.MathUtils.lerp(
         mainGroupRef.current.rotation.y,
         targetRotY,
@@ -463,7 +468,7 @@ function LivingRoastScene({ scrollProgressRef }: SceneProps) {
         color="#f59e0b"
       />
 
-      <group ref={mainGroupRef} position={[1.05, 0.05, 0]}>
+      <group ref={mainGroupRef} position={stagePosition} scale={stageScale}>
         {/* 1. HERO ARABICA COFFEE BEAN */}
         <mesh ref={heroBeanRef} geometry={heroGeometry} castShadow receiveShadow>
           <meshPhysicalMaterial
@@ -546,7 +551,6 @@ export function HeroRoastWebGL({ announcementText }: HeroRoastWebGLProps) {
   const scrollProgressRef = useRef<number>(0);
   const [uiProgress, setUiProgress] = useState<number>(0);
 
-  // Hitung progress scroll di sepanjang track 320vh
   useEffect(() => {
     let rafId: number | null = null;
 
@@ -575,7 +579,6 @@ export function HeroRoastWebGL({ announcementText }: HeroRoastWebGLProps) {
     };
   }, []);
 
-  // Tentukan stage aktif (0..3) berdasarkan uiProgress
   const activeStage = useMemo(() => {
     for (let i = ROAST_STAGES.length - 1; i >= 0; i--) {
       if (uiProgress >= ROAST_STAGES[i].scrollRange[0]) {
@@ -590,7 +593,6 @@ export function HeroRoastWebGL({ announcementText }: HeroRoastWebGLProps) {
     [uiProgress]
   );
 
-  // Fungsi klik untuk melompat ke tahap tertentu di track scroll
   const scrollToStage = useCallback((stageIndex: number) => {
     if (!containerRef.current) return;
     const stage = ROAST_STAGES[stageIndex];
@@ -598,7 +600,6 @@ export function HeroRoastWebGL({ announcementText }: HeroRoastWebGLProps) {
     const rect = containerRef.current.getBoundingClientRect();
     const containerTopAbs = window.scrollY + rect.top;
     const scrollableDistance = Math.max(1, rect.height - window.innerHeight);
-    // Ambil titik tengah rentang stage (atau 0 untuk stage pertama)
     const targetProgress =
       stageIndex === 0
         ? 0
@@ -615,25 +616,25 @@ export function HeroRoastWebGL({ announcementText }: HeroRoastWebGLProps) {
   return (
     <div
       ref={containerRef}
-      className="relative h-[320vh] w-full bg-[#05120d] text-white select-none"
+      className="relative h-[250vh] sm:h-[320vh] w-full bg-[#05120d] text-white select-none"
     >
       {/* ================= STICKY FULL-VIEWPORT 3D STAGE ================= */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
+      <div className="sticky top-14 sm:top-16 h-[calc(100dvh-3.5rem)] sm:h-[calc(100dvh-4rem)] w-full overflow-hidden">
         {/* Ambient Radial Backdrops */}
         <div
           className="pointer-events-none absolute inset-0 transition-opacity duration-700"
           style={{
-            background: `radial-gradient(55% 50% at 72% 48%, ${activeStage.accentHex}2e 0%, transparent 68%), radial-gradient(45% 45% at 18% 25%, rgba(16, 185, 129, 0.14) 0%, transparent 65%)`,
+            background: `radial-gradient(60% 45% at 50% 28%, ${activeStage.accentHex}33 0%, transparent 70%), radial-gradient(50% 45% at 72% 48%, ${activeStage.accentHex}26 0%, transparent 68%)`,
           }}
         />
 
         {/* Subtle Technical Grid Overlay */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
+          className="pointer-events-none absolute inset-0 opacity-[0.06]"
           style={{
             backgroundImage:
               "linear-gradient(to right, rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.4) 1px, transparent 1px)",
-            backgroundSize: "56px 56px",
+            backgroundSize: "48px 48px",
           }}
         />
 
@@ -648,71 +649,83 @@ export function HeroRoastWebGL({ announcementText }: HeroRoastWebGLProps) {
           </Canvas>
         </div>
 
-        {/* Vignette Gradient untuk menjaga keterbacaan teks di sisi kiri & bawah */}
+        {/* Mobile Portrait Vignette: Jendela tengah-atas terang untuk Biji Kopi 3D, bawah gelap pekat untuk HUD */}
         <div
-          className="pointer-events-none absolute inset-0 z-10"
+          className="pointer-events-none absolute inset-0 z-10 lg:hidden"
           style={{
             background:
-              "linear-gradient(90deg, rgba(5,18,13,0.92) 0%, rgba(5,18,13,0.72) 44%, rgba(5,18,13,0.18) 76%, rgba(5,18,13,0.45) 100%), linear-gradient(180deg, rgba(5,18,13,0.45) 0%, transparent 22%, transparent 78%, rgba(5,18,13,0.94) 100%)",
+              "linear-gradient(180deg, rgba(5,18,13,0.78) 0%, rgba(5,18,13,0.08) 14%, rgba(5,18,13,0.06) 44%, rgba(5,18,13,0.88) 60%, rgba(5,18,13,0.98) 100%)",
+          }}
+        />
+
+        {/* Desktop Widescreen Vignette: Sisi kiri gelap untuk teks, sisi kanan terang untuk panggung 3D */}
+        <div
+          className="pointer-events-none absolute inset-0 z-10 hidden lg:block"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(5,18,13,0.92) 0%, rgba(5,18,13,0.72) 44%, rgba(5,18,13,0.16) 76%, rgba(5,18,13,0.45) 100%), linear-gradient(180deg, rgba(5,18,13,0.45) 0%, transparent 22%, transparent 78%, rgba(5,18,13,0.94) 100%)",
           }}
         />
 
         {/* ================= FOREGROUND HUD & SCROLLYTELLING CONTENT ================= */}
-        <div className="relative z-20 mx-auto flex h-full max-w-7xl flex-col justify-between px-4 py-6 sm:px-6 sm:py-10 lg:py-12">
+        <div className="relative z-20 mx-auto flex h-full max-w-7xl flex-col justify-between px-3.5 pt-2.5 pb-[68px] sm:px-6 sm:py-6 md:pb-6 lg:py-10">
           {/* TOP BAR: BRAND BADGES & LIVE ROASTER TELEMETRY PILL */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="gold" className="px-3 py-1 text-xs font-bold shadow-md">
-                ☕ Fresh Roast dalam 72 Jam
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <Badge variant="gold" className="px-2.5 py-0.5 text-[10px] sm:text-xs font-bold shadow-md">
+                ☕ Fresh Roast 72 Jam
               </Badge>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/35 bg-emerald-950/70 px-3 py-1 font-mono text-[11px] font-semibold text-emerald-300 backdrop-blur-md">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                3D WebGL Interactive Roaster
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/35 bg-emerald-950/75 px-2.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-semibold text-emerald-300 backdrop-blur-md">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                3D WebGL Roaster
               </span>
               {announcementText && (
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-gold/20 border border-gold/45 px-3 py-1 text-xs text-gold-light font-semibold backdrop-blur-md">
+                <div className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-gold/20 border border-gold/45 px-3 py-0.5 text-xs text-gold-light font-semibold backdrop-blur-md">
                   <Sparkles className="h-3 w-3 text-gold-light shrink-0" />
-                  <span>{announcementText}</span>
+                  <span className="truncate max-w-xs">{announcementText}</span>
                 </div>
               )}
             </div>
 
-            {/* Live Mini Telemetry Readout on Top-Right */}
-            <div className="hidden sm:flex items-center gap-3 rounded-2xl border border-white/15 bg-black/55 px-4 py-2 font-mono text-xs backdrop-blur-md shadow-lg">
-              <div className="flex items-center gap-1.5 text-gold-light">
-                <Thermometer className="h-3.5 w-3.5 text-gold" />
-                <span className="font-black text-sm">{liveTelemetry.temp.toFixed(1)}°C</span>
+            {/* Live Telemetry Readout Pill (Tampil di Mobile & Desktop) */}
+            <div className="inline-flex self-start sm:self-auto items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/15 bg-black/60 px-2.5 py-1 sm:px-4 sm:py-1.5 font-mono text-[10px] sm:text-xs backdrop-blur-md shadow-lg">
+              <div className="flex items-center gap-1 text-gold-light">
+                <Thermometer className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gold" />
+                <span className="font-black text-xs sm:text-sm">{liveTelemetry.temp.toFixed(1)}°C</span>
               </div>
-              <div className="h-3.5 w-px bg-white/15" />
+              <div className="h-3 w-px bg-white/15" />
               <div className="flex items-center gap-1 text-amber-300">
-                <Zap className="h-3.5 w-3.5" />
-                <span>RoR +{liveTelemetry.ror.toFixed(1)}</span>
+                <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span>+{liveTelemetry.ror.toFixed(1)}</span>
               </div>
-              <div className="h-3.5 w-px bg-white/15" />
+              <div className="h-3 w-px bg-white/15" />
               <div className="flex items-center gap-1 text-cyan-300">
-                <Gauge className="h-3.5 w-3.5" />
+                <Gauge className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 <span>DTR {liveTelemetry.dtr.toFixed(1)}%</span>
               </div>
-              <div className="h-3.5 w-px bg-white/15" />
-              <span className="text-white/70">{liveTelemetry.timeFormatted}</span>
+              <div className="h-3 w-px bg-white/15" />
+              <span className="text-white/75 font-semibold">{liveTelemetry.timeFormatted}</span>
             </div>
           </div>
 
-          {/* CENTER-LEFT STORYTELLING COLUMN */}
-          <div className="my-auto max-w-xl lg:max-w-2xl space-y-4 sm:space-y-5">
+          {/* JENDELA RUANG 3D DI LAYAR MOBILE (agar Biji Kopi 3D tidak tertutup teks) */}
+          <div className="flex-1 min-h-[24vh] sm:min-h-[18vh] lg:hidden pointer-events-none" />
+
+          {/* STORYTELLING COLUMN (Bawah di Mobile, Kiri-Tengah di Desktop) */}
+          <div className="lg:my-auto max-w-xl lg:max-w-2xl space-y-2.5 sm:space-y-4">
             {/* Dynamic Phase Tag */}
-            <div className="inline-flex items-center gap-2 rounded-xl border border-gold/40 bg-black/55 px-3.5 py-1.5 backdrop-blur-md">
+            <div className="inline-flex items-center gap-1.5 rounded-lg sm:rounded-xl border border-gold/40 bg-black/60 px-2.5 py-1 sm:px-3.5 sm:py-1.5 backdrop-blur-md">
               <Flame
-                className="h-3.5 w-3.5 shrink-0 transition-colors duration-300"
+                className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0 transition-colors duration-300"
                 style={{ color: activeStage.accentHex }}
               />
-              <span className="font-mono text-[10px] sm:text-xs font-bold tracking-wider text-gold-light uppercase">
+              <span className="font-mono text-[9.5px] sm:text-xs font-bold tracking-wider text-gold-light uppercase truncate">
                 {activeStage.phaseBadge}
               </span>
             </div>
 
             {/* Dynamic Stage Headline */}
-            <h1 className="font-[var(--font-display)] text-3xl sm:text-5xl lg:text-[3.35rem] font-bold leading-[1.14] tracking-tight text-white drop-shadow-md transition-all duration-300">
+            <h1 className="font-[var(--font-display)] text-2xl sm:text-4xl lg:text-[3.3rem] font-bold leading-[1.14] tracking-tight text-white drop-shadow-md">
               {activeStage.headlinePrimary}{" "}
               <span className="text-gold-gradient inline-block">
                 {activeStage.headlineAccent}
@@ -720,56 +733,57 @@ export function HeroRoastWebGL({ announcementText }: HeroRoastWebGLProps) {
             </h1>
 
             {/* Dynamic Stage Description */}
-            <p className="max-w-xl text-sm sm:text-base lg:text-lg leading-relaxed text-white/80 transition-all duration-300">
+            <p className="max-w-xl text-xs sm:text-base lg:text-lg leading-relaxed text-white/80 line-clamp-2 sm:line-clamp-3 lg:line-clamp-none">
               {activeStage.description}
             </p>
 
-            {/* Dynamic Chemistry & Sensory Pill Box */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-xl pt-1">
-              <div className="rounded-xl border border-white/12 bg-black/50 p-3 backdrop-blur-md">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-gold-light/80 block">
-                  Sensory & Aroma Aktif
+            {/* Dynamic Chemistry & Sensory Pill Box (2 kolom ringkas di HP) */}
+            <div className="grid grid-cols-2 gap-2 max-w-xl">
+              <div className="rounded-xl border border-white/12 bg-black/55 p-2 sm:p-3 backdrop-blur-md min-w-0">
+                <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-gold-light/80 block truncate">
+                  Sensory & Aroma
                 </span>
-                <p className="mt-0.5 text-xs sm:text-sm font-bold text-white truncate">
+                <p className="mt-0.5 text-[11px] sm:text-sm font-bold text-white truncate">
                   {activeStage.aromaNotes}
                 </p>
               </div>
-              <div className="rounded-xl border border-white/12 bg-black/50 p-3 backdrop-blur-md">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-300/80 block">
-                  Reaksi Fisika & Kimia
+              <div className="rounded-xl border border-white/12 bg-black/55 p-2 sm:p-3 backdrop-blur-md min-w-0">
+                <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-emerald-300/80 block truncate">
+                  Reaksi Kimia
                 </span>
-                <p className="mt-0.5 text-xs sm:text-sm font-semibold text-white/90 truncate">
+                <p className="mt-0.5 text-[11px] sm:text-sm font-semibold text-white/90 truncate">
                   {activeStage.chemistryNote}
                 </p>
               </div>
             </div>
 
-            {/* Primary CTA Buttons (Always Accessible) */}
-            <div className="pt-2 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            {/* Primary CTA Buttons (Berdampingan di HP agar hemat ruang vertikal) */}
+            <div className="pt-1 grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
               <Button
                 size="lg"
                 variant="gold"
-                className="w-full sm:w-auto h-12 text-sm font-bold shadow-xl justify-center"
+                className="w-full sm:w-auto h-10 sm:h-12 px-3 sm:px-6 text-xs sm:text-sm font-bold shadow-xl justify-center"
                 asChild
               >
                 <Link href="/menu">
-                  Eksplor Menu & Pesan <ArrowRight className="h-4 w-4 ml-1.5" />
+                  <span>Eksplor Menu</span>
+                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1" />
                 </Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full sm:w-auto h-12 text-sm font-semibold justify-center border-white/25 bg-white/5 text-white hover:bg-white/15 hover:text-white backdrop-blur-md"
+                className="w-full sm:w-auto h-10 sm:h-12 px-3 sm:px-5 text-xs sm:text-sm font-semibold justify-center border-white/25 bg-white/5 text-white hover:bg-white/15 hover:text-white backdrop-blur-md"
                 asChild
               >
                 <a href="#roast-cockpit">
-                  Cockpit Kurva & Sains 7 Fase
+                  Kurva & Sains 7 Fase
                 </a>
               </Button>
             </div>
 
-            {/* Trust Highlights */}
-            <div className="hidden sm:flex flex-wrap gap-x-5 gap-y-2 pt-1 text-xs text-white/70">
+            {/* Trust Highlights (Desktop) */}
+            <div className="hidden lg:flex flex-wrap gap-x-5 gap-y-2 pt-1 text-xs text-white/70">
               <span className="flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" /> Pembayaran Aman
               </span>
@@ -782,17 +796,16 @@ export function HeroRoastWebGL({ announcementText }: HeroRoastWebGLProps) {
             </div>
           </div>
 
-          {/* BOTTOM BAR: INTERACTIVE 4-STAGE SCROLL PROGRESS RAIL & SCROLL HINT */}
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-end justify-between gap-4 border-t border-white/10 pt-4">
-            {/* Clickable 4-Stage Scrollytelling Rail */}
+          {/* BOTTOM BAR: INTERACTIVE 4-STAGE SCROLL PROGRESS RAIL */}
+          <div className="mt-2.5 sm:mt-4 flex flex-col lg:flex-row items-stretch lg:items-end justify-between gap-3 border-t border-white/10 pt-2.5 sm:pt-3.5">
             <div className="flex-1 max-w-3xl">
-              <div className="flex items-center justify-between text-[11px] font-mono text-white/60 mb-2">
-                <span className="flex items-center gap-1.5">
-                  <Wind className="h-3.5 w-3.5 text-gold-light" />
-                  <span>SCROLL UNTUK MEMANGGANG BIJI KOPI 3D (ATAU KLIK TAHAP)</span>
+              <div className="flex items-center justify-between text-[9.5px] sm:text-[11px] font-mono text-white/65 mb-1.5">
+                <span className="flex items-center gap-1 truncate">
+                  <Wind className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gold-light shrink-0" />
+                  <span className="truncate">SCROLL / KLIK TAHAP ROASTING 3D</span>
                 </span>
-                <span className="text-gold-light font-bold">
-                  {Math.round(uiProgress * 100)}% ROAST PROGRESS
+                <span className="text-gold-light font-bold shrink-0 ml-2">
+                  {Math.round(uiProgress * 100)}% ROAST
                 </span>
               </div>
 
@@ -806,15 +819,15 @@ export function HeroRoastWebGL({ announcementText }: HeroRoastWebGLProps) {
                       type="button"
                       onClick={() => scrollToStage(st.index)}
                       className={cn(
-                        "group relative overflow-hidden rounded-xl border p-2 sm:px-3 sm:py-2 text-left transition-all backdrop-blur-md",
+                        "group relative overflow-hidden rounded-lg sm:rounded-xl border px-2 py-1.5 sm:px-3 sm:py-2 text-left transition-all backdrop-blur-md",
                         isCurrent
-                          ? "border-gold bg-gold/20 shadow-lg scale-[1.02]"
+                          ? "border-gold bg-gold/25 shadow-md"
                           : isPassed
-                          ? "border-emerald-500/40 bg-emerald-950/40 hover:border-gold/50"
-                          : "border-white/10 bg-black/45 hover:border-white/30"
+                          ? "border-emerald-500/40 bg-emerald-950/45 hover:border-gold/50"
+                          : "border-white/12 bg-black/50 hover:border-white/30"
                       )}
                     >
-                      <div className="flex items-center justify-between gap-1 font-mono text-[10px]">
+                      <div className="flex items-center justify-between gap-1 font-mono text-[9px] sm:text-[10px]">
                         <span
                           className={cn(
                             "font-bold",
@@ -823,13 +836,13 @@ export function HeroRoastWebGL({ announcementText }: HeroRoastWebGLProps) {
                         >
                           {st.stepCode}
                         </span>
-                        <span className="text-[10px] text-white/70 font-semibold">
+                        <span className="text-white/75 font-semibold">
                           {st.tempLabel}
                         </span>
                       </div>
                       <p
                         className={cn(
-                          "mt-0.5 text-[11px] sm:text-xs font-bold truncate",
+                          "mt-0.5 text-[10px] sm:text-xs font-bold truncate",
                           isCurrent ? "text-white" : "text-white/70 group-hover:text-white"
                         )}
                       >
@@ -841,8 +854,8 @@ export function HeroRoastWebGL({ announcementText }: HeroRoastWebGLProps) {
               </div>
             </div>
 
-            {/* Stats & Scroll Down Prompt */}
-            <div className="flex items-center justify-between lg:justify-end gap-6">
+            {/* Stats & Scroll Down Prompt (Desktop) */}
+            <div className="hidden lg:flex items-center justify-end gap-6">
               <div className="hidden xl:flex items-center gap-6 border-r border-white/15 pr-6">
                 {[
                   ["49", "Menu & Varian"],

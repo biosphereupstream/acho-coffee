@@ -7,7 +7,7 @@ const HeroRoastWebGL = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="relative flex h-screen w-full items-center justify-center bg-[#05120d] text-white overflow-hidden">
+      <div className="relative flex h-[calc(100dvh-3.5rem)] sm:h-[calc(100dvh-4rem)] w-full items-center justify-center bg-[#05120d] text-white overflow-hidden">
         <div
           className="pointer-events-none absolute inset-0"
           style={{

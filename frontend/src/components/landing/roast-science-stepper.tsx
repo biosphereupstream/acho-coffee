@@ -165,27 +165,27 @@ export function RoastScienceStepper() {
         </div>
 
         {/* Interactive Stage Interactive Showcase Box */}
-        <div className="mt-6 rounded-3xl border border-border/80 bg-gradient-to-b from-card via-card/95 to-secondary/30 p-6 sm:p-10 shadow-lg backdrop-blur-sm">
-          <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
+        <div className="mt-4 sm:mt-6 rounded-2xl sm:rounded-3xl border border-border/80 bg-gradient-to-b from-card via-card/95 to-secondary/30 p-4 sm:p-10 shadow-lg backdrop-blur-sm">
+          <div className="grid gap-6 sm:gap-8 lg:grid-cols-12 lg:items-center">
             
             {/* Visual Simulated Bean & Temperature Gauge (Left Column - 5 cols) */}
-            <div className="flex flex-col items-center justify-center text-center lg:col-span-5 rounded-2xl bg-secondary/40 border border-border/60 p-6 sm:p-8 relative overflow-hidden">
+            <div className="flex flex-col items-center justify-center text-center lg:col-span-5 rounded-2xl bg-secondary/40 border border-border/60 p-4 sm:p-8 relative overflow-hidden">
               <div
                 className="absolute inset-0 pointer-events-none opacity-40 blur-2xl"
                 style={{ background: beanVisual.glow }}
               />
 
               {/* Temperature Badge */}
-              <div className="relative flex items-center gap-1.5 rounded-full bg-background/90 border border-border px-4 py-1.5 shadow-sm text-xs font-mono font-extrabold text-foreground">
+              <div className="relative flex items-center gap-1.5 rounded-full bg-background/90 border border-border px-3.5 py-1 sm:px-4 sm:py-1.5 shadow-sm text-xs font-mono font-extrabold text-foreground">
                 <Thermometer className="h-4 w-4 text-gold-deep" />
                 <span>{currentStage.suhu}</span>
               </div>
 
               {/* Simulated Coffee Bean Visual */}
-              <div className="relative my-8 flex items-center justify-center">
+              <div className="relative my-5 sm:my-8 flex items-center justify-center">
                 <div
                   className={cn(
-                    "relative h-40 w-28 rounded-[50%/40%] shadow-2xl transition-all duration-500 bg-gradient-to-br flex items-center justify-center border-2",
+                    "relative h-32 w-22 sm:h-40 sm:w-28 rounded-[50%/40%] shadow-2xl transition-all duration-500 bg-gradient-to-br flex items-center justify-center border-2",
                     beanVisual.bg
                   )}
                   style={{
@@ -194,7 +194,7 @@ export function RoastScienceStepper() {
                   }}
                 >
                   {/* Bean Center Crease / Split */}
-                  <div className="h-32 w-1.5 rounded-full bg-black/40 blur-[0.5px] transform -rotate-2 relative">
+                  <div className="h-24 sm:h-32 w-1.5 rounded-full bg-black/40 blur-[0.5px] transform -rotate-2 relative">
                     {/* Chaff line simulation */}
                     <div className="absolute inset-y-1 left-0 w-0.5 bg-amber-100/40" />
                   </div>
@@ -215,10 +215,10 @@ export function RoastScienceStepper() {
               </div>
 
               <div className="relative space-y-1">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest font-mono">
+                <p className="text-[11px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest font-mono">
                   Transformasi Fisik Biji
                 </p>
-                <p className="text-base font-extrabold text-foreground">
+                <p className="text-sm sm:text-base font-extrabold text-foreground">
                   {beanVisual.label}
                 </p>
                 <p className="text-[11px] text-muted-foreground">

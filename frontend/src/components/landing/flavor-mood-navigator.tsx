@@ -111,22 +111,22 @@ export function FlavorMoodNavigator({ initialCoffees }: FlavorMoodNavigatorProps
         </div>
 
         {/* Dual Track Switcher: Beans vs Drinks */}
-        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-secondary/80 border border-border/80 self-start md:self-end">
+        <div className="grid grid-cols-2 md:flex items-center gap-1.5 p-1.5 rounded-2xl bg-secondary/80 border border-border/80 w-full md:w-auto self-start md:self-end">
           <button
             onClick={() => {
               setActiveCategory("beans");
               setSelectedMood("all");
             }}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all",
+              "flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-0",
               activeCategory === "beans"
                 ? "bg-green-deep text-white shadow-md ring-1 ring-gold/40"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Coffee className="h-4 w-4 text-gold" />
-            <span>Biji Kopi Sangrai</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-mono">
+            <Coffee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gold shrink-0" />
+            <span className="truncate">Biji Kopi</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-mono shrink-0">
               4
             </span>
           </button>
@@ -137,24 +137,24 @@ export function FlavorMoodNavigator({ initialCoffees }: FlavorMoodNavigatorProps
               setSelectedMood("all");
             }}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all",
+              "flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all min-w-0",
               activeCategory === "drinks"
                 ? "bg-green-deep text-white shadow-md ring-1 ring-gold/40"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <CupSoda className="h-4 w-4 text-gold" />
-            <span>Minuman Siap Minum</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-mono">
+            <CupSoda className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gold shrink-0" />
+            <span className="truncate">Minuman Botol</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-mono shrink-0">
               45
             </span>
           </button>
         </div>
       </div>
 
-      {/* Flavor Mood Selector Pills */}
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold text-muted-foreground mr-1 hidden sm:inline">
+      {/* Flavor Mood Selector Pills (Swipeable di Smartphone) */}
+      <div className="mt-5 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none sm:flex-wrap sm:overflow-visible sm:pb-0">
+        <span className="text-xs font-bold text-muted-foreground mr-1 hidden sm:inline shrink-0">
           Sensory Notes:
         </span>
         {FLAVOR_MOODS.map((mood) => {
@@ -164,7 +164,7 @@ export function FlavorMoodNavigator({ initialCoffees }: FlavorMoodNavigatorProps
               key={mood.id}
               onClick={() => setSelectedMood(mood.id)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200",
+                "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 whitespace-nowrap",
                 isSelected ? mood.activeColor : mood.color
               )}
             >

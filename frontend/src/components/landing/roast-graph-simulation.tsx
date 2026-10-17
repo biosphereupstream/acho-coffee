@@ -716,11 +716,11 @@ export function RoastGraphSimulation() {
         x: mapX(activePreset.tpSec),
         y: mapYTemp(activePreset.tpTemp),
         // Badge di bawah lembah TP
-        badgeX: mapX(activePreset.tpSec) + 22,
+        badgeX: mapX(activePreset.tpSec) + 24,
         badgeY: Math.min(PLOT_BOTTOM - 16, mapYTemp(activePreset.tpTemp) + 32),
-        badgeW: 68,
+        badgeW: 76,
         color: "#84a95a",
-        borderColor: "rgba(132,169,90,0.75)",
+        borderColor: "rgba(132,169,90,0.85)",
         textColor: "#d9f99d",
       },
       {
@@ -733,9 +733,9 @@ export function RoastGraphSimulation() {
         // Badge di atas-kiri titik DE
         badgeX: mapX(activePreset.dryEndSec) - 18,
         badgeY: mapYTemp(activePreset.dryEndTemp) - 34,
-        badgeW: 72,
+        badgeW: 80,
         color: "#d4a948",
-        borderColor: "rgba(212,169,72,0.8)",
+        borderColor: "rgba(212,169,72,0.88)",
         textColor: "#fef08a",
       },
       {
@@ -746,11 +746,11 @@ export function RoastGraphSimulation() {
         x: mapX(activePreset.fcSec),
         y: mapYTemp(activePreset.fcTemp),
         // Badge di atas-kiri titik FCs
-        badgeX: mapX(activePreset.fcSec) - 30,
+        badgeX: mapX(activePreset.fcSec) - 32,
         badgeY: mapYTemp(activePreset.fcTemp) - 36,
-        badgeW: 80,
+        badgeW: 88,
         color: "#e6602e",
-        borderColor: "rgba(249,115,22,0.9)",
+        borderColor: "rgba(249,115,22,0.92)",
         textColor: "#ffedd5",
         isCritical: true,
       },
@@ -765,11 +765,11 @@ export function RoastGraphSimulation() {
         x: mapX(activePreset.scSec),
         y: mapYTemp(activePreset.scTemp),
         // Badge SC ditaruh di BAWAH-KIRI kurva supaya tidak pernah bertumpuk dengan FCs maupun DROP
-        badgeX: mapX(activePreset.scSec) - 16,
+        badgeX: mapX(activePreset.scSec) - 18,
         badgeY: mapYTemp(activePreset.scTemp) + 38,
-        badgeW: 76,
+        badgeW: 82,
         color: "#dc2626",
-        borderColor: "rgba(248,113,113,0.9)",
+        borderColor: "rgba(248,113,113,0.92)",
         textColor: "#fecaca",
         isCritical: true,
       });
@@ -783,11 +783,11 @@ export function RoastGraphSimulation() {
       x: mapX(activePreset.dropSec),
       y: mapYTemp(activePreset.dropTemp),
       // Badge DROP di atas titik akhir sangrai (digeser sedikit ke kiri agar tidak keluar batas kanan)
-      badgeX: Math.min(PLOT_RIGHT - 48, mapX(activePreset.dropSec) - 10),
-      badgeY: Math.max(PLOT_TOP + 15, mapYTemp(activePreset.dropTemp) - 30),
-      badgeW: 88,
+      badgeX: Math.min(PLOT_RIGHT - 52, mapX(activePreset.dropSec) - 12),
+      badgeY: Math.max(PLOT_TOP + 16, mapYTemp(activePreset.dropTemp) - 30),
+      badgeW: 94,
       color: "#2dd4bf",
-      borderColor: "rgba(45,212,191,0.85)",
+      borderColor: "rgba(45,212,191,0.9)",
       textColor: "#ccfbf1",
     });
 
@@ -800,7 +800,7 @@ export function RoastGraphSimulation() {
   // Posisi HUD Playhead Tag: ditaruh di jalur bawah (y=316) agar tidak menutupi milestone di kurva,
   // dan otomatis pindah ke jalur atas (y=62) saat di awal sangrai (dekat lembah TP)
   const playheadTagY = currentTimeSec < 135 ? PLOT_TOP + 20 : PLOT_BOTTOM - 18;
-  const playheadTagX = Math.min(PLOT_RIGHT - 74, Math.max(PLOT_LEFT + 74, currentX));
+  const playheadTagX = Math.min(PLOT_RIGHT - 82, Math.max(PLOT_LEFT + 82, currentX));
 
   return (
     <div className="glossy-card relative overflow-hidden rounded-2xl sm:rounded-3xl border border-gold/40 bg-gradient-to-br from-[#071610] via-[#0b2118] to-[#040e0a] text-white shadow-2xl w-full max-w-full">
@@ -809,22 +809,22 @@ export function RoastGraphSimulation() {
       <div className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
 
       {/* ================= TOP HUD: STATUS & PRESET SELECTION ================= */}
-      <div className="border-b border-white/10 p-3.5 sm:p-5">
-        <div className="flex flex-col gap-3.5">
+      <div className="border-b border-white/10 p-3 sm:p-5">
+        <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="gold" className="text-primary font-bold px-2.5 py-0.5 text-[11px] gap-1 shadow-sm">
+                <Badge variant="gold" className="text-primary font-bold px-2.5 py-0.5 text-[10px] sm:text-[11px] gap-1 shadow-sm">
                   <Activity className="h-3 w-3 animate-pulse" /> Live Roaster Scope
                 </Badge>
                 <span className="font-mono text-[10px] sm:text-[11px] text-gold-light tracking-wider font-semibold">
                   BIOSPHERE LAB v2.5 • ARTISAN TELEMETRY
                 </span>
               </div>
-              <h3 className="mt-1 font-[var(--font-display)] text-lg sm:text-xl font-black tracking-wide text-white flex flex-wrap items-center gap-2">
+              <h3 className="mt-1 font-[var(--font-display)] text-base sm:text-xl font-black tracking-wide text-white flex flex-wrap items-center gap-2">
                 Cockpit Kurva Roasting Kimiawi
                 {telemetry.phase.isCritical && (
-                  <span className="rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] px-2.5 py-0.5 font-mono animate-pulse">
+                  <span className="rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] px-2 py-0.5 font-mono animate-pulse">
                     CRITICAL MILESTONE
                   </span>
                 )}
@@ -832,7 +832,7 @@ export function RoastGraphSimulation() {
             </div>
 
             {/* Preset Buttons */}
-            <div className="flex items-center gap-1 rounded-xl border border-white/15 bg-black/50 p-1 overflow-x-auto max-w-full">
+            <div className="flex items-center gap-1 rounded-xl border border-white/15 bg-black/50 p-1 overflow-x-auto max-w-full scrollbar-none">
               {PRESETS.map((p) => {
                 const isSelected = activePreset.id === p.id;
                 return (
@@ -859,22 +859,22 @@ export function RoastGraphSimulation() {
             </div>
           </div>
 
-          <p className="text-xs text-white/70 leading-relaxed line-clamp-2">
+          <p className="text-[11px] sm:text-xs text-white/70 leading-relaxed line-clamp-2">
             {activePreset.description}
           </p>
         </div>
 
         {/* ================= 5 LIVE TELEMETRY CARDS ================= */}
-        <div className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
           {/* Card 1: Bean Temp (BT) */}
-          <div className="rounded-xl border border-gold/40 bg-black/40 p-2.5 backdrop-blur-xs min-w-0 shadow-inner">
+          <div className="rounded-xl border border-gold/40 bg-black/40 p-2 sm:p-2.5 backdrop-blur-xs min-w-0 shadow-inner">
             <div className="flex items-center justify-between gap-1">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-gold-light flex items-center gap-1 truncate">
                 <Thermometer className="h-3 w-3 text-gold shrink-0" /> BT Probe
               </span>
               <span className="text-[9px] font-mono text-gold-light/60 shrink-0">Bean</span>
             </div>
-            <p className="mt-1 font-mono text-lg sm:text-xl font-black text-gold-light leading-tight">
+            <p className="mt-0.5 font-mono text-base sm:text-xl font-black text-gold-light leading-tight">
               {telemetry.bt.toFixed(1)} <span className="text-[11px] font-medium text-white/50">°C</span>
             </p>
             <p className="text-[10px] text-white/70 mt-0.5 truncate font-medium">
@@ -883,14 +883,14 @@ export function RoastGraphSimulation() {
           </div>
 
           {/* Card 2: Drum / Air Temp (ET) */}
-          <div className="rounded-xl border border-emerald-500/40 bg-black/40 p-2.5 backdrop-blur-xs min-w-0 shadow-inner">
+          <div className="rounded-xl border border-emerald-500/40 bg-black/40 p-2 sm:p-2.5 backdrop-blur-xs min-w-0 shadow-inner">
             <div className="flex items-center justify-between gap-1">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1 truncate">
                 <Flame className="h-3 w-3 text-emerald-400 shrink-0" /> ET Drum
               </span>
               <span className="text-[9px] font-mono text-emerald-400/60 shrink-0">Air</span>
             </div>
-            <p className="mt-1 font-mono text-lg sm:text-xl font-black text-emerald-300 leading-tight">
+            <p className="mt-0.5 font-mono text-base sm:text-xl font-black text-emerald-300 leading-tight">
               {telemetry.et.toFixed(1)} <span className="text-[11px] font-medium text-white/50">°C</span>
             </p>
             <p className="text-[10px] text-white/70 mt-0.5 truncate">
@@ -899,14 +899,14 @@ export function RoastGraphSimulation() {
           </div>
 
           {/* Card 3: Rate of Rise (RoR) */}
-          <div className="rounded-xl border border-amber-500/40 bg-black/40 p-2.5 backdrop-blur-xs min-w-0 shadow-inner">
+          <div className="rounded-xl border border-amber-500/40 bg-black/40 p-2 sm:p-2.5 backdrop-blur-xs min-w-0 shadow-inner">
             <div className="flex items-center justify-between gap-1">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1 truncate">
                 <Zap className="h-3 w-3 text-amber-400 shrink-0" /> RoR Delta
               </span>
               <span className="text-[9px] font-mono text-amber-400/60 shrink-0">30s</span>
             </div>
-            <p className="mt-1 font-mono text-lg sm:text-xl font-black text-amber-300 leading-tight">
+            <p className="mt-0.5 font-mono text-base sm:text-xl font-black text-amber-300 leading-tight">
               {telemetry.ror > 0 ? `+${telemetry.ror.toFixed(1)}` : telemetry.ror.toFixed(1)}{" "}
               <span className="text-[11px] font-medium text-white/50">°C/m</span>
             </p>
@@ -916,14 +916,14 @@ export function RoastGraphSimulation() {
           </div>
 
           {/* Card 4: Development Time Ratio (DTR) */}
-          <div className="rounded-xl border border-indigo-400/40 bg-black/40 p-2.5 backdrop-blur-xs min-w-0 shadow-inner">
+          <div className="rounded-xl border border-indigo-400/40 bg-black/40 p-2 sm:p-2.5 backdrop-blur-xs min-w-0 shadow-inner">
             <div className="flex items-center justify-between gap-1">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-1 truncate">
                 <Gauge className="h-3 w-3 text-indigo-400 shrink-0" /> Live DTR
               </span>
               <span className="text-[9px] font-mono text-indigo-300/60 shrink-0">SCA</span>
             </div>
-            <p className="mt-1 font-mono text-lg sm:text-xl font-black text-indigo-200 leading-tight">
+            <p className="mt-0.5 font-mono text-base sm:text-xl font-black text-indigo-200 leading-tight">
               {telemetry.dtrPercent > 0 ? `${telemetry.dtrPercent.toFixed(1)}%` : "0.0%"}
             </p>
             <p className="text-[10px] text-indigo-300/80 mt-0.5 truncate font-medium">
@@ -932,7 +932,7 @@ export function RoastGraphSimulation() {
           </div>
 
           {/* Card 5: Gas & Airflow Machine Status */}
-          <div className="col-span-2 sm:col-span-2 xl:col-span-1 rounded-xl border border-white/20 bg-black/40 p-2.5 backdrop-blur-xs min-w-0 shadow-inner">
+          <div className="col-span-2 sm:col-span-2 xl:col-span-1 rounded-xl border border-white/20 bg-black/40 p-2 sm:p-2.5 backdrop-blur-xs min-w-0 shadow-inner">
             <div className="flex items-center justify-between gap-1">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-white/80 flex items-center gap-1 truncate">
                 <Wind className="h-3 w-3 text-white/80 shrink-0" /> Burner / Air
@@ -941,7 +941,7 @@ export function RoastGraphSimulation() {
                 {formatTime(currentTimeSec)}
               </span>
             </div>
-            <div className="mt-1 flex items-center justify-between gap-2 font-mono">
+            <div className="mt-0.5 flex items-center justify-between gap-2 font-mono">
               <div className="flex items-baseline gap-1">
                 <span className="text-[9px] text-amber-400 font-bold">GAS</span>
                 <span className="text-sm sm:text-base font-black text-white">{telemetry.gas}%</span>
@@ -960,9 +960,9 @@ export function RoastGraphSimulation() {
       </div>
 
       {/* ================= LAYER TOGGLES & SCOPE OPTIONS ================= */}
-      <div className="px-3.5 sm:px-5 py-2 bg-black/35 border-b border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5 font-mono text-[10px] sm:text-[11px]">
-          <span className="text-white/50 uppercase text-[10px] tracking-wider font-bold mr-0.5">
+      <div className="px-3 sm:px-5 py-2 bg-black/35 border-b border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 font-mono text-[10px] sm:text-[11px] overflow-x-auto scrollbar-none max-w-full">
+          <span className="text-white/50 uppercase text-[10px] tracking-wider font-bold mr-0.5 shrink-0">
             Layers:
           </span>
 
@@ -971,7 +971,7 @@ export function RoastGraphSimulation() {
             type="button"
             onClick={() => setShowBT(!showBT)}
             className={cn(
-              "flex items-center gap-1 px-2 py-0.5 rounded-md border transition-all",
+              "shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-md border transition-all",
               showBT
                 ? "border-gold/60 bg-gold/15 text-gold-light font-bold"
                 : "border-white/10 text-white/40 line-through"
@@ -986,7 +986,7 @@ export function RoastGraphSimulation() {
             type="button"
             onClick={() => setShowET(!showET)}
             className={cn(
-              "flex items-center gap-1 px-2 py-0.5 rounded-md border transition-all",
+              "shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-md border transition-all",
               showET
                 ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-300 font-bold"
                 : "border-white/10 text-white/40 line-through"
@@ -1001,7 +1001,7 @@ export function RoastGraphSimulation() {
             type="button"
             onClick={() => setShowRoR(!showRoR)}
             className={cn(
-              "flex items-center gap-1 px-2 py-0.5 rounded-md border transition-all",
+              "shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-md border transition-all",
               showRoR
                 ? "border-amber-500/60 bg-amber-500/15 text-amber-300 font-bold"
                 : "border-white/10 text-white/40 line-through"
@@ -1016,7 +1016,7 @@ export function RoastGraphSimulation() {
             type="button"
             onClick={() => setShowGhost(!showGhost)}
             className={cn(
-              "flex items-center gap-1 px-2 py-0.5 rounded-md border transition-all",
+              "shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-md border transition-all",
               showGhost
                 ? "border-cyan-400/60 bg-cyan-400/15 text-cyan-200 font-bold"
                 : "border-white/10 text-white/40 line-through"
@@ -1029,13 +1029,13 @@ export function RoastGraphSimulation() {
           </button>
         </div>
 
-        <span className="inline-flex items-center gap-1 text-[10px] text-white/60 font-mono">
+        <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-white/60 font-mono">
           <Target className="h-3 w-3 text-gold" /> Geser/klik grafik untuk inspeksi
         </span>
       </div>
 
       {/* ================= MAIN SVG ROASTER SCOPE CANVAS ================= */}
-      <div className="relative px-2 py-2.5 sm:px-4 sm:py-3.5 overflow-hidden w-full max-w-full">
+      <div className="relative px-1.5 py-2 sm:px-4 sm:py-3.5 overflow-hidden w-full max-w-full">
         <svg
           ref={svgRef}
           viewBox="0 0 760 390"
@@ -1126,25 +1126,25 @@ export function RoastGraphSimulation() {
                   <g>
                     <rect
                       x={x1 + 1.5}
-                      y={12}
+                      y={11}
                       width={Math.max(4, width - 3)}
-                      height={20}
+                      height={22}
                       rx={4}
-                      fill={isActivePhase ? p.color : "rgba(6, 20, 14, 0.85)"}
-                      fillOpacity={isActivePhase ? 0.32 : 0.75}
+                      fill={isActivePhase ? p.color : "rgba(6, 20, 14, 0.88)"}
+                      fillOpacity={isActivePhase ? 0.36 : 0.8}
                       stroke={p.color}
-                      strokeWidth={isActivePhase ? "1.4" : "0.8"}
-                      strokeOpacity={isActivePhase ? 0.95 : 0.45}
+                      strokeWidth={isActivePhase ? "1.5" : "0.9"}
+                      strokeOpacity={isActivePhase ? 0.95 : 0.5}
                     />
                     <text
                       x={x1 + width / 2}
                       y={22.5}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fill={isActivePhase ? "#ffffff" : "rgba(255,255,255,0.68)"}
-                      fontSize={width < 48 ? "7.5" : "8.5"}
+                      fill={isActivePhase ? "#ffffff" : "rgba(255,255,255,0.78)"}
+                      fontSize={width < 48 ? "8.5" : "9.5"}
                       fontFamily="monospace"
-                      fontWeight={isActivePhase ? "bold" : "normal"}
+                      fontWeight="bold"
                     >
                       {width < 42 ? p.shortTag.slice(0, 4) : p.shortTag}
                     </text>
@@ -1166,7 +1166,7 @@ export function RoastGraphSimulation() {
           />
 
           {/* ================= 2. GRID LINES & AXES ================= */}
-          {/* Horizontal Temperature Grid Lines (100°C, 150°C, 200°C, 250°C) */}
+          {/* Horizontal Temperature Grid Lines (50°C, 100°C, 150°C, 200°C, 250°C) */}
           {[50, 100, 150, 200, 250].map((temp) => {
             const y = mapYTemp(temp);
             return (
@@ -1181,11 +1181,12 @@ export function RoastGraphSimulation() {
                 />
                 <text
                   x={PLOT_LEFT - 6}
-                  y={y + 3.5}
+                  y={y + 4}
                   textAnchor="end"
-                  fill="rgba(255,255,255,0.52)"
-                  fontSize="9.5"
+                  fill="rgba(255,255,255,0.68)"
+                  fontSize="10.5"
                   fontFamily="monospace"
+                  fontWeight="bold"
                 >
                   {temp}°C
                 </text>
@@ -1203,16 +1204,17 @@ export function RoastGraphSimulation() {
                   y1={y}
                   x2={PLOT_RIGHT}
                   y2={y}
-                  stroke="rgba(251, 191, 36, 0.35)"
+                  stroke="rgba(251, 191, 36, 0.4)"
                   strokeWidth="1"
                 />
                 <text
                   x={PLOT_RIGHT + 6}
-                  y={y + 3}
+                  y={y + 3.5}
                   textAnchor="start"
-                  fill="rgba(251, 191, 36, 0.65)"
-                  fontSize="9"
+                  fill="rgba(251, 191, 36, 0.8)"
+                  fontSize="10"
                   fontFamily="monospace"
+                  fontWeight="bold"
                 >
                   +{rorVal}
                 </text>
@@ -1235,11 +1237,12 @@ export function RoastGraphSimulation() {
                 />
                 <text
                   x={x}
-                  y={PLOT_BOTTOM + 18}
+                  y={PLOT_BOTTOM + 19}
                   textAnchor="middle"
-                  fill="rgba(255,255,255,0.58)"
-                  fontSize="9.5"
+                  fill="rgba(255,255,255,0.72)"
+                  fontSize="10.5"
                   fontFamily="monospace"
+                  fontWeight="bold"
                 >
                   {formatTime(sec)}
                 </text>
@@ -1250,36 +1253,36 @@ export function RoastGraphSimulation() {
           {/* ================= 3. TELEMETRY CURVES ================= */}
           {/* Ghost Reference Profile Curve (Artisan/Cropster Ideal Benchmark) */}
           {showGhost && (
-            <g opacity={0.75}>
+            <g opacity={0.8}>
               <path
                 d={ghostPath}
                 fill="none"
                 stroke="#38bdf8"
-                strokeWidth="1.6"
+                strokeWidth="1.8"
                 strokeDasharray="5,4"
               />
               {/* Ghost Badge ditempatkan di area tengah Maillard (t=375s) agar tidak pernah menabrak FCs/DROP */}
               <g
                 transform={`translate(${mapX(375)}, ${
-                  mapYTemp(calculateTelemetry(375, GHOST_REFERENCE).bt) + 18
+                  mapYTemp(calculateTelemetry(375, GHOST_REFERENCE).bt) + 20
                 })`}
               >
                 <rect
-                  x="-36"
-                  y="-8"
-                  width="72"
-                  height="15"
+                  x="-40"
+                  y="-9"
+                  width="80"
+                  height="18"
                   rx="4"
                   fill="#04131a"
                   stroke="#38bdf8"
-                  strokeWidth="0.9"
-                  opacity="0.9"
+                  strokeWidth="1"
+                  opacity="0.92"
                 />
                 <text
                   x="0"
                   y="0.5"
                   fill="#7dd3fc"
-                  fontSize="8"
+                  fontSize="9"
                   fontFamily="monospace"
                   fontWeight="bold"
                   textAnchor="middle"
@@ -1298,17 +1301,17 @@ export function RoastGraphSimulation() {
                 d={etRoastPath}
                 fill="none"
                 stroke="#34d399"
-                strokeWidth="1.8"
+                strokeWidth="2"
                 strokeDasharray="5,3"
-                opacity={0.75}
+                opacity={0.78}
               />
               <path
                 d={etCoolPath}
                 fill="none"
                 stroke="#34d399"
-                strokeWidth="1.2"
+                strokeWidth="1.3"
                 strokeDasharray="2,4"
-                opacity={0.35}
+                opacity={0.38}
               />
             </g>
           )}
@@ -1319,10 +1322,10 @@ export function RoastGraphSimulation() {
               d={rorPath}
               fill="none"
               stroke="#fbbf24"
-              strokeWidth="2"
+              strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              opacity={0.82}
+              opacity={0.85}
             />
           )}
 
@@ -1334,7 +1337,7 @@ export function RoastGraphSimulation() {
                 d={btRoastPath}
                 fill="none"
                 stroke="url(#scopeBtGradient)"
-                strokeWidth="3.4"
+                strokeWidth="3.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 filter="url(#subtleLineGlow)"
@@ -1344,9 +1347,9 @@ export function RoastGraphSimulation() {
                 d={btCoolPath}
                 fill="none"
                 stroke="#2dd4bf"
-                strokeWidth="2"
+                strokeWidth="2.2"
                 strokeDasharray="4,4"
-                opacity={0.65}
+                opacity={0.68}
               />
             </g>
           )}
@@ -1356,7 +1359,7 @@ export function RoastGraphSimulation() {
             const isNearPlayhead = Math.abs(currentTimeSec - m.timeSec) <= 14;
             const halfW = m.badgeW / 2;
             const isBadgeAbove = m.badgeY < m.y;
-            const lineEndY = isBadgeAbove ? m.badgeY + 10 : m.badgeY - 10;
+            const lineEndY = isBadgeAbove ? m.badgeY + 11 : m.badgeY - 11;
 
             return (
               <g key={m.id}>
@@ -1367,19 +1370,19 @@ export function RoastGraphSimulation() {
                   x2={m.badgeX}
                   y2={lineEndY}
                   stroke={m.color}
-                  strokeWidth="1.2"
+                  strokeWidth="1.4"
                   strokeDasharray="2,2"
-                  opacity={0.85}
+                  opacity={0.9}
                 />
 
                 {/* Milestone Node on BT Curve */}
                 <circle
                   cx={m.x}
                   cy={m.y}
-                  r={m.isCritical ? 5.2 : 4.2}
+                  r={m.isCritical ? 5.6 : 4.6}
                   fill={m.color}
                   stroke="#ffffff"
-                  strokeWidth={m.isCritical ? "2" : "1.5"}
+                  strokeWidth={m.isCritical ? "2" : "1.6"}
                   filter={m.isCritical ? "url(#laserGlow)" : undefined}
                 />
 
@@ -1396,14 +1399,14 @@ export function RoastGraphSimulation() {
                 >
                   <rect
                     x={-halfW}
-                    y={-10}
+                    y={-11}
                     width={m.badgeW}
-                    height={20}
+                    height={22}
                     rx={5}
                     fill="#06140e"
-                    fillOpacity={0.94}
+                    fillOpacity={0.96}
                     stroke={isNearPlayhead ? "#fef08a" : m.borderColor}
-                    strokeWidth={isNearPlayhead ? "1.6" : "1.1"}
+                    strokeWidth={isNearPlayhead ? "1.8" : "1.2"}
                   />
                   <text
                     x={0}
@@ -1411,7 +1414,7 @@ export function RoastGraphSimulation() {
                     textAnchor="middle"
                     dominantBaseline="middle"
                     fill={m.textColor}
-                    fontSize="9"
+                    fontSize="10"
                     fontFamily="monospace"
                     fontWeight="bold"
                   >
@@ -1429,28 +1432,28 @@ export function RoastGraphSimulation() {
             x2={currentX}
             y2={PLOT_BOTTOM}
             stroke="#f5d78e"
-            strokeWidth="1.6"
+            strokeWidth="1.8"
             strokeDasharray="3,3"
-            opacity={0.9}
+            opacity={0.92}
           />
 
           {/* Animated Crosshair Head on BT Curve */}
           <circle
             cx={currentX}
             cy={currentY}
-            r={6.5}
+            r={6.8}
             fill="#ffffff"
             stroke="#eab308"
-            strokeWidth="2.8"
+            strokeWidth="3"
             filter="url(#laserGlow)"
           />
           <circle
             cx={currentX}
             cy={currentY}
-            r={12}
+            r={12.5}
             fill="none"
             stroke="#f5d78e"
-            strokeWidth="1.4"
+            strokeWidth="1.5"
             opacity={0.65}
             className="animate-ping"
           />
@@ -1458,14 +1461,14 @@ export function RoastGraphSimulation() {
           {/* Non-Overlapping Playhead HUD Tag */}
           <g transform={`translate(${playheadTagX}, ${playheadTagY})`} filter="url(#badgeShadow)">
             <rect
-              x="-72"
-              y="-11"
-              width="144"
-              height="22"
+              x="-80"
+              y="-12"
+              width="160"
+              height="24"
               rx="6"
               fill="#06120d"
               stroke="#f5d78e"
-              strokeWidth="1.3"
+              strokeWidth="1.4"
               opacity="0.96"
             />
             <text
@@ -1474,7 +1477,7 @@ export function RoastGraphSimulation() {
               textAnchor="middle"
               dominantBaseline="middle"
               fill="#fef08a"
-              fontSize="9.5"
+              fontSize="10.5"
               fontFamily="monospace"
               fontWeight="bold"
             >
@@ -1484,10 +1487,10 @@ export function RoastGraphSimulation() {
         </svg>
 
         {/* Scope Coordinate Axis Labels Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-white/50 px-2 pt-1 font-mono">
-          <span>Y-Left: Bean/Drum Temp (50°C – 250°C)</span>
-          <span className="text-amber-400/80">Y-Right: Rate of Rise (+5 – +25°C/m)</span>
-          <span>X-Axis: Roast Time (00:00 – 12:00)</span>
+        <div className="flex flex-wrap items-center justify-between gap-1.5 text-[9.5px] sm:text-[10px] text-white/55 px-1.5 sm:px-2 pt-1 font-mono">
+          <span>Y-Left: Suhu (50–250°C)</span>
+          <span className="text-amber-400/85">Y-Right: RoR (+5–25°C/m)</span>
+          <span>X: Waktu (00:00–12:00)</span>
         </div>
       </div>
 
