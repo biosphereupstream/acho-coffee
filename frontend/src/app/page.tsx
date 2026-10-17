@@ -3,7 +3,6 @@ import {
   ArrowRight,
   CalendarClock,
   Flame,
-  ShieldCheck,
   Sparkles,
   Star,
   Truck,
@@ -16,8 +15,8 @@ import { FreshnessTelemetry } from "@/components/landing/freshness-telemetry";
 import { StickyMobileCTA } from "@/components/landing/sticky-mobile-cta";
 import { LandingFAQ } from "@/components/landing/faq";
 import RoastJourney from "@/components/landing/roast-journey-wrapper";
+import HeroRoastWebGLWrapper from "@/components/landing/hero-roast-webgl-wrapper";
 import { getLiveFrontendConfig, getLiveMenu } from "@/lib/menu";
-import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -79,75 +78,9 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* ================= HERO ================= */}
-      <section className="relative overflow-hidden">
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(60% 50% at 80% 0%, rgba(201,162,39,0.10) 0%, transparent 60%), radial-gradient(50% 40% at 10% 20%, rgba(13,92,58,0.08) 0%, transparent 60%)",
-          }}
-        />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 py-8 sm:px-6 sm:py-14 lg:grid-cols-2 lg:gap-14 lg:py-20 overflow-hidden">
-          <div className="w-full max-w-full">
-            <div className="flex flex-wrap items-center gap-2 mb-4 sm:mb-5">
-              <Badge variant="gold" className="animate-fade-up px-3 py-1 text-xs">
-                ☕ Fresh Roast dalam 72 Jam
-              </Badge>
-              {config?.announcement_text && (
-                <div className="animate-fade-up inline-flex items-center gap-1.5 rounded-full bg-gold/15 border border-gold/40 px-3 py-1 text-xs text-gold-deep font-semibold">
-                  <Sparkles className="h-3 w-3 text-gold-deep shrink-0" />
-                  <span>{config.announcement_text}</span>
-                </div>
-              )}
-            </div>
-            <h1 className="animate-fade-up font-[var(--font-display)] text-3xl sm:text-5xl lg:text-[3.4rem] font-bold leading-[1.16] tracking-tight text-green-deep break-words" style={{ animationDelay: "0.05s" }}>
-              Dipesan Hari Ini,{" "}
-              <span className="text-gold-gradient inline-block">Dipanggang Khusus</span> Untukmu
-            </h1>
-            <p className="animate-fade-up mt-4 sm:mt-5 max-w-xl text-sm sm:text-base lg:text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.12s" }}>
-              Pilih single origin atau blend nusantara, tentukan profil roasting & gilingan, lalu jadwalkan pengambilan
-              di roastery atau kirim ke rumahmu — lengkap dengan tracing kurir dan update di setiap tahap.
-            </p>
-
-            <div className="animate-fade-up mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 w-full" style={{ animationDelay: "0.2s" }}>
-              <Button size="lg" variant="gold" className="w-full sm:w-auto h-12 text-sm font-bold shadow-md justify-center" asChild>
-                <Link href="/menu">
-                  Eksplor Menu & Pesan <ArrowRight className="h-4 w-4 ml-1.5" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 text-sm font-semibold justify-center" asChild>
-                <Link href="/#proses">Sains Roasting 7 Fase</Link>
-              </Button>
-            </div>
-            <p className="animate-fade-up text-[11px] text-muted-foreground mt-2" style={{ animationDelay: "0.24s" }}>
-              ✦ Disangrai on-demand • Bebas pilih profil gilingan • Garansi kesegaran 72 jam
-            </p>
-
-            <div className="animate-fade-up mt-6 sm:mt-8 flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground" style={{ animationDelay: "0.28s" }}>
-              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-primary shrink-0" /> Pembayaran Aman</span>
-              <span className="flex items-center gap-1.5"><Flame className="h-4 w-4 text-gold-deep shrink-0" /> 4 Profil Roasting</span>
-              <span className="flex items-center gap-1.5"><CalendarClock className="h-4 w-4 text-primary shrink-0" /> Ambil / Kirim</span>
-            </div>
-
-            <div className="animate-fade-up mt-6 sm:mt-8 grid max-w-md grid-cols-3 gap-2 sm:gap-4 border-t border-border pt-5 sm:pt-6" style={{ animationDelay: "0.34s" }}>
-              {[
-                ["49", "Menu & Varian"],
-                ["7", "Fase Kimiawi"],
-                ["4.9★", "Kepuasan 500+"],
-              ].map(([num, label]) => (
-                <div key={label} className="min-w-0">
-                  <p className="text-xl sm:text-2xl font-extrabold text-green-deep">{num}</p>
-                  <p className="text-[11px] sm:text-xs font-medium text-muted-foreground truncate">{label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="animate-fade-up lg:pl-4 w-full max-w-full overflow-hidden" style={{ animationDelay: "0.15s" }}>
-            <RoastJourney />
-          </div>
-        </div>
+      {/* ================= 3D WEBGL SCROLLYTELLING HERO ================= */}
+      <section className="relative">
+        <HeroRoastWebGLWrapper announcementText={config?.announcement_text} />
 
         {/* marquee */}
         <div className="metal-green relative overflow-hidden py-3">
@@ -159,6 +92,22 @@ export default async function HomePage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ================= INTERACTIVE ROAST TELEMETRY COCKPIT ================= */}
+      <section id="roast-cockpit" className="relative scroll-mt-20 mx-auto max-w-6xl px-4 pt-16 pb-8 sm:px-6">
+        <div className="mx-auto max-w-2xl text-center mb-8">
+          <Badge variant="gold" className="text-primary font-bold">
+            Live Artisan Telemetry
+          </Badge>
+          <h2 className="mt-3 font-[var(--font-display)] text-3xl font-bold text-green-deep sm:text-4xl">
+            Simulasi Kurva <span className="text-gold-gradient">Roasting Presisi</span>
+          </h2>
+          <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+            Eksplorasi kurva Bean Temperature (BT), Rate of Rise (RoR), dan Development Time Ratio (DTR) secara interaktif pada setiap profil sangrai Biosphere.
+          </p>
+        </div>
+        <RoastJourney />
       </section>
 
       {/* ================= 7 FASE SAINS ROASTING INTERAKTIF ================= */}
