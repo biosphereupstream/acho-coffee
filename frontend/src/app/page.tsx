@@ -14,8 +14,7 @@ import { FlavorMoodNavigator } from "@/components/landing/flavor-mood-navigator"
 import { FreshnessTelemetry } from "@/components/landing/freshness-telemetry";
 import { StickyMobileCTA } from "@/components/landing/sticky-mobile-cta";
 import { LandingFAQ } from "@/components/landing/faq";
-import RoastJourney from "@/components/landing/roast-journey-wrapper";
-import HeroRoastWebGLWrapper from "@/components/landing/hero-roast-webgl-wrapper";
+import HeroV60WebGLWrapper from "@/components/landing/hero-v60-webgl-wrapper";
 import { getLiveFrontendConfig, getLiveMenu } from "@/lib/menu";
 
 export const dynamic = "force-dynamic";
@@ -78,9 +77,9 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* ================= 3D WEBGL SCROLLYTELLING HERO ================= */}
+      {/* ================= 3D V60 POUR-OVER SCROLLYTELLING HERO (700VH) ================= */}
       <section className="relative">
-        <HeroRoastWebGLWrapper announcementText={config?.announcement_text} />
+        <HeroV60WebGLWrapper announcementText={config?.announcement_text} />
 
         {/* marquee */}
         <div className="metal-green relative overflow-hidden py-3">
@@ -92,22 +91,6 @@ export default async function HomePage() {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* ================= INTERACTIVE ROAST TELEMETRY COCKPIT ================= */}
-      <section id="roast-cockpit" className="relative scroll-mt-16 mx-auto max-w-6xl px-3.5 pt-10 pb-6 sm:px-6 sm:pt-16 sm:pb-8">
-        <div className="mx-auto max-w-2xl text-center mb-6 sm:mb-8">
-          <Badge variant="gold" className="text-primary font-bold">
-            Live Artisan Telemetry
-          </Badge>
-          <h2 className="mt-2.5 sm:mt-3 font-[var(--font-display)] text-2xl font-bold text-green-deep sm:text-4xl">
-            Simulasi Kurva <span className="text-gold-gradient">Roasting Presisi</span>
-          </h2>
-          <p className="mt-2 text-xs sm:text-base text-muted-foreground">
-            Eksplorasi kurva Bean Temperature (BT), Rate of Rise (RoR), dan Development Time Ratio (DTR) secara interaktif pada setiap profil sangrai Biosphere.
-          </p>
-        </div>
-        <RoastJourney />
       </section>
 
       {/* ================= 7 FASE SAINS ROASTING INTERAKTIF ================= */}
